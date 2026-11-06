@@ -3,6 +3,7 @@
 /** @file depot_gui.cpp The GUI for depots. */
 
 #include "train.h"
+#include "n3ds_ui.h"
 #include "ship.h"
 #include "aircraft.h"
 #include "gui.h"
@@ -245,9 +246,47 @@ struct DepotWindow : Window {
 
 		this->owner = GetTileOwner(tile);
 		this->CreateDepotListWindow(type);
+#ifdef N3DS
+ this->n3ds_train_depot=type==VEH_TRAIN;
+#endif
 
 		this->FindWindowPlacementAndResize(desc);
 	}
+
+#ifdef N3DS
+ virtual void OnN3DSScreenChange(bool upper)
+ {
+  if(this->type!=VEH_TRAIN){Window::OnN3DSScreenChange(upper);return;}
+  bool top=upper||this->n3ds_train_depot_top;int width=top?400:320,rows=top?5:4;
+  bool changed=this->width!=width||this->height!=80+rows*28;
+  this->n3ds_native_layout=true;this->width=width;this->height=80+rows*28;
+  this->resize.step_width=1;this->resize.step_height=28;this->resize.width=320;this->resize.height=164;
+  this->vscroll.cap=rows;this->hscroll.cap=width-102;
+  this->widget[DEPOT_WIDGET_MATRIX].data=(rows<<8)+1;
+  int bottom=14+rows*28,side=rows*28+22;
+  N3DSWidgetRect(this,DEPOT_WIDGET_MATRIX,0,width-67,14,bottom-1);
+  N3DSWidgetRect(this,DEPOT_WIDGET_H_SCROLL,0,width-67,bottom,bottom+21);
+  N3DSWidgetRect(this,DEPOT_WIDGET_V_SCROLL,width-22,width-1,14,bottom+21);
+  int tools[]={DEPOT_WIDGET_SELL,DEPOT_WIDGET_SELL_CHAIN,DEPOT_WIDGET_SELL_ALL,DEPOT_WIDGET_AUTOREPLACE};
+  for(int i=0;i<4;i++)N3DSWidgetRect(this,tools[i],width-66,width-23,14+i*side/4,13+(i+1)*side/4);
+  N3DSWidgetRect(this,DEPOT_WIDGET_BUILD,0,width/2-1,bottom+22,bottom+43);
+  N3DSWidgetRect(this,DEPOT_WIDGET_CLONE,width/2,width-1,bottom+22,bottom+43);
+  N3DSWidgetRect(this,DEPOT_WIDGET_LOCATION,0,width/3-1,bottom+44,bottom+65);
+  N3DSWidgetRect(this,DEPOT_WIDGET_VEHICLE_LIST,width/3,2*width/3-1,bottom+44,bottom+65);
+  N3DSWidgetRect(this,DEPOT_WIDGET_STOP_ALL,2*width/3,5*width/6-1,bottom+44,bottom+65);
+  N3DSWidgetRect(this,DEPOT_WIDGET_START_ALL,5*width/6,width-1,bottom+44,bottom+65);
+  this->height=bottom+66;this->HideWidget(DEPOT_WIDGET_RESIZE);
+  Window::OnN3DSScreenChange(top);
+  if(this->n3ds_train_depot_top&&!upper){this->left=0;this->top=0;}
+  if(changed)MarkWholeScreenDirty();
+ }
+ void DrawN3DSConsistCount(const Vehicle *v,int x,int y)
+ {
+  unsigned engines=0,wagons=0;for(const Vehicle*u=v;u!=NULL;u=GetNextUnit(u)){if(IsTrainWagon(u))wagons++;else engines++;}
+  char text[80];snprintf(text,sizeof(text),"%u engine%s  %u wagon%s",engines,engines==1?"":"s",wagons,wagons==1?"":"s");
+  DoDrawString(text,x+36,y+2,TC_BLACK);
+ }
+#endif
 
 	~DepotWindow()
 	{
@@ -269,10 +308,17 @@ struct DepotWindow : Window {
 		switch (v->type) {
 			case VEH_TRAIN:
 				DrawTrainImage(v, x + 21, sprite_y, this->sel, this->hscroll.cap + 4, this->hscroll.pos);
+#ifdef N3DS
+    this->DrawN3DSConsistCount(v,x,y);
+#endif
 
 				/* Number of wagons relative to a standard length wagon (rounded up) */
 				SetDParam(0, (v->u.rail.cached_total_length + 7) / 8);
-				DrawStringRightAligned(this->widget[DEPOT_WIDGET_MATRIX].right - 1, y + 4, STR_TINY_BLACK, TC_FROMSTRING); // Draw the counter
+				#ifdef N3DS
+    {char length[24];snprintf(length,sizeof(length),"Len %u",(v->u.rail.cached_total_length+7)/8);SetDParamStr(0,length);DrawStringRightAligned(this->widget[DEPOT_WIDGET_MATRIX].right-1,y+2,STR_JUST_RAW_STRING,TC_BLACK);}
+#else
+    DrawStringRightAligned(this->widget[DEPOT_WIDGET_MATRIX].right-1,y+4,STR_TINY_BLACK,TC_FROMSTRING);
+#endif // Draw the counter
 				break;
 
 			case VEH_ROAD:     DrawRoadVehImage( v, x + 24, sprite_y, this->sel, 1); break;
@@ -294,7 +340,10 @@ struct DepotWindow : Window {
 			diff_y = 12;
 		}
 
-		DrawSprite((v->vehstatus & VS_STOPPED) ? SPR_FLAG_VEH_STOPPED : SPR_FLAG_VEH_RUNNING, PAL_NONE, x + diff_x, y + diff_y);
+		#ifdef N3DS
+  if(v->type==VEH_TRAIN&&this->resize.step_height>14){diff_x=15;diff_y=14;}
+#endif
+  DrawSprite((v->vehstatus & VS_STOPPED) ? SPR_FLAG_VEH_STOPPED : SPR_FLAG_VEH_RUNNING, PAL_NONE, x + diff_x, y + diff_y);
 
 		SetDParam(0, v->unitnumber);
 		DrawString(x, y + 2, (uint16)(v->max_age - DAYS_IN_LEAP_YEAR) >= v->age ? STR_00E2 : STR_00E3, TC_FROMSTRING);
@@ -364,11 +413,14 @@ struct DepotWindow : Window {
 		maxval = min(this->vehicle_list.Length() + this->wagon_list.Length(), (this->vscroll.pos * boxes_in_each_row) + (rows_in_display * boxes_in_each_row));
 
 		/* draw the train wagons, that do not have an engine in front */
-		for (; num < maxval; num++, y += 14) {
+		for (; num < maxval; num++, y += this->resize.step_height) {
 			const Vehicle *v = this->wagon_list[num - this->vehicle_list.Length()];
 			const Vehicle *u;
 
-			DrawTrainImage(v, x + 50, y, this->sel, this->hscroll.cap - 29, 0);
+			DrawTrainImage(v, x + 50, y + (this->resize.step_height-14), this->sel, this->hscroll.cap - 29, 0);
+#ifdef N3DS
+   this->DrawN3DSConsistCount(v,x,y);
+#endif
 			DrawString(x, y + 2, STR_8816, TC_FROMSTRING);
 
 			/* Draw the train counter */
@@ -376,7 +428,9 @@ struct DepotWindow : Window {
 			u = v;
 			do i++; while ((u = u->Next()) != NULL); // Determine length of train
 			SetDParam(0, i);                      // Set the counter
-			DrawStringRightAligned(this->widget[DEPOT_WIDGET_MATRIX].right - 1, y + 4, STR_TINY_BLACK, TC_FROMSTRING); // Draw the counter
+			#ifndef N3DS
+   DrawStringRightAligned(this->widget[DEPOT_WIDGET_MATRIX].right-1,y+4,STR_TINY_BLACK,TC_FROMSTRING);
+#endif // Draw the counter
 		}
 	}
 
@@ -1012,7 +1066,10 @@ struct DepotWindow : Window {
 
 	virtual void OnResize(Point new_size, Point delta)
 	{
-		this->vscroll.cap += delta.y / (int)this->resize.step_height;
+		#ifdef N3DS
+  if(this->type==VEH_TRAIN&&this->n3ds_native_layout){this->OnN3DSScreenChange(N3DSUpperUiActive());return;}
+#endif
+  this->vscroll.cap += delta.y / (int)this->resize.step_height;
 		this->hscroll.cap += delta.x / (int)this->resize.step_width;
 		this->widget[DEPOT_WIDGET_MATRIX].data = (this->vscroll.cap << 8) + (this->type == VEH_TRAIN ? 1 : this->hscroll.cap);
 		ResizeDepotButtons(this);

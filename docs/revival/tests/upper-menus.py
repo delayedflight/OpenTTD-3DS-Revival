@@ -16,7 +16,7 @@ cpp=r'''#include <algorithm>
 using std::min;using std::max;using byte=unsigned char;using uint32=unsigned;
 template<class T>T Clamp(T a,T l,T h){return min(max(a,l),h);}
 struct Point{int x,y;};struct {Point pos,delta;bool dirty=false,in_window=false;int wheel=0;} _cursor;
-struct Window{int window_class=2,window_number=7;void OnN3DSScreenChange(bool){}}menu;
+struct Window{bool n3ds_train_depot=false,n3ds_train_depot_top=false,n3ds_user_position=false,n3ds_position_upper=false;int n3ds_user_left=0,n3ds_user_top=22;int window_class=2,window_number=7;void OnN3DSScreenChange(bool){}}menu;
 using WindowClass=int;using WindowNumber=int;
 const int GM_EDITOR=2,GM_NORMAL=1,GM_MENU=0,WC_MAIN_TOOLBAR=1,WKC_ESC=1,WKC_PAUSE=2;
 int _game_mode=1,_upper_ui_class=0,_upper_ui_number=0;
@@ -28,10 +28,11 @@ Window *N3DSFrontUi(){return front;}Window *FindWindowById(int c,int n){return e
 Window *_map_ui_front=nullptr;bool construction=false;bool N3DSIsMapConstructionWindow(WindowClass){return construction;}
 static void SetN3DSUpperUi(bool upper,bool preserve_placement=false);
 void ResetObjectToPlace(){resets++;}void HandleMouseEvents(){mouse_events++;}void MarkWholeScreenDirty(){redraws++;}void HandleKeypress(unsigned){keys++;}
+bool N3DSDepotFocus(){return false;}
 bool NativeN3DSTitle(){return false;}bool NativeN3DSToolbarRow(int){return false;}bool NativeN3DSDropdownRow(int){return false;}bool NativeN3DSOrdersRow(int){return false;}
 '''.replace('HEADER',str(root/'src/n3ds_controls.h'))
 cpp+=block('static void SelectN3DSInput(bool map)\n{')+'\n'+block('static void SetN3DSUpperUi(bool upper, bool preserve_placement)\n{')+'\n'+block('static void CheckN3DSUpperUi()\n{')+'\n'+block('static void MoveN3DSTouch(int x, int y)\n{')
-a=s.index('case SDL_JOYBUTTONDOWN:');buttons=block('if (_upper_ui) {',a)
+a=s.index('case SDL_JOYBUTTONDOWN:');buttons=block('if (_upper_ui||N3DSDepotFocus()) {',a)
 cpp+='\nvoid Buttons(bool down,int button){struct{struct{int button;}jbutton;}ev{{button}};do{'+buttons+'}while(false);}\n'
 a=s.index('static void DrawN3DSPanel()');copy=block('if (_upper_ui) {',a)
 cpp+='''struct Format{int BytesPerPixel;};struct Surface{void*pixels;int pitch;Format*format;}*_sdl_screen,*_ui_surface;

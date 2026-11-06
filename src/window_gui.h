@@ -150,6 +150,9 @@ public:
 	WindowNumber window_number; ///< Window number within the window class
 
 #ifdef N3DS
+	bool n3ds_train_depot=false,n3ds_train_depot_top=false;
+ bool n3ds_user_position=false,n3ds_position_upper=false;
+ int n3ds_user_left=0,n3ds_user_top=22;
 	bool n3ds_native_layout = false; ///< A dedicated compact reflow is supplied.
 	int n3ds_canvas_x = 0, n3ds_canvas_y = 0; ///< Saved offsets in the native menu workspace.
 #endif

@@ -32,9 +32,9 @@
 #endif
 
 #ifdef N3DS
-static bool N3DSTopWindow(const Window *w)
+bool N3DSTopWindow(const Window *w)
 {
- return w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR;
+ return w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR || (!N3DSUpperUiActive() && w->n3ds_train_depot_top);
 }
 #endif
 
@@ -1265,7 +1265,7 @@ Window *FindWindowFromPt(int x, int y)
  FOR_ALL_WINDOWS_FROM_FRONT(w) {
 #ifdef N3DS
   if (w->window_class == WC_STATUS_BAR) continue; // Upper information bar has no lower touch target.
-  if ((w->window_class == WC_MAIN_WINDOW) != _n3ds_map_input) continue;
+  if (N3DSTopWindow(w) != _n3ds_map_input) continue;
 #endif
 		if (IsInsideBS(x, w->left, w->width) && IsInsideBS(y, w->top, w->height)) {
 			return w;
@@ -1495,7 +1495,10 @@ static bool HandleWindowDragging()
 				int delta;
 
 				FOR_ALL_WINDOWS_FROM_BACK(v) {
-					if (v == w) continue; // Don't snap at yourself
+					if (v == w) continue;
+#ifdef N3DS
+     if(N3DSTopWindow(v)!=N3DSTopWindow(w))continue;
+#endif // Don't snap at yourself
 
 					if (y + w->height > v->top && y < v->top + v->height) {
 						/* Your left border <-> other right border */
@@ -1597,7 +1600,13 @@ static bool HandleWindowDragging()
 				w->viewport->top  += ny - w->top;
 			}
 #ifdef N3DS
-			if ((N3DSIsConstructionWindow(w->window_class) && !N3DSUpperUiActive() && w->width<=320) || (w->window_class == WC_VEHICLE_VIEW && w->width <= 320 && !N3DSUpperUiActive()) || w->window_class == WC_VEHICLE_ORDERS || (w->width == 320 && (w->window_class == WC_VEHICLE_DETAILS || w->window_class == WC_TRAINS_LIST || w->window_class == WC_ROADVEH_LIST || w->window_class == WC_SHIPS_LIST || w->window_class == WC_AIRCRAFT_LIST))) { nx = N3DSIsConstructionWindow(w->window_class)?40+max(0,(320-w->width)/2):40; ny = 22; }
+ int old_native_x=nx,old_native_y=ny;
+ if(!N3DSUsesScrollableWorkspace(w)&&(w->n3ds_native_layout||N3DSUsesScreenPin(w->window_class))){
+  bool upper=N3DSUpperUiActive()||w->n3ds_train_depot_top;int origin=upper?0:40;
+  nx=Clamp(nx,origin,origin+max(0,(upper?400:320)-w->width));ny=Clamp(ny,upper?0:22,max(upper?0:22,240-w->height));
+  w->n3ds_user_position=true;w->n3ds_position_upper=upper;w->n3ds_user_left=nx;w->n3ds_user_top=ny;
+  if(w->viewport!=NULL){w->viewport->left+=nx-old_native_x;w->viewport->top+=ny-old_native_y;}
+ }
 #endif
 			w->left = nx;
 			w->top  = ny;
@@ -1808,7 +1817,10 @@ static bool MaybeBringWindowToFront(Window *w)
 			return false;
 		}
 
-		if (u->window_class == WC_MAIN_WINDOW ||
+		#ifdef N3DS
+  if(N3DSTopWindow(u)!=N3DSTopWindow(w))continue;
+#endif
+  if (u->window_class == WC_MAIN_WINDOW ||
 				IsVitalWindow(u) ||
 				u->window_class == WC_TOOLTIPS ||
 				u->window_class == WC_DROPDOWN_MENU) {
@@ -2256,8 +2268,11 @@ void Window::OnN3DSScreenChange(bool upper)
    ResizeWindow(this,delta,0);Point size={this->width,this->height};Point diff={delta,0};this->OnResize(size,diff);
   }
  }
- const int nx=upper?max(0,(400-this->width)/2):40+max(0,(320-this->width)/2);
- const int ny=_game_mode==GM_MENU?max(0,(240-this->height)/2):min(22,max(0,240-this->height));
+ int nx=upper?max(0,(400-this->width)/2):40+max(0,(320-this->width)/2);
+ int ny=_game_mode==GM_MENU?max(0,(240-this->height)/2):min(22,max(0,240-this->height));
+ if(this->n3ds_position_upper!=upper){this->n3ds_user_position=false;this->n3ds_position_upper=upper;}
+ if(this->n3ds_user_position){int origin=upper?0:40;nx=Clamp(this->n3ds_user_left,origin,origin+max(0,(upper?400:320)-this->width));ny=Clamp(this->n3ds_user_top,22,max(22,240-this->height));}
+ if(this->n3ds_train_depot_top){nx=0;ny=0;}
  if(this->viewport!=NULL){this->viewport->left+=nx-this->left;this->viewport->top+=ny-this->top;}
  bool changed=this->left!=nx||this->top!=ny;this->left=nx;this->top=ny;
  for(uint i=0;i<this->widget_count;i++){

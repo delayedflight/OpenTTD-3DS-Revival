@@ -4,7 +4,7 @@ This guide describes the r3d inspection-centre refinement of the r3a repair, bas
 
 ## Build and project layout
 
-The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3d/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
+The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3q/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
 
 The upstream checkout, the r1b source, and r2 source are kept separately in the development project. Private saves and crash dumps are local evidence, not release assets. Never test against the user's only save or write a release directly onto their SD card.
 
@@ -376,3 +376,22 @@ Converted audio is CC BY-SA 3.0 and separate from the GPL game code. Attribution
 
 
 The final r3p emulator loaded 73 slots/71 nonempty effects and logged world-effect launches with different IDs, nonzero sample sizes and viewport panning during copied Flufingwell simulation. Music continued with zero recorded underruns/I/O errors. Automated tests do not assess speaker sound quality; this remains an original-console check. See SOUND-EFFECTS-VALIDATION.txt.
+
+
+## r3q train workshop and bounded window dragging
+
+Train depots use a native 320x192 lower pane (four 28-pixel consist rows) or 400x220 upper pane (five rows). Each row keeps an engine/wagon count above the sprites. Counting follows GetNextUnit, so articulated parts and rear dual-headed parts do not inflate the wagon count. The old length metric is explicitly labelled Len and is separate from this count. Horizontal scrolling moves the train sprites without hiding the count.
+
+Train purchase windows use four 22-pixel list rows, a bounded details region and full-height Build/Rename buttons. Row selection uses the same 22-pixel stride as drawing. Tapping details scrolls statistics that exceed the region, without growing the window.
+
+Pin on a train depot or its associated purchase window toggles the depot alone onto the upper screen. The purchase pane remains below; the map returns above when unpinned. X, Y or Select toggles DEPOT CONTROL: the lower screen becomes a touchpad for the upper depot, Circle Pad moves its pointer, A/L clicks and holds, and D-pad up/down scrolls. Toggling back restores shopping. Pointer and held construction state reset on transfer. Other pin-enabled windows retain their whole-workspace upper-screen behavior. Only one train depot is paired at a time.
+
+N3DSTopWindow is the shared authority for rendering, hit testing, occlusion and cached scrolling. The paired depot uses the existing map framebuffer; no third framebuffer or second simulation is allocated. Toolbar occlusion and lower-window activation ignore the upper depot. Cached viewport scrolling treats its rectangle as an obstacle, so world pixels cannot overwrite the depot. Native windows can be dragged by their caption within their physical screen bounds; their position persists until a screen transfer. Full-screen panes have little or no movement space; pinned depots stay anchored. Drag snapping ignores windows on the other physical screen.
+
+Reproduce the actual-code sanitizer test with:
+
+```sh
+python3 source/docs/revival/tests/train-workspace.py /tmp/openttd-trains
+```
+
+It checks 20 repeated screen round trips, widget/action bounds, every pixel of purchase selection rows, paired input/draw ownership, focus guards, retained manual positions and articulated/dual-headed consist counts. The existing fourteen UI suites pass. The depot cached-scroll oracle passes 30/30 cases (r3p fails 8); the original split-scroll oracle passes 20/20 cases. Existing mixed-enum linker warnings remain. This is a UI repair, not proof of original-console memory/performance stability. The separate validation report records emulator scope and hardware checks still needed.

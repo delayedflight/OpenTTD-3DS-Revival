@@ -214,8 +214,8 @@ static void DoSetViewportPosition(const Window *w, int left, int top, int width,
 	FOR_ALL_WINDOWS_FROM_BACK_FROM(w, w) {
 #ifdef N3DS
   /* Lower-screen windows cannot hide pixels from an upper-screen scroll. */
-  const bool owner_top = owner->window_class == WC_MAIN_WINDOW;
-  const bool obstacle_top = w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR;
+  const bool owner_top = N3DSTopWindow(owner);
+  const bool obstacle_top = N3DSTopWindow(w);
   if (owner_top != obstacle_top) continue;
 #endif
 		if (left + width > w->left &&
@@ -262,7 +262,7 @@ static void DoSetViewportPosition(const Window *w, int left, int top, int width,
 		}
 
 		#ifdef N3DS
-  void *surface = owner->window_class == WC_MAIN_WINDOW ? _screen.dst_ptr : _n3ds_ui_pixels;
+  void *surface = N3DSTopWindow(owner) ? _screen.dst_ptr : _n3ds_ui_pixels;
   GfxScroll(left, top, width, height, xo, yo, surface);
 #else
   GfxScroll(left, top, width, height, xo, yo);

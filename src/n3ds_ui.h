@@ -12,6 +12,7 @@ bool N3DSUpperUiActive();
 bool N3DSIsCanvasWindow(WindowClass cls);
 bool N3DSIsManagementWindow(WindowClass cls);
 class Window;
+bool N3DSTopWindow(const Window *w);
 bool N3DSUsesScrollableWorkspace(const Window *w);
 void N3DSWidgetRect(Window *w, uint id, int l, int r, int t, int b);
 bool N3DSUsesScreenPin(WindowClass cls);

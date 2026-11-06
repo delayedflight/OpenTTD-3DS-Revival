@@ -40,6 +40,7 @@ static bool _touch_held;
 static bool _pad_held;
 static N3DSBuildButtons _build_buttons;
 static bool _map_pad;
+static bool _depot_focus_active;
 static bool _station_picker_active;
 static int _station_picker_request; // 0 none, 1 enter, 2 return after button release
 static bool _panel_needs_draw = true;
@@ -122,11 +123,36 @@ static Window *N3DSFrontUi()
 {
  Window *w;
  FOR_ALL_WINDOWS_FROM_FRONT(w) {
-  if (w->window_class != WC_MAIN_WINDOW && w->window_class != WC_STATUS_BAR && w->window_class != WC_TOOLTIPS) return w;
+  if (!N3DSTopWindow(w) && w->window_class != WC_TOOLTIPS) return w;
  }
  return NULL;
 }
 static Window *_map_ui_front;
+static Window *N3DSUpperTrainDepot()
+{
+ if(_upper_ui)return NULL;Window*w;FOR_ALL_WINDOWS_FROM_FRONT(w)if(w->n3ds_train_depot_top)return w;return NULL;
+}
+static bool N3DSDepotFocus(){return _depot_focus_active&&_map_pad&&N3DSUpperTrainDepot()!=NULL;}
+static void SetN3DSDepotFocus(bool focus)
+{
+ if(_pad_held||_touch_held)ResetObjectToPlace();
+ _build_buttons.Reset();_left_button_down=_left_button_clicked=_pad_held=_touch_held=false;
+ HandleMouseEvents();_map_pad=focus;_depot_focus_active=focus;_map_ui_front=N3DSFrontUi();SelectN3DSInput(focus);
+ CenterN3DSMapCursor();_panel_needs_draw=true;MarkWholeScreenDirty();
+}
+static bool ToggleN3DSDepotScreen(WindowClass cls,WindowNumber number)
+{
+ if(cls!=WC_VEHICLE_DEPOT&&cls!=WC_BUILD_VEHICLE)return false;
+ Window*depot=FindWindowById(WC_VEHICLE_DEPOT,number);if(depot==NULL||!depot->n3ds_train_depot)return false;
+ if(_upper_ui)SetN3DSUpperUi(false);
+ bool top=!depot->n3ds_train_depot_top;Window*w;
+ FOR_ALL_WINDOWS_FROM_FRONT(w)w->n3ds_train_depot_top=false;
+ depot->n3ds_train_depot_top=top;
+ FOR_ALL_WINDOWS_FROM_FRONT(w)w->OnN3DSScreenChange(false);
+ SetN3DSDepotFocus(top&&FindWindowById(WC_BUILD_VEHICLE,number)==NULL);
+ return true;
+}
+
 
 /** Transfer the existing UI surface; no extra framebuffer is allocated. */
 static void SetN3DSUpperUi(bool upper, bool preserve_placement)
@@ -141,6 +167,7 @@ static void SetN3DSUpperUi(bool upper, bool preserve_placement)
  HandleMouseEvents();
  SelectN3DSInput(false);
  _upper_ui = upper;
+ if(upper){Window*w;FOR_ALL_WINDOWS_FROM_FRONT(w)w->n3ds_train_depot_top=false;}
  Window *layout_window;
  FOR_ALL_WINDOWS_FROM_FRONT(layout_window) layout_window->OnN3DSScreenChange(upper);
  if (upper) {
@@ -206,7 +233,7 @@ static void ProcessN3DSMenuScreenChange()
  if (!_upper_request_pending) return;
  if (_left_button_down || _touch_held || _pad_held) return;
  _upper_request_pending=false;
- if ((_game_mode == GM_NORMAL || _game_mode == GM_EDITOR) && FindWindowById(_upper_request_class,_upper_request_number)!=NULL) SetN3DSUpperUi(_upper_request_value);
+ if ((_game_mode == GM_NORMAL || _game_mode == GM_EDITOR) && FindWindowById(_upper_request_class,_upper_request_number)!=NULL && !ToggleN3DSDepotScreen(_upper_request_class,_upper_request_number)) SetN3DSUpperUi(_upper_request_value);
 }
 
 static void CheckN3DSUpperUi()
@@ -220,7 +247,7 @@ static bool NativeN3DSOrdersRow(int y)
 {
  Window *w;
  FOR_ALL_WINDOWS_FROM_FRONT(w) {
-  if (w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR || w->window_class == WC_TOOLTIPS || w->window_class == WC_DROPDOWN_MENU) continue;
+  if (w->window_class==WC_MAIN_WINDOW || w->window_class==WC_STATUS_BAR || w->n3ds_train_depot_top || w->window_class == WC_TOOLTIPS || w->window_class == WC_DROPDOWN_MENU) continue;
   if ((_game_mode == GM_NORMAL || _game_mode == GM_EDITOR) && N3DSUsesScrollableWorkspace(w)) {
    if(y>=w->top&&y<w->top+w->height)return true;
    continue;
@@ -229,7 +256,7 @@ static bool NativeN3DSOrdersRow(int y)
    if (y >= w->top && y < w->top+w->height) return true;
    continue;
   }
-  if (w->window_class == WC_VEHICLE_VIEW && w->left == 40 && w->width <= 320) {
+  if (w->window_class == WC_VEHICLE_VIEW && w->left >= 40 && w->left+w->width <= 360) {
    if (y >= w->top && y < w->top + w->height) return true;
    continue;
   }
@@ -256,6 +283,7 @@ static bool NativeN3DSToolbarRow(int y)
  const Window *v;
  FOR_ALL_WINDOWS_FROM_FRONT(v) {
   if (v == w) break;
+  if(v->n3ds_train_depot_top)continue;
   if (v->window_class == WC_MAIN_WINDOW || v->window_class == WC_STATUS_BAR) continue;
   if (y >= v->top && y < v->top + v->height && v->left < 360 && v->left + v->width > 40) return false;
  }
@@ -382,6 +410,7 @@ static void DrawN3DSCanvasFooter()
 static void DrawN3DSPanel()
 {
  CheckN3DSUpperUi();
+ if(_depot_focus_active&&N3DSUpperTrainDepot()==NULL)SetN3DSDepotFocus(false);
  if (_upper_ui) {
   const int bytes = _sdl_screen->format->BytesPerPixel;
   for (int y = 0; y < 240; y++) memcpy((byte *)_sdl_screen->pixels + y * _sdl_screen->pitch, (byte *)_ui_surface->pixels + y * _ui_surface->pitch, 400 * bytes);
@@ -424,14 +453,14 @@ static void DrawN3DSPanel()
 	DrawPixelInfo *saved = _cur_dpi;
 	_cur_dpi = &panel;
 	DrawFrameRect(0, 0, 319, 239, COLOUR_GREY, FR_NONE);
-	DoDrawStringCentered(160, 12, _upper_ui ? "MENU CONTROL" : (_station_picker_active ? "SELECT STATION" : "MAP CONTROL"), TC_WHITE);
+	DoDrawStringCentered(160, 12, N3DSDepotFocus()?"DEPOT CONTROL":_upper_ui ? "MENU CONTROL" : (_station_picker_active ? "SELECT STATION" : "MAP CONTROL"), TC_WHITE);
 	DrawFrameRect(6, 34, 313, 193, COLOUR_GREY, FR_LOWERED);
-	DoDrawStringCentered(160, 85, _upper_ui ? "Touchpad: move the pointer" : "Drag gently to move the cursor", TC_WHITE);
-	DoDrawStringCentered(160, 105, _upper_ui ? "L / A: click or hold" : (_station_picker_active ? "L / A: choose station   B: cancel" : "L: click / hold L and drag to build"), TC_WHITE);
+	DoDrawStringCentered(160, 85, (_upper_ui||N3DSDepotFocus()) ? "Touchpad: move the pointer" : "Drag gently to move the cursor", TC_WHITE);
+	DoDrawStringCentered(160, 105, (_upper_ui||N3DSDepotFocus()) ? "L / A: click or hold" : (_station_picker_active ? "L / A: choose station   B: cancel" : "L: click / hold L and drag to build"), TC_WHITE);
 	const Window *front = N3DSFrontUi();
 	if (_upper_ui && front != NULL && N3DSIsMapConstructionWindow(front->window_class)) DoDrawStringCentered(160, 175, "X: use selected tool on map", TC_WHITE);
-	DoDrawStringCentered(160, 207, _upper_ui ? "Y / SELECT: return menu to bottom" : "SELECT / X: return to tools", TC_WHITE);
-	DoDrawStringCentered(160, 223, _upper_ui ? "Circle Pad: pointer  D-pad: scroll" : "Circle Pad: scroll   R/Y: zoom   B: cancel", TC_WHITE);
+	DoDrawStringCentered(160, 207, N3DSDepotFocus()?"X / Y / SELECT: return to shopping":_upper_ui ? "Y / SELECT: return menu to bottom" : "SELECT / X: return to tools", TC_WHITE);
+	DoDrawStringCentered(160, 223, (_upper_ui||N3DSDepotFocus()) ? "Circle Pad: pointer  D-pad: scroll" : "Circle Pad: scroll   R/Y: zoom   B: cancel", TC_WHITE);
 	_cur_dpi = saved;
  DrawN3DSCanvasFooter();
 }
@@ -439,14 +468,14 @@ static void DrawN3DSPanel()
 static void MoveN3DSTouch(int x, int y)
 {
  if(_canvas_touch){MoveN3DSCanvasDrag(x,y);return;}
- if (_upper_ui) {
+ if (_upper_ui||N3DSDepotFocus()) {
   if (_touch_held) {
    const Point old = _cursor.pos;
    _cursor.pos.x = Clamp(old.x + x - _last_touch_x, 0, 399);
    _cursor.pos.y = Clamp(old.y + y - _last_touch_y, 0, 239);
    _cursor.delta.x = _cursor.pos.x - old.x;
    _cursor.delta.y = _cursor.pos.y - old.y;
-   _ui_cursor = _cursor.pos;
+   if(N3DSDepotFocus())_n3ds_map_cursor=_cursor.pos;else _ui_cursor = _cursor.pos;
    _cursor.dirty = true;
    HandleMouseEvents();
   }
@@ -913,11 +942,13 @@ static int PollEvent()
 		case SDL_JOYBUTTONDOWN:
 		case SDL_JOYBUTTONUP: {
 			bool down = ev.type == SDL_JOYBUTTONDOWN;
+   if(N3DSUpperTrainDepot()!=NULL&&down&&(ev.jbutton.button==3||ev.jbutton.button==4||ev.jbutton.button==7)){SetN3DSDepotFocus(!N3DSDepotFocus());break;}
+
    if (down && ev.jbutton.button == 4 && (_upper_ui || !_map_pad)) {
     SetN3DSUpperUi(!_upper_ui);
     break;
    }
-   if (_upper_ui) {
+   if (_upper_ui||N3DSDepotFocus()) {
     if (ev.jbutton.button == 1 || ev.jbutton.button == 5) {
      _build_buttons.Set(ev.jbutton.button, down);
      _left_button_down = _pad_held = _build_buttons.Held();
@@ -1120,7 +1151,7 @@ void VideoDriver_SDL::MainLoop()
 			/* Ignore the centre region to avoid Circle Pad drift. */
 			const int cx = SDL_JoystickGetAxis(_3ds_joystick, 0);
 			const int cy = SDL_JoystickGetAxis(_3ds_joystick, 1);
-   if (_upper_ui) {
+   if (_upper_ui||N3DSDepotFocus()) {
     const int dx = abs(cx) > 8000 ? (cx < 0 ? -1 : 1) * max(1, (abs(cx) - 8000) * 5 / 24760) : 0;
     const int dy = abs(cy) > 8000 ? (cy < 0 ? -1 : 1) * max(1, (abs(cy) - 8000) * 5 / 24760) : 0;
     const Point old = _cursor.pos;
@@ -1128,7 +1159,7 @@ void VideoDriver_SDL::MainLoop()
     _cursor.pos.y = Clamp(old.y + dy, 0, 239);
     _cursor.delta.x = _cursor.pos.x - old.x;
     _cursor.delta.y = _cursor.pos.y - old.y;
-    _ui_cursor = _cursor.pos;
+    if(N3DSDepotFocus())_n3ds_map_cursor=_cursor.pos;else _ui_cursor = _cursor.pos;
     if (dx != 0 || dy != 0) _cursor.dirty = true;
     static uint scroll_tick = 0;
     if (++scroll_tick >= 4) {
@@ -1141,10 +1172,10 @@ void VideoDriver_SDL::MainLoop()
    }
    const int magnitude = max(abs(cx), abs(cy));
    _n3ds_scroll_factor = dpad != 0 ? 10 : max(2, min(10, 2 + (magnitude - 8000) * 8 / 24760));
-			if (!_upper_ui && cx < -8000) dpad |= SDL_HAT_LEFT;
-			if (!_upper_ui && cx > 8000) dpad |= SDL_HAT_RIGHT;
-			if (!_upper_ui && cy < -8000) dpad |= SDL_HAT_UP;
-			if (!_upper_ui && cy > 8000) dpad |= SDL_HAT_DOWN;
+			if (!_upper_ui && !N3DSDepotFocus() && cx < -8000) dpad |= SDL_HAT_LEFT;
+			if (!_upper_ui && !N3DSDepotFocus() && cx > 8000) dpad |= SDL_HAT_RIGHT;
+			if (!_upper_ui && !N3DSDepotFocus() && cy < -8000) dpad |= SDL_HAT_UP;
+			if (!_upper_ui && !N3DSDepotFocus() && cy > 8000) dpad |= SDL_HAT_DOWN;
 			_dirkeys =
 				((dpad & SDL_HAT_LEFT)  ? 1 : 0) |
 				((dpad & SDL_HAT_UP)    ? 2 : 0) |

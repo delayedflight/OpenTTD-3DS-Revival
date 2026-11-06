@@ -1,0 +1,37 @@
+OpenTTD 3DS Revival r3q — train workshop validation
+
+Executable SHA256: 79dc5eccc7852f55700a5a76d0837a69edc0f123884c10e244f73b1997fd2717
+Build: contained devkitPro compilation completed; existing mixed-enum ABI
+linker warnings remain. Debug ELF retained beside the executable in builds.
+
+All 15 current UI suites pass (actual-code host harnesses with sanitizers):
+scenario-layouts, file-news-layouts, canvas-menus, management-layouts,
+construction-layouts, compact-vehicles, native-vehicle-rows, screen-pin,
+upper-menus, native-toolbar, touch-dropdown, touch-orders, station-picker,
+inspection-exit, train-workspace.
+Train suite covers 20 screen round trips, widget bounds, all 22-pixel row
+hits, pair input ownership, focus transfer and articulated/dual-head counts.
+Cached-scroll oracle: paired-depot 30/30 pass (r3p 8 failures); original
+split-screen 20/20 pass. Protected 1980 save hash remains unchanged.
+English string IDs unchanged. Update ZIP CRC and executable hash verified;
+no graphics/music/save files included. Complete source excludes private media.
+
+Emulator: Azahar 2126.2, disposable copied Flufingwell 1980 game. A camera-only
+fixture centres an existing train depot. During development, verified depot
+above / shop below, bought an MJS250 engine and Copper Ore Hopper and saw
+1 engine / 1 wagon; both sprites remained visible. The final exact packaged
+executable boots, loads the copied game, opens the native lower depot through
+controller input and continues simulation/autosave with music. It contains
+subsequent toolbar-occlusion and focus-reset fixes. Full touch-based purchase
+repetition on that exact final binary was blocked by the desktop automation
+returning windowNotFoundAtPosition for emulator coordinate clicks; keyboard
+input and screenshots continued to work. Do not treat the earlier purchase
+check as a complete end-to-end test of the final executable.
+
+Hardware follow-up: pin/unpin depot and purchase pane; buy multiple wagons;
+confirm counts; scroll long consists; X/Y/Select focus transfer; A/L hold to
+move wagons; D-pad scrolling; close depot while focused; small-window caption
+drag; map scrolling after unpin; long-session music/effects and autosaving.
+No original-console performance or RAM measurement is claimed. The change
+uses the existing two framebuffer surfaces and does not add a third one.
+No device, original save, graphics folder or soundtrack was modified.

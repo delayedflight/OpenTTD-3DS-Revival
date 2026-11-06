@@ -23,7 +23,7 @@ struct Window;bool N3DSUsesScrollableWorkspace(const Window*){return false;}bool
 struct Point{int x,y;};struct Viewport{int left=0,top=0;};
 struct Widget{int left=0,right=10,top=0,bottom=13,type=WWT_TEXTBTN,data=0,tooltips=0;bool hidden=false;};
 '''+ 'enum{'+','.join(classes)+'};\n'+enums+'\n'+funcs+'''
-struct Window{bool n3ds_native_layout=false;int n3ds_canvas_x=0,n3ds_canvas_y=0;int width=320,height=200,left=40,top=22,window_class=WC_SCEN_LAND_GEN,widget_count=64;Widget widget[80];struct{int step_width=1,width=36;}resize;Viewport*viewport=nullptr;
+struct Window{bool n3ds_train_depot=false,n3ds_train_depot_top=false,n3ds_user_position=false,n3ds_position_upper=false;int n3ds_user_left=0,n3ds_user_top=22;bool n3ds_native_layout=false;int n3ds_canvas_x=0,n3ds_canvas_y=0;int width=320,height=200,left=40,top=22,window_class=WC_SCEN_LAND_GEN,widget_count=64;Widget widget[80];struct{int step_width=1,width=36;}resize;Viewport*viewport=nullptr;
 void OnN3DSScreenChange(bool);void OnResize(Point,Point){};void SetWidgetHiddenState(int i,bool h){assert(i>=0&&i<widget_count);widget[i].hidden=h;}
 };void ResizeWindow(Window*w,int x,int y){w->width+=x;w->height+=y;}void MarkWholeScreenDirty(){}
 '''+block(win,'void N3DSWidgetRect')+'\n'+base+'\n'

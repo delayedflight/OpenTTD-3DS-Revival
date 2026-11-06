@@ -3,6 +3,7 @@
 /** @file build_vehicle_gui.cpp GUI for building vehicles. */
 
 #include "train.h"
+#include "n3ds_ui.h"
 #include "roadveh.h"
 #include "ship.h"
 #include "aircraft.h"
@@ -635,9 +636,9 @@ static void DrawVehicleEngine(VehicleType type, int x, int y, EngineID engine, S
  * @param selected_id what engine to highlight as selected, if any
  * @param count_location Offset to print the engine count (used by autoreplace). 0 means it's off
  */
-void DrawEngineList(VehicleType type, int x, int r, int y, const GUIEngineList *eng_list, uint16 min, uint16 max, EngineID selected_id, int count_location, GroupID selected_group)
+static void DrawEngineListRows(VehicleType type, int x, int r, int y, const GUIEngineList *eng_list, uint16 min, uint16 max, EngineID selected_id, int count_location, GroupID selected_group, int row_height)
 {
-	byte step_size = GetVehicleListHeight(type);
+	byte step_size = row_height;
 	byte x_offset = 0;
 	byte y_offset = 0;
 
@@ -684,6 +685,9 @@ void DrawEngineList(VehicleType type, int x, int r, int y, const GUIEngineList *
 		}
 	}
 }
+
+void DrawEngineList(VehicleType type, int x, int r, int y, const GUIEngineList *eng_list, uint16 min, uint16 max, EngineID selected_id, int count_location, GroupID selected_group)
+{DrawEngineListRows(type,x,r,y,eng_list,min,max,selected_id,count_location,selected_group,GetVehicleListHeight(type));}
 
 
 struct BuildVehicleWindow : Window {
@@ -761,6 +765,25 @@ struct BuildVehicleWindow : Window {
 		this->height+=10;
 #endif
 	}
+
+#ifdef N3DS
+ int n3ds_info_scroll=0,n3ds_info_total=0;
+ int N3DSPurchaseRow()const{return this->vehicle_type==VEH_TRAIN?22:GetVehicleListHeight(this->vehicle_type);}
+ virtual void OnN3DSScreenChange(bool upper)
+ {
+  if(this->vehicle_type!=VEH_TRAIN){Window::OnN3DSScreenChange(upper);return;}
+  this->n3ds_native_layout=true;this->width=upper?400:320;this->height=218;int w=this->width;
+  N3DSWidgetRect(this,BUILD_VEHICLE_WIDGET_SORT_ASSENDING_DESCENDING,0,95,14,35);
+  N3DSWidgetRect(this,BUILD_VEHICLE_WIDGET_SORT_DROPDOWN,96,w-1,14,35);
+  N3DSWidgetRect(this,BUILD_VEHICLE_WIDGET_LIST,0,w-23,36,123);
+  N3DSWidgetRect(this,BUILD_VEHICLE_WIDGET_SCROLLBAR,w-22,w-1,36,123);
+  N3DSWidgetRect(this,BUILD_VEHICLE_WIDGET_PANEL,0,w-1,124,195);
+  N3DSWidgetRect(this,BUILD_VEHICLE_WIDGET_BUILD,0,w/2-1,196,217);
+  N3DSWidgetRect(this,BUILD_VEHICLE_WIDGET_RENAME,this->listview_mode?0:w/2,w-1,196,217);
+  this->vscroll.cap=4;this->widget[BUILD_VEHICLE_WIDGET_LIST].data=0x401;
+  this->HideWidget(BUILD_VEHICLE_WIDGET_RESIZE);Window::OnN3DSScreenChange(upper);
+ }
+#endif
 
 	/* Setup widget strings to fit the different types of vehicles */
 	void SetupWindowStrings(VehicleType type)
@@ -941,7 +964,10 @@ struct BuildVehicleWindow : Window {
 
 	void OnClick(Point pt, int widget)
 	{
-		switch (widget) {
+		#ifdef N3DS
+  if(this->vehicle_type==VEH_TRAIN&&widget==BUILD_VEHICLE_WIDGET_PANEL){int next=this->n3ds_info_scroll+56;this->n3ds_info_scroll=next>=this->n3ds_info_total?0:next;this->SetDirty();return;}
+#endif
+  switch (widget) {
 			case BUILD_VEHICLE_WIDGET_SORT_ASSENDING_DESCENDING:
 				this->descending_sort_order ^= true;
 				_last_sort_order[this->vehicle_type] = this->descending_sort_order;
@@ -950,9 +976,18 @@ struct BuildVehicleWindow : Window {
 				break;
 
 			case BUILD_VEHICLE_WIDGET_LIST: {
-				uint i = (pt.y - this->widget[BUILD_VEHICLE_WIDGET_LIST].top) / GetVehicleListHeight(this->vehicle_type) + this->vscroll.pos;
+				uint i = (pt.y - this->widget[BUILD_VEHICLE_WIDGET_LIST].top) /
+#ifdef N3DS
+     this->N3DSPurchaseRow()
+#else
+     GetVehicleListHeight(this->vehicle_type)
+#endif
+     + this->vscroll.pos;
 				size_t num_items = this->eng_list.Length();
 				this->sel_engine = (i < num_items) ? this->eng_list[i] : INVALID_ENGINE;
+#ifdef N3DS
+    this->n3ds_info_scroll=0;
+#endif
 				this->SetDirty();
 				break;
 			}
@@ -1035,25 +1070,37 @@ struct BuildVehicleWindow : Window {
 
 		this->DrawWidgets();
 
-		DrawEngineList(this->vehicle_type, this->widget[BUILD_VEHICLE_WIDGET_LIST].left + 2, this->widget[BUILD_VEHICLE_WIDGET_LIST].right, this->widget[BUILD_VEHICLE_WIDGET_LIST].top + 1, &this->eng_list, this->vscroll.pos, max, this->sel_engine, 0, DEFAULT_GROUP);
+		DrawEngineListRows(this->vehicle_type, this->widget[BUILD_VEHICLE_WIDGET_LIST].left + 2, this->widget[BUILD_VEHICLE_WIDGET_LIST].right, this->widget[BUILD_VEHICLE_WIDGET_LIST].top + 1, &this->eng_list, this->vscroll.pos, max, this->sel_engine, 0, DEFAULT_GROUP,
+#ifdef N3DS
+   this->N3DSPurchaseRow()
+#else
+   GetVehicleListHeight(this->vehicle_type)
+#endif
+  );
 
 		if (this->sel_engine != INVALID_ENGINE) {
 			const Widget *wi = &this->widget[BUILD_VEHICLE_WIDGET_PANEL];
 #ifdef N3DS
 			DrawPixelInfo info_dpi;DrawPixelInfo *info_saved=_cur_dpi;
-			if(FillDrawPixelInfo(&info_dpi,0,wi->top,this->width,::max(1,min(196,wi->bottom+1)-wi->top))) {
+			if(FillDrawPixelInfo(&info_dpi,0,wi->top,this->width,::max(1,min(this->vehicle_type==VEH_TRAIN?184:196,wi->bottom+1)-wi->top))) {
 				info_dpi.top+=wi->top; /* Purchase text retains window-local coordinates. */
 				_cur_dpi=&info_dpi;
 			}
 #endif
-			int text_end = DrawVehiclePurchaseInfo(2, wi->top + 1, wi->right - wi->left - 2, this->sel_engine);
+			int text_end = DrawVehiclePurchaseInfo(2, wi->top + 1
 #ifdef N3DS
-			_cur_dpi=info_saved;text_end=min(text_end,195);
+   - (this->vehicle_type==VEH_TRAIN?this->n3ds_info_scroll:0)
+#endif
+   , wi->right - wi->left - 2, this->sel_engine);
+#ifdef N3DS
+			_cur_dpi=info_saved;
+   if(this->vehicle_type==VEH_TRAIN){this->n3ds_info_total=::max(0,text_end+this->n3ds_info_scroll-wi->top-1);DoDrawString(this->listview_mode?"Tap details to scroll":(this->n3ds_info_total>60?"Tap details: scroll | Pin: depot above":"Pin: depot above"),4,185,TC_BLACK);}
+   text_end=min(text_end,195);
 #endif
 
 			if (
 #ifdef N3DS
-				text_end != wi->bottom
+				this->vehicle_type!=VEH_TRAIN && text_end != wi->bottom
 #else
 				text_end > wi->bottom
 #endif
@@ -1102,6 +1149,10 @@ struct BuildVehicleWindow : Window {
 
 	virtual void OnResize(Point new_size, Point delta)
 	{
+#ifdef N3DS
+  if(this->vehicle_type==VEH_TRAIN&&this->n3ds_native_layout){this->OnN3DSScreenChange(N3DSUpperUiActive());return;}
+#endif
+
 		if (delta.x != 0 && !this->listview_mode) {
 			ResizeButtons(this, BUILD_VEHICLE_WIDGET_BUILD, BUILD_VEHICLE_WIDGET_RENAME);
 		}

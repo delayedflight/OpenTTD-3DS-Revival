@@ -15,8 +15,9 @@ enum{WC_TRAINS_LIST=1,WC_ROADVEH_LIST,WC_SHIPS_LIST,WC_AIRCRAFT_LIST,WC_VEHICLE_
 const int GM_EDITOR=2,GM_NORMAL=1,GM_MENU=0,WDF_STICKY_BUTTON=1,WWT_STICKYBOX=1,WF_STICKY=4;
 bool _upper_ui=false,_upper_request_pending=false,_upper_request_value=false,_left_button_down=false,_touch_held=false,_pad_held=false;
 int _upper_request_class=0,_upper_request_number=0,_game_mode=GM_NORMAL,transfers=0;bool exists=true;
-struct Widget{int type=WWT_STICKYBOX;};struct Window{int window_class=WC_TRAINS_LIST,window_number=7,desc_flags=WDF_STICKY_BUTTON,flags4=0;void InvalidateWidget(int){}}menu;
+struct Widget{int type=WWT_STICKYBOX;};struct Window{bool n3ds_train_depot=false,n3ds_train_depot_top=false,n3ds_user_position=false,n3ds_position_upper=false;int n3ds_user_left=0,n3ds_user_top=22;int window_class=WC_TRAINS_LIST,window_number=7,desc_flags=WDF_STICKY_BUTTON,flags4=0;void InvalidateWidget(int){}}menu;
 Window*FindWindowById(int c,int n){return exists&&menu.window_class==c&&menu.window_number==n?&menu:nullptr;}
+bool ToggleN3DSDepotScreen(int,int){return false;}
 void SetN3DSUpperUi(bool b){_upper_ui=b;transfers++;}
 '''
 cpp+='bool N3DSIsCanvasWindow(WindowClass){return false;}bool N3DSIsManagementWindow(WindowClass){return false;}bool N3DSIsConstructionWindow(WindowClass){return false;}\n'

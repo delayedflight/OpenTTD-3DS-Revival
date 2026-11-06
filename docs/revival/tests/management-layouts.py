@@ -25,7 +25,7 @@ template<class T>T Clamp(T a,T l,T h){return min(max(a,l),h);}struct Window;bool
 struct Widget{int left=0,right=0,top=0,bottom=0,type=WWT_LABEL,data=0,tooltips=0;bool hidden=false;};
 struct Point{int x,y;};struct Viewport{int left=0,top=0;};
 '''+ 'enum{'+','.join(classes)+'};\n'+'\n'.join(enums)+'\n'+funcs+'''
-struct Window{bool n3ds_native_layout=false;int n3ds_canvas_x=0,n3ds_canvas_y=0;int width=320,height=200,left=40,top=22,window_class=WC_COMPANY,widget_count=80;Widget widget[80];struct{int cap=0;}vscroll;struct{int step_width=1,width=36;}resize;Viewport*viewport=nullptr;
+struct Window{bool n3ds_train_depot=false,n3ds_train_depot_top=false,n3ds_user_position=false,n3ds_position_upper=false;int n3ds_user_left=0,n3ds_user_top=22;bool n3ds_native_layout=false;int n3ds_canvas_x=0,n3ds_canvas_y=0;int width=320,height=200,left=40,top=22,window_class=WC_COMPANY,widget_count=80;Widget widget[80];struct{int cap=0;}vscroll;struct{int step_width=1,width=36;}resize;Viewport*viewport=nullptr;
 void OnN3DSScreenChange(bool);void OnResize(Point,Point){};void HideWidget(int i){widget[i].hidden=true;}void SetWidgetHiddenState(int i,bool h){widget[i].hidden=h;}void LowerWidget(int){};
 };void ResizeWindow(Window*w,int x,int y){w->width+=x;w->height+=y;}void MarkWholeScreenDirty(){}
 '''+block(win,'void N3DSWidgetRect')+'\n'+base+'\n'

@@ -17,7 +17,8 @@ common=r'''
 using uint8 = unsigned char;
 #define N3DS 1
 const int WC_MAIN_WINDOW=0, WC_STATUS_BAR=1, WC_UI=2, WC_INVALID=-1;
-struct Window { int left,top,width,height,window_class; const Window *z_front; };
+struct Window { int left,top,width,height,window_class; const Window *z_front; bool depot_top; };
+bool N3DSTopWindow(const Window*w){return w->window_class==WC_MAIN_WINDOW||w->window_class==WC_STATUS_BAR||w->depot_top;}
 #define FOR_ALL_WINDOWS_FROM_BACK_FROM(w,start) for(w=start;w!=nullptr;w=w->z_front) if(w->window_class!=WC_INVALID)
 struct Point {int x,y;}; Point _vp_move_offs;
 struct {void *dst_ptr; int pitch;} _screen;

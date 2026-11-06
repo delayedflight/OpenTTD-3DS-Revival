@@ -19,7 +19,7 @@ cpp=r'''
 struct Point {int x,y;};
 struct {Point pos,delta;bool dirty=false,in_window=false;} _cursor;
 struct {int width=400,height=240;} _screen;
-struct Window {int top=228;} bar;
+struct Window {bool n3ds_train_depot=false,n3ds_train_depot_top=false,n3ds_user_position=false,n3ds_position_upper=false;int n3ds_user_left=0,n3ds_user_top=22;int top=228;} bar;
 const int WC_STATUS_BAR=1, WC_DROPDOWN_MENU=2, GM_MENU=0, GM_EDITOR=2,GM_NORMAL=1;
 bool bar_present=true;
 const Window *FindWindowById(int,int){return bar_present?&bar:nullptr;}

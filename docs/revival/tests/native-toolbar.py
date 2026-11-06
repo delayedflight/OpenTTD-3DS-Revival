@@ -17,7 +17,7 @@ const uint TBP_TOOLBAR_MINBUTTON=14,TBP_BUTTONWIDTH=22,TBP_NORMAL_MAXBUTTON=19;
 const int TB_LOWER=2,WWT_EMPTY=0,WWT_IMGBTN=1,GM_EDITOR=2,GM_NORMAL=1,WC_MAIN_TOOLBAR=1,WC_MAIN_WINDOW=2,WC_STATUS_BAR=3;
 int _toolbar_mode=0,_game_mode=GM_NORMAL;
 struct Widget{int type,left,right;};
-struct Window{int width=320,left=40,top=0,height=22,window_class=1;Window *z_back=nullptr;uint widget_count=29;Widget widget[29];}bar;
+struct Window{bool n3ds_train_depot=false,n3ds_train_depot_top=false,n3ds_user_position=false,n3ds_position_upper=false;int n3ds_user_left=0,n3ds_user_top=22;int width=320,left=40,top=0,height=22,window_class=1;Window *z_back=nullptr;uint widget_count=29;Widget widget[29];}bar;
 Window *_z_front_window=&bar;
 #define FOR_ALL_WINDOWS_FROM_FRONT(v) for(v=_z_front_window;v!=nullptr;v=v->z_back)
 const Window *FindWindowById(int,int){return &bar;}

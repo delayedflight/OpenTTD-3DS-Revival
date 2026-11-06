@@ -26,7 +26,7 @@ template<class T>T Clamp(T a,T l,T h){return min(max(a,l),h);}struct Window;bool
 struct Widget{int type=WWT_PANEL,left=0,right=147,top=0,bottom=13,tooltips=0;};
 struct Point{int x,y;};struct Viewport{int left=0,top=0;};const int STR_NULL=0;
 '''+ 'enum{'+','.join(classes)+'};\n'+'\n'.join(enums)+'\n'+block(video,'bool N3DSIsMapConstructionWindow')+'\n'+block(video,'bool N3DSIsConstructionWindow')+'''
-struct Window{bool n3ds_native_layout=false;Widget widget[64];int n3ds_canvas_x=0,n3ds_canvas_y=0;int width=148,height=200,left=0,top=0,window_class=WC_BUILD_STATION,widget_count=64;struct{uint16 pos=0,count=2,cap=0;}vscroll,hscroll;struct{int step_width=1,width=36,step_height=14;}resize;Viewport*viewport=nullptr;
+struct Window{bool n3ds_train_depot=false,n3ds_train_depot_top=false,n3ds_user_position=false,n3ds_position_upper=false;int n3ds_user_left=0,n3ds_user_top=22;bool n3ds_native_layout=false;Widget widget[64];int n3ds_canvas_x=0,n3ds_canvas_y=0;int width=148,height=200,left=0,top=0,window_class=WC_BUILD_STATION,widget_count=64;struct{uint16 pos=0,count=2,cap=0;}vscroll,hscroll;struct{int step_width=1,width=36,step_height=14;}resize;Viewport*viewport=nullptr;
 void SetWidgetHiddenState(int,bool){};void OnResize(Point,Point){};void OnN3DSScreenChange(bool);
 void Depot(int type){
 #define VEH_TRAIN 0
