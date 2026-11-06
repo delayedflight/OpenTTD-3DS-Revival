@@ -1,0 +1,513 @@
+[
+  {
+    "index": 0,
+    "credit": "\"Good Year\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 3638,
+    "seconds": 0.32997732426303855,
+    "sha256": "e8ae722bd16299afa96347fd7a69dbac76b6c725c6ce674d0488520dbcc69068"
+  },
+  {
+    "index": 1,
+    "credit": "\"Bad Year\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 8928,
+    "seconds": 0.809795918367347,
+    "sha256": "1aabe6bfd4abae947da43626a489e93e7d9039bca6c8d810d8a681d0306c2891"
+  },
+  {
+    "index": 2,
+    "credit": "\"Splat (building docks/canals/river)\". Original \"splattt.mp3\" by \"SlykMrByches\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 8774,
+    "seconds": 0.7958276643990929,
+    "sha256": "2118faf99c0d54320a4b8c8acd38cab7d3499ebf74396e87c0897359d79d59ba"
+  },
+  {
+    "index": 3,
+    "credit": "\"Factory Whistle\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 25549,
+    "seconds": 2.317369614512472,
+    "sha256": "0116ef1ca9814c0a1af67f5522efec745339e58e9efbaaee2129c8de875b92dd"
+  },
+  {
+    "index": 4,
+    "credit": "\"Steam train station departure\". Original \"steam train horn 01.wav\" by \"eliasheuninck\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 23183,
+    "seconds": 2.102766439909297,
+    "sha256": "7827444c91e22b668fb6c2350831cc7118749d59f69f7c3514a00e66c6b796da"
+  },
+  {
+    "index": 5,
+    "credit": "\"Steam engine going in tunnel\". Original \"steam train horn 01.wav\" by \"eliasheuninck\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 25300,
+    "seconds": 2.2947845804988662,
+    "sha256": "8c20e9bcc325809db2e480ad30a1e0817469761476b7b603fbba177d2420522e"
+  },
+  {
+    "index": 6,
+    "credit": "\"Ship horn\". Original \"ship2_bergen.aif\" by Leon Milo. Edited by Wuzzy. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 26491,
+    "seconds": 2.40281179138322,
+    "sha256": "5024988baab71dca47638bdafe70e99b027c6575311163079b71492191b24374"
+  },
+  {
+    "index": 7,
+    "credit": "\"Ferry horn\". Original \"msfinmarken_Bergen.aif\" by Leon Milo. Edited by Wuzzy. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 35152,
+    "seconds": 3.188390022675737,
+    "sha256": "9c437aea68bea1ee5924aaed5fb784fb30ecf2998f39f64cd59f385414b267f1"
+  },
+  {
+    "index": 8,
+    "credit": "\"Propeller plane start\". Original \"Plane Cessna start stop.wav\" by \"Cheeseheadburger\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 34436,
+    "seconds": 3.1234467120181404,
+    "sha256": "1e6dfa7a08f132b5abf588d56c4e6fec418268378a237898022466662864a520"
+  },
+  {
+    "index": 9,
+    "credit": "\"Early jet take off\". Original \"Passenger jet departs 2.wav\" by \"www.digifishmusic.com\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 36748,
+    "seconds": 3.3331519274376418,
+    "sha256": "0723e2c64b47fb55903162ad0fc45d301cdffe10a20e364eb86c3566eac52043"
+  },
+  {
+    "index": 10,
+    "credit": "\"Diesel/electric train station departure\". Original \"Locomotive 1 Distant horn.wav\" by \"patchen\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 21935,
+    "seconds": 1.9895691609977324,
+    "sha256": "400020d6329f93cb83ba0ba1c95e914eb7dbad24de5cd6c3a5d59cd090ce7a6c"
+  },
+  {
+    "index": 11,
+    "credit": "\"Mining machinery\". Original \"L'ascenseur - Elevator\" by \"Aldor\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported. Original is Public Domain.",
+    "pcm_bytes": 25646,
+    "seconds": 2.326167800453515,
+    "sha256": "3ed830e81b21034e3c0d83c9bfb2a92870ac5bc10cd62528e2768e9209f54273"
+  },
+  {
+    "index": 12,
+    "credit": "\"Electric sparking\". Original \"JacobsLadderLong2.flac\" by \"Halleck\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 31680,
+    "seconds": 2.873469387755102,
+    "sha256": "fd4bcad0ebb7c61ce38e30d2e771c0ad39cea2a0265e4b5ffc8bd99e165a17e3"
+  },
+  {
+    "index": 13,
+    "credit": "\"Steam (of steam engine)\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 18781,
+    "seconds": 1.7034920634920634,
+    "sha256": "9581327123cde5beffb327db4c45bfa4fdb8b82ef0c706c2755a9677863d13f1"
+  },
+  {
+    "index": 14,
+    "credit": "\"Level crossing\". Original \"RRCrossing.wav\" by \"Mark_Ian\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 31118,
+    "seconds": 2.8224943310657595,
+    "sha256": "1fa4f3d081cbc6b3f1cc0c85ccc3a8df3958dadf6f3ca1c940a5507d15ac6eaf"
+  },
+  {
+    "index": 15,
+    "credit": "\"Road vehicle breakdown\". Original \"Dropping a large gun.wav\" by \"Leady\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 16153,
+    "seconds": 1.465124716553288,
+    "sha256": "37cab49b176ca1496a8a8d4b11ac32a66b908865c98e4e924db67ca1182eec73"
+  },
+  {
+    "index": 16,
+    "credit": "\"Train/ship breakdown\". Original \"Dumpster_Diving.wav\" by \"1sticky8\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 14031,
+    "seconds": 1.2726530612244897,
+    "sha256": "e2bf6fa91ba34a996eedcad82bf3febe1ab97f525d132cf2c79a9f7bed332244"
+  },
+  {
+    "index": 17,
+    "credit": "\"Crash\". Original \"crash.wav\" by \"sagetyrtle\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 19099,
+    "seconds": 1.7323356009070294,
+    "sha256": "2906e6c922cbda0ab4bf7e4132806b0cfdf84f87cdf4afbf8026779efa701019"
+  },
+  {
+    "index": 18,
+    "credit": "\"Explosion\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 17804,
+    "seconds": 1.614875283446712,
+    "sha256": "4bae7f4620f7367f7d219c3a134fa1291f0e050f7be324522ba348b5ee91e59e"
+  },
+  {
+    "index": 19,
+    "credit": "\"Big crash\". Original \"crash.wav\" by \"sagetyrtle\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 19156,
+    "seconds": 1.7375056689342403,
+    "sha256": "94cd84df6dd3adebfe75a568ce1f3bafd029dc09f1893db658995f644e934870"
+  },
+  {
+    "index": 20,
+    "credit": "\"Cash till\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 15983,
+    "seconds": 1.4497052154195011,
+    "sha256": "b1c0f7dd82fa7003a0a91ef780ba1d829fc69c84727225704f6e7e1bd079828a"
+  },
+  {
+    "index": 21,
+    "credit": "\"Beep\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 960,
+    "seconds": 0.08707482993197278,
+    "sha256": "3a7ace9544d00238d45aebaa59556ad2260a8e0e6f61aaa9fe2a3d35fb607bbd"
+  },
+  {
+    "index": 22,
+    "credit": "\"Morse\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 16800,
+    "seconds": 1.5238095238095237,
+    "sha256": "dabafb8a35ecacbf53fbe066f4891d10a308c3f6ccabca6d110c4ebd20982262"
+  },
+  {
+    "index": 23,
+    "credit": "\"Plane wheels touching ground\". Original \"CarStartSkidCrash.wav\" by \"musicmasta1\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 1782,
+    "seconds": 0.16163265306122448,
+    "sha256": "0d5fbf2e598ba7a61edd50ea75478f03f5a3b66bf26b2c39c79e391ecfa38372"
+  },
+  {
+    "index": 24,
+    "credit": "\"Helicopter\". Original \"helicopterRaw_16sec.wav\" by \"lorenzosu\". Edited by \"Wuzzy\". License: Creative Commons Attribution-ShareAlike 3.0 Unported.",
+    "pcm_bytes": 27215,
+    "seconds": 2.4684807256235826,
+    "sha256": "1a4b234277ad1c0ffc5528056e74e390ff6cf0f92908fb54d5252313b1affc7b"
+  },
+  {
+    "index": 25,
+    "credit": "\"Truck/old bus start, pull away\". Original \"file0375.mp3\" by \"saphix\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 44266,
+    "seconds": 4.015056689342404,
+    "sha256": "9ed99924613bed63c48f44b92a88e0ad8934e8eeb51e79373098260414f3718c"
+  },
+  {
+    "index": 26,
+    "credit": "\"Truck/old bus start, pull away with horn\". Original \"file0375.mp3\" by \"saphix\" and \"Industrial Air Horn.wav\" by \"mcpable\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 44266,
+    "seconds": 4.015056689342404,
+    "sha256": "855591fa6a831309f89b971e8fb557c21b74858e9ca3a4826f7dc6113bd056b5"
+  },
+  {
+    "index": 27,
+    "credit": "\"Modern bus start\". Original \"london bus approaches & leaves.wav\" by \"icmusic\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 31784,
+    "seconds": 2.882902494331066,
+    "sha256": "8492f27114270d402c9b185a636c903707aa05beee4df946c84c9b380f261d19"
+  },
+  {
+    "index": 28,
+    "credit": "\"Old bus start\". Original \"t_start1.mp3\" by \"roscoetoon\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 30439,
+    "seconds": 2.760907029478458,
+    "sha256": "59d75dcf7de48b02283f54f86d773b69e2ccf66ffb3e2c2e82a53ee2074e7549"
+  },
+  {
+    "index": 29,
+    "credit": "\"Applause\". Original \"Approx 850 - Enthusiast Audience.wav\" by \"lonemonk\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 40656,
+    "seconds": 3.6876190476190476,
+    "sha256": "7d022b53aa781b6ab42a3e0ae68b56f571e17427552957b1608491e59e424aee"
+  },
+  {
+    "index": 30,
+    "credit": "\"Oooh sound\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 18618,
+    "seconds": 1.6887074829931972,
+    "sha256": "24b272e273ea9f650aca175727ca8d151b24c47dc01627e0ad0486fee5a5bbc9"
+  },
+  {
+    "index": 31,
+    "credit": "\"Splat (terraform/non-rail builds\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 3799,
+    "seconds": 0.34458049886621317,
+    "sha256": "cc91353f312a0c07dfa706c1ba6105c5cd16703fdb4f8115769d78d9b8c3b1d2"
+  },
+  {
+    "index": 32,
+    "credit": "\"Splat (rail builds)\". Original \"kick_1.wav\" by \"jascha\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 1933,
+    "seconds": 0.17532879818594105,
+    "sha256": "0a3fca875a71e265a7719505598f54d0b6b3fb62c292fcb89410e575cc6b3f9e"
+  },
+  {
+    "index": 33,
+    "credit": "\"Jackhammer\". Original \"air hammer half close.wav\" by \"Bluesy1905\". Cut and edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 28263,
+    "seconds": 2.563537414965986,
+    "sha256": "adcfc8ee4d25305ecd11c707c009912477243cfa9a8699619985217a3d484d9d"
+  },
+  {
+    "index": 34,
+    "credit": "\"Unused/Nothing\". Trivial empty sound file. License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 0,
+    "seconds": 0.0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "index": 35,
+    "credit": "\"Modern car horn\". Original \"claxon.wav\" by \"han1\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 7431,
+    "seconds": 0.6740136054421769,
+    "sha256": "bd27cddf7f9d11be30a4832f121f21d023236b15a64aaff10972250d4dcb41e0"
+  },
+  {
+    "index": 36,
+    "credit": "\"Sheep\". Original \"Corner of a sheep field in summer\" by David R Barnes. Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 14530,
+    "seconds": 1.3179138321995465,
+    "sha256": "efff4a36740d4f0b6287ac0ea7f73fcfffe1d312d0a2d4fb2cd5c9dd1d126253"
+  },
+  {
+    "index": 37,
+    "credit": "\"Cow\". Original \"Cow - Moan 2 - 96kHz.wav\" by \"Jarred Gib\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 16391,
+    "seconds": 1.4867120181405895,
+    "sha256": "7d41266a20035026c76300b278b3b2f199c0ca5c65d420c85b42e93285147809"
+  },
+  {
+    "index": 38,
+    "credit": "\"Horse\". Original \"20060419.horse.neigh.wav\" by \"dobroide\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 20146,
+    "seconds": 1.8273015873015872,
+    "sha256": "b9a3e9f1e0474a28dbd117e40411aeb1ea9bd909dcb99880170e8702efd66b56"
+  },
+  {
+    "index": 39,
+    "credit": "\"Building bridge\". Original \"in the smithy 2.wav\" by \"l0calh05t\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 26738,
+    "seconds": 2.425215419501134,
+    "sha256": "519c97a2738812988e216cb1114573c50424d2defd1158adf04e6e3bc9c80f6f"
+  },
+  {
+    "index": 40,
+    "credit": "\"Sawmill\". Original \"Circular saw crosscutting.wav\" by \"Benboncan\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 43044,
+    "seconds": 3.90421768707483,
+    "sha256": "371f91ae0a4ec5229ef5cc00c4458e7c145739d77e17cca273e8f8fe5bff74ea"
+  },
+  {
+    "index": 41,
+    "credit": "\"Toyland: Sugar mine (1)\". Original \"shaker2.wav\" by \"marvman\". Cut and edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 991,
+    "seconds": 0.08988662131519275,
+    "sha256": "b3c8c9146adb8d83167c93b9f43212005fbc8f5efd888e39a48549844e6da991"
+  },
+  {
+    "index": 42,
+    "credit": "\"Toyland: Toy factory (1)\". Original \"ae_51_m.wav\" by \"Sedi\", \"vial-glass-square-cinnamon-sticks-open-02.wav\" by Jan Schupke aka \"Vehicle\" and \"whoosh06.wav\" by Richard Frohlich aka \"FreqMan\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0.",
+    "pcm_bytes": 6634,
+    "seconds": 0.6017233560090703,
+    "sha256": "201f6c75a7d7b111d84cf42b2838369ae66fdeda0ebb25855fb9d4d835b95371"
+  },
+  {
+    "index": 43,
+    "credit": "\"Toyland: Toy factory (2)\". Original \"ae_51_m.wav\" by \"Sedi\" and \"Slide Whistle, Descending, B (H1).wav\" by \"InspectorJ\". Edited and mixed by \"Wuzzy\". License: Creative Commons Attribution 3.0.",
+    "pcm_bytes": 8238,
+    "seconds": 0.7472108843537415,
+    "sha256": "a8a588bbf0cd61e43c0e91ce7687bdad49a198965e0d95520c0653ffd60adc94"
+  },
+  {
+    "index": 44,
+    "credit": "\"Toyland: Toy factory (3)\". Orignal \"nnb04_maxed.wav\" by \"Pooleside\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 34242,
+    "seconds": 3.105850340136054,
+    "sha256": "5a701ffceaa7954ae04bfd3ad05551b02b61b6c9fde16ce90443f220337a725f"
+  },
+  {
+    "index": 45,
+    "credit": "\"Toyland: Sugar mine (2)\". Original \"shaker2.wav\" by \"marvman\". Cut and edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 721,
+    "seconds": 0.0653968253968254,
+    "sha256": "32b893d00ce51b88cab38b3b1fd29510a895f40476192597195646ce73387234"
+  },
+  {
+    "index": 46,
+    "credit": "\"Toyland: Bubble generated\". \"Bubble 001.wav\" by \"ristooooo1\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 8174,
+    "seconds": 0.74140589569161,
+    "sha256": "edf5dcabc75831291e89873727033617f73e3048450ebb5a26ec5301b9265cf8"
+  },
+  {
+    "index": 47,
+    "credit": "\"Toyland: Bubble plop\". By Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 967,
+    "seconds": 0.08770975056689342,
+    "sha256": "fc159d82781e9e98db70b61ae9154adc98fe45779f002317a03d158ef299d114"
+  },
+  {
+    "index": 48,
+    "credit": "\"Toyland: Toffee quarry\". Original \"Metal_03.wav\" by \"Q.K.\", \"aluminum02.wav\" by \"Necrosensual\" and \"slide_whistle_down_fast_01.wav\" by \"joedeshon\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 12020,
+    "seconds": 1.090249433106576,
+    "sha256": "dbe5b394797097a2f4e0c0aa5409293351582156f851638b268e986c932672bc"
+  },
+  {
+    "index": 49,
+    "credit": "\"Toyland: Bubble slurped\". \"Cartoon - Slurp!.wav\" by \"Beviceps\" and \"raw_bubblingdrink5.ogg\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 7975,
+    "seconds": 0.7233560090702947,
+    "sha256": "28c3d9db417d7d8192d7b8f294798519cd4e69c24f6e391032da7ada6a05879d"
+  },
+  {
+    "index": 50,
+    "credit": "\"Unused/Nothing | OpenSFX 1.0.3\". Trivial empty sound file. Tag exists to force OTTD checksum diff. License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 0,
+    "seconds": 0.0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "index": 51,
+    "credit": "\"Toyland: Plastic mine\". Original \"bulle.wav\" by \"Goldy-sama\" and \"ELEMENTS_WATER_02_Phasin-bubbles.wav\" by \"suonho\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 43583,
+    "seconds": 3.953106575963719,
+    "sha256": "991394105d50077ed4fc769a05da09ed4cabd97f26af2247fcda82fd2ee4781c"
+  },
+  {
+    "index": 52,
+    "credit": "\"Wind\". Original \"wind1.wav\" by \"Anton\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 30241,
+    "seconds": 2.7429478458049887,
+    "sha256": "995383bd45e121186eea0eaa10947b22bc22c696b4a153a25974fe49a854690e"
+  },
+  {
+    "index": 53,
+    "credit": "\"Toyland: Road vehicle breakdown\". Original \"CRASH2.wav\" by \"NoiseCollector\" and \"Snare 4.wav\" by \"VEXST\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 18119,
+    "seconds": 1.6434467120181406,
+    "sha256": "8a600cfa8e9739cf662d2a3cb376e456e2d9c4f767432a2aa7dc7662115c9af0"
+  },
+  {
+    "index": 54,
+    "credit": "\"Lumber mill: Crashing tree\". Original \"A Tree Falling Down.wav\" by \"ecfike\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 13005,
+    "seconds": 1.1795918367346938,
+    "sha256": "ea292154c35bcc85311b024b55719064e8975f174f75bf3ec7a40ffc0dc9d125"
+  },
+  {
+    "index": 55,
+    "credit": "\"Lumber mill: Falling tree\". Original \"cutting_tree.wav\" by \"fkurz\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 28706,
+    "seconds": 2.603718820861678,
+    "sha256": "a3539b980de300f545019af2e6f1ec1c34e09574d2132f82ba82c7b7d2b643c4"
+  },
+  {
+    "index": 56,
+    "credit": "\"Lumber mill: Chainsaw\". Original \"CHAINSAW.wav\" by \"JFBSAUVE\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 29860,
+    "seconds": 2.708390022675737,
+    "sha256": "bcba228559f49a56f66f1694844ac151d746c74baf7864b4d9ae321a9bf63553"
+  },
+  {
+    "index": 57,
+    "credit": "\"Heavy wind\". Original \"wind1.wav\" by \"Anton\". Edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 30241,
+    "seconds": 2.7429478458049887,
+    "sha256": "995383bd45e121186eea0eaa10947b22bc22c696b4a153a25974fe49a854690e"
+  },
+  {
+    "index": 58,
+    "credit": "\"Toyland: Train breakdown\". Original \"wfl5.5_snap.wav\" by Derek Murphy and \"crashB.wav\" by \"Matias.Reccius\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 25727,
+    "seconds": 2.3335147392290247,
+    "sha256": "922eeea2fc50d06a771308cd4806a272989542587243036490dbb093c92bbfe3"
+  },
+  {
+    "index": 59,
+    "credit": "\"Mach 1+ Jet take off\". Original \"Landing Jet 5 (Close).wav\" by \"bigpickle51\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 44578,
+    "seconds": 4.043356009070295,
+    "sha256": "8ba90f16647c47d6b6f4d242fb59f6b5b536985709d77698d0fb82606599a4d3"
+  },
+  {
+    "index": 60,
+    "credit": "\"Toyland: Comedy bus start (1)\". Original \"file0375.mp3\" by \"saphix\" and \"boing_raw.aif\" by \"cfork\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 43642,
+    "seconds": 3.9584580498866213,
+    "sha256": "8f153f8913283bc5c143b1d8d2d9aa6b91bb9e5d0eb9eb6854ae917dc1fd6e7b"
+  },
+  {
+    "index": 61,
+    "credit": "\"Modern jet take off\". Original \"5_Navy-Blue-Angels-jets_CLIP.wav\" by ibisradio. Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 33914,
+    "seconds": 3.0760997732426305,
+    "sha256": "9097b907d1a7a830d275ff5840a45e926f48c0e7d8ed62bcd5f4542283d494ab"
+  },
+  {
+    "index": 62,
+    "credit": "\"Toyland: Comedy bus start (2)\". Original \"file0375.mp3\" by \"saphix\" and \"Bike Horn double toot.wav\" by \"Stickinthemud\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 44654,
+    "seconds": 4.050249433106576,
+    "sha256": "9e7af9fc05319077c42c6cf3c358979dc968681d6f58ab07e8cc02e37916c102"
+  },
+  {
+    "index": 63,
+    "credit": "\"Toyland: Comedy truck start (1)\". Original \"t_start1.mp3\" by \"roscoetoon\" and \"Squeeky ball Toy_1.L.wav\" by \"AGFX\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 30132,
+    "seconds": 2.733061224489796,
+    "sha256": "928b9a8379ae093d2b8f82683a922bd51decdd8ad183e69bb6db5cc400774b1e"
+  },
+  {
+    "index": 64,
+    "credit": "\"Toyland: Comedy truck start (2)\". Original \"london bus approaches & leaves.wav\" by \"icmusic\" and \"Boink_v3.wav\" by \"simon.rue\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 31784,
+    "seconds": 2.882902494331066,
+    "sha256": "09ed408239920d22c661acc241f244cc93b1b8a44222198f67e776ff16512f77"
+  },
+  {
+    "index": 65,
+    "credit": "\"Maglev train station departure\". Original \"metro.wav\" by \"Marec\". Mixed/edited by Janis Lukss. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 21787,
+    "seconds": 1.9761451247165533,
+    "sha256": "44f9b291216fe1854adf178e2459a70f54c6b68ed4c12b3d575ea7a74e999616"
+  },
+  {
+    "index": 66,
+    "credit": "\"Tropical: Bird (1)\". Original \"Bird Noise - 1.wav\" by \"SpaceJoe\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 23652,
+    "seconds": 2.1453061224489796,
+    "sha256": "92799b0e67ed885e63858ba6a5c259a378e98c35b78c4ad7f6a1fb0060c34afb"
+  },
+  {
+    "index": 67,
+    "credit": "\"Tropical: Lion roar\". Original \"elaine-growl.wav\" by Elaine Miller. Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 31236,
+    "seconds": 2.8331972789115647,
+    "sha256": "a23f948d725b3674999493881ba9ce9a5c48706aeee6795970b08dfbe2dda181"
+  },
+  {
+    "index": 68,
+    "credit": "\"Tropical: Monkeys\". Original \"Affen schreit.mp3\" by \"Bidone\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 20032,
+    "seconds": 1.8169614512471655,
+    "sha256": "b3ff063a61fcc2915cbb0b5934de3ce4a42b3165f8de273775cb2d2474f5a279"
+  },
+  {
+    "index": 69,
+    "credit": "\"Toyland: Propeller plane take off\". Original \"Airplane propeller.wav\" by \"MrVasLuk\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 42262,
+    "seconds": 3.8332879818594106,
+    "sha256": "ee47bdba9a8b6b9e7a1e7f926d34beeba96796a8898199f9495985450e0d3c1d"
+  },
+  {
+    "index": 70,
+    "credit": "\"Toyland: Jet take off\". Original \"Passenger jet departs 2.wav\" by \"www.digifishmusic.com\", \"Car start and drive.mp3\" by \"han1\" and \"swosh.aif\" by \"man\". Edited by Richard Wheeler. License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 40961,
+    "seconds": 3.715283446712018,
+    "sha256": "dc76b3d8c23337644c88a0968abda0f74452d36df98645b435cc4e555ca663f0"
+  },
+  {
+    "index": 71,
+    "credit": "\"Monorail train station departure\". Original \"Train passby (tape stop).wav\" by \"Metzik\". Edited by \"Wuzzy\". License: Creative Commons Attribution 3.0 Unported.",
+    "pcm_bytes": 27482,
+    "seconds": 2.4926984126984126,
+    "sha256": "92f4970357ab44b9bc0c733975321351760859f3ffcba9fed715e886155d4858"
+  },
+  {
+    "index": 72,
+    "credit": "\"Tropical: Bird (2)\". Original \"Bird Noise - 12.wav\" by \"SpaceJoe\". Edited by \"Wuzzy\". License: Creative Commons Zero 1.0.",
+    "pcm_bytes": 32949,
+    "seconds": 2.9885714285714284,
+    "sha256": "6ab2dfa252f9d2564249a3ac7700a41be589bb18f55f78f31d2790e30b4d4951"
+  }
+]

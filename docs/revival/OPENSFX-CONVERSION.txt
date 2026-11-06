@@ -1,0 +1,22 @@
+OpenTTD 3DS Revival — OpenSFX compatibility conversion
+
+Derived from OpenSFX 1.0.3 by the OpenSFX contributors.
+Original project: https://github.com/OpenTTD/OpenSFX
+Official archive: https://cdn.openttd.org/opensfx-releases/1.0.3/opensfx-1.0.3-all.zip
+Archive SHA256: e0a218b7dd9438e701503b0f84c25a97c1c11b7c2f025323fb19d6db16ef3759
+
+Modification: all 73 CAT slots retain their original ordering and attribution.
+WAV audio was converted to mono, unsigned 8-bit PCM at 11025 Hz, using macOS
+afconvert at quality 127, then repacked without modern CAT offset flags and
+extra chunks for the OpenTTD 0.7.0 reader. Two upstream unused slots remain empty.
+Converted collection: Creative Commons Attribution-ShareAlike 3.0 Unported.
+Keep this notice, upstream readme/credits, license and per-sound credits together
+with the converted bank when redistributing it. See CREDITS.txt and LICENSE.txt.
+The original authors did not produce or endorse this compatibility conversion.
+
+Converted sample.cat SHA256:
+847d3610fc11fed858048ba080769e687b7d8614055f7087a1a059224eefaa3b
+
+Reproduce after extracting opensfx.cat from the official ZIP/TAR (macOS):
+python3 convert-opensfx.py /path/to/opensfx.cat /path/to/output-directory
+The converted sample.cat and per-effect manifest are written to that directory.

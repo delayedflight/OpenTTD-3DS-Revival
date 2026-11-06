@@ -12,6 +12,10 @@
 #include "map_func.h"
 #include "vehicle_base.h"
 #include "debug.h"
+#ifdef N3DS
+#include <SDL.h>
+#include "music/n3ds_wav.h"
+#endif
 
 static uint _file_count;
 static FileEntry *_files;
@@ -129,7 +133,11 @@ static bool SetBankSource(MixerChannel *mc, const FileEntry *fe)
 bool SoundInitialize(const char *filename)
 {
 	OpenBankFile(filename);
-	return true;
+#ifdef N3DS
+ unsigned usable=0,largest=0;for(unsigned i=0;i<_file_count;i++)if(_files[i].file_size!=0){usable++;largest=max(largest,unsigned(_files[i].file_size));}
+ FILE *log=fopen("sound-effects.log","w");if(log!=NULL){fprintf(log,"bank=%s slots=%u nonempty=%u largest_pcm=%u\n",filename,_file_count,usable,largest);fclose(log);}
+#endif
+ return true;
 }
 
 /* Low level sound player */
@@ -140,7 +148,13 @@ static void StartSound(uint sound, int panning, uint volume)
 	const FileEntry *fe = GetSound(sound);
 	if (fe == NULL) return;
 
-	MixerChannel *mc = MxAllocateChannel();
+	#ifdef N3DS
+ if(_n3ds_wav_output_rate!=0)SDL_LockAudio();
+#endif
+ MixerChannel *mc = MxAllocateChannel();
+#ifdef N3DS
+ if(_n3ds_wav_output_rate!=0)SDL_UnlockAudio();
+#endif
 	if (mc == NULL) return;
 
 	if (!SetBankSource(mc, fe)) return;
@@ -152,7 +166,16 @@ static void StartSound(uint sound, int panning, uint volume)
 	uint left_vol = (volume * PANNING_LEVELS) - (volume * panning);
 	uint right_vol = (volume * PANNING_LEVELS) + (volume * panning);
 	MxSetChannelVolume(mc, left_vol * 128 / PANNING_LEVELS, right_vol * 128 / PANNING_LEVELS);
-	MxActivateChannel(mc);
+	#ifdef N3DS
+ // Publish a fully populated inactive channel to the audio callback.
+ // Asset reads/allocation above deliberately stay outside the audio lock.
+ if(_n3ds_wav_output_rate!=0)SDL_LockAudio();
+#endif
+ MxActivateChannel(mc);
+#ifdef N3DS
+ if(_n3ds_wav_output_rate!=0)SDL_UnlockAudio();
+ static unsigned logged=0;if(logged<8){FILE *log=fopen("sound-effects.log","a");if(log!=NULL){fprintf(log,"effect=%u pcm_bytes=%u rate=%u volume=%u panning=%d\n",sound,unsigned(fe->file_size),fe->rate,volume,panning);fclose(log);}logged++;}
+#endif
 }
 
 

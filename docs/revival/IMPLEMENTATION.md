@@ -358,3 +358,21 @@ All 22 user-supplied WAVs are ordinary 44.1 kHz stereo 16-bit PCM, mapped by exa
 
 
 The r3o emulator started music from an old playing=false/custom-playlist configuration, loaded a disposable Flufingwell copy, advanced from the theme to Easy Driver, accepted Next to Little Red Diesel and Stop, and saved playing=false plus wav_autoplay_initialized=true on normal Exit. No recorded underruns/I/O errors. This is separate from the complete 22-track host read-through; see WAV-VALIDATION-r3o.txt for limits.
+
+
+## r3p sound effects and channel publication
+
+The public-release-derived development data contained a zero-byte sample.cat. The existing SoundInitialize function returned success while all 73 allocated catalogue slots remained size zero, so music output alone did not prove effects. A compatible OpenSFX-derived sample.cat supplies the effects without loading the entire bank into RAM. Current upstream OpenSFX uses modern offset flags and 16-bit samples; the documented offline conversion retains ordering/credits and produces canonical mono unsigned PCM8 WAV entries at 11025 Hz. The result is 1,661,236 bytes, 73 slots with 71 nonempty effects, largest PCM 44,654 bytes. The two unused upstream slots stay empty.
+
+StartSound now reserves an inactive channel under the SDL audio lock, reads/allocates its sample outside the lock, sets its source/volume while inactive, and publishes active under the lock. This orders channel fields against the callback and prevents reservation racing callback sample release. The eight-channel mixer and existing sample auto-free remain unchanged. Worst-case sample storage for eight copies of the largest effect is 357,232 bytes plus channel/allocator metadata; the whole 1.6 MB bank is not cached. SDL initialization and WAV music streaming remain the r3o implementation.
+
+sound-effects.log records usable catalogue size and the first eight effect launches. No logging or SD reading was added to the audio callback. The host test compiles the actual CAT parser, SetBankSource/StartSound, index/volume mapping and complete mixer. It verifies all 71 effects mix to nonzero output with correct rate/format, samples are released, and 3,000 main-thread triggers against the callback pass ASan/UBSan and TSan. The Docker build succeeds with the pre-existing mixed-enum ABI warnings.
+
+```sh
+python3 source/docs/revival/tests/sound-effects.py /tmp/openttd-effects /path/to/sample.cat
+```
+
+Converted audio is CC BY-SA 3.0 and separate from the GPL game code. Attribution, upstream licenses, original download checksum, per-effect credits and the conversion recipe are included. No original TTD effect samples are distributed. See OPENSFX-CONVERSION.txt for asset reproduction. Original-console audible validation remains required.
+
+
+The final r3p emulator loaded 73 slots/71 nonempty effects and logged world-effect launches with different IDs, nonzero sample sizes and viewport panning during copied Flufingwell simulation. Music continued with zero recorded underruns/I/O errors. Automated tests do not assess speaker sound quality; this remains an original-console check. See SOUND-EFFECTS-VALIDATION.txt.

@@ -1,0 +1,36 @@
+r3p sound-effects validation
+
+Finding: the development installation's data/sample.cat was zero bytes. The
+existing effect triggers, eight-channel mixer and SDL output were present, but
+the empty bank left all sound slots silent. This does not establish the contents
+of the user's SD card; no device data was inspected or changed for this update.
+
+Asset: official OpenSFX 1.0.3 ZIP, SHA256 verified against the official release.
+Converted offline to preserve the legacy 0.7.0 CAT ordering and compatibility:
+73 slots, 71 nonempty effects, two unused slots retained; mono unsigned 8-bit PCM
+at 11025 Hz. Bank size 1,661,236 bytes. Largest PCM sample 44,654 bytes. The whole
+bank is not loaded into RAM: per-effect storage remains limited to eight active
+channels (at most 357,232 bytes for eight largest samples, plus metadata).
+Converted bank SHA256: 847d3610fc11fed858048ba080769e687b7d8614055f7087a1a059224eefaa3b
+OpenSFX credits, CC BY-SA 3.0 licence, provenance and conversion recipe included.
+
+Code: channel reservation and activation now synchronize with SDL callback
+sample release/consumption. File reads/allocation occur outside the audio lock;
+fully initialized inactive channels are published under it. Existing effects
+mixing/autofree and r3o WAV/autoplay remain intact. Diagnostics record bank sizes
+and first eight launches outside the audio callback.
+
+Targeted actual-source ASan/UBSan and TSan suites pass. They run the actual bank
+parser, index/volume mapping, StartSound/SetBankSource and full mixer; all 71
+nonempty effects produce nonzero output with correct rate/format, sample buffers
+are released and 3000 triggers against a concurrent callback complete safely.
+The pinned Docker compilation passes, with pre-existing mixed-enum ABI warnings.
+
+Emulator: Azahar 2126.2 arm64; disposable cloned profile with the final binary,
+converted bank, existing WAV album and copied Flufingwell game. Startup reported
+slots=73/nonempty=71/largest_pcm=44654. Normal game loading/simulation triggered
+multiple world effects with distinct IDs, positive sizes and viewport panning.
+Music playback continued; recorded music underruns and I/O errors remained zero.
+Automated inspection confirms trigger/mixer/output paths, not speaker quality.
+Original-3DS audible effects, balance against music and extended memory/SD stress
+still require hardware playtesting. No SD, original save or WAV was modified.
