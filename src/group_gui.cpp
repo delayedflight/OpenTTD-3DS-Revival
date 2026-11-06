@@ -172,6 +172,14 @@ public:
 	{
 		const Owner owner = (Owner)GB(this->window_number, 0, 8);
 		this->vehicle_type = (VehicleType)GB(this->window_number, 11, 5);
+#ifdef N3DS
+  /* Narrow only the group sidebar; preserve the original vehicle-list width. */
+  for (uint i = 0; i < this->widget_count; i++) {
+   Widget &wi = this->widget[i];
+   if (wi.left >= 164) wi.left -= 60;
+   if (wi.right >= 163) wi.right -= 60;
+  }
+#endif
 
 		this->owner = owner;
 		this->resize.step_width = 1;
@@ -426,11 +434,15 @@ public:
 
 			/* draw the selected group in white, else we draw it in black */
 			SetDParam(0, g->index);
-			DrawString(10, y1, STR_GROUP_NAME, (this->group_sel == g->index) ? TC_WHITE : TC_BLACK);
+			#ifdef N3DS
+   DrawStringTruncated(10, y1, STR_GROUP_NAME, (this->group_sel == g->index) ? TC_WHITE : TC_BLACK, this->widget[GRP_WIDGET_LIST_GROUP].right - 40);
+#else
+   DrawString(10, y1, STR_GROUP_NAME, (this->group_sel == g->index) ? TC_WHITE : TC_BLACK);
+#endif
 
 			/* draw the number of vehicles of the group */
 			SetDParam(0, g->num_vehicle);
-			DrawStringRightAligned(187, y1 + 1, STR_GROUP_TINY_NUM, (this->group_sel == g->index) ? TC_WHITE : TC_BLACK);
+			DrawStringRightAligned(this->widget[GRP_WIDGET_LIST_GROUP].right, y1 + 1, STR_GROUP_TINY_NUM, (this->group_sel == g->index) ? TC_WHITE : TC_BLACK);
 		}
 
 		this->DrawSortButtonState(GRP_WIDGET_SORT_BY_ORDER, this->vehicles.IsDescSortOrder() ? SBS_DOWN : SBS_UP);
@@ -701,7 +713,11 @@ public:
 
 
 static WindowDesc _group_desc(
-	WDP_AUTO, WDP_AUTO, 460, 194, 460, 246,
+	#ifdef N3DS
+ WDP_AUTO, WDP_AUTO, 400, 194, 400, 246,
+#else
+ WDP_AUTO, WDP_AUTO, 460, 194, 460, 246,
+#endif
 	WC_INVALID, WC_NONE,
 	WDF_STD_TOOLTIPS | WDF_STD_BTN | WDF_DEF_WIDGET | WDF_UNCLICK_BUTTONS | WDF_STICKY_BUTTON | WDF_RESIZABLE,
 	_group_widgets

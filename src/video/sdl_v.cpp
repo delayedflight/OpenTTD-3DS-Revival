@@ -22,6 +22,8 @@
 #include <3ds.h>
 #include "../window_gui.h"
 #include "../table/sprites.h"
+#include "../window_func.h"
+#include "../tilehighlight_func.h"
 #endif
 
 static FVideoDriver_SDL iFVideoDriver_SDL;
@@ -37,6 +39,8 @@ static bool _touch_held;
 static bool _pad_held;
 static N3DSBuildButtons _build_buttons;
 static bool _map_pad;
+static bool _station_picker_active;
+static int _station_picker_request; // 0 none, 1 enter, 2 return after button release
 static bool _panel_needs_draw = true;
 static SDL_Surface *_ui_surface;
 void *_n3ds_ui_pixels;
@@ -91,6 +95,16 @@ static void SelectN3DSInput(bool map)
 	_cursor.in_window = true;
 }
 
+static void CenterN3DSMapCursor()
+{
+ const Window *bar = FindWindowById(WC_STATUS_BAR, 0);
+ const int visible_height = bar != NULL ? bar->top : _screen.height;
+ _n3ds_map_cursor.x = _screen.width / 2;
+ _n3ds_map_cursor.y = visible_height / 2;
+ if (_n3ds_map_input) _cursor.pos = _n3ds_map_cursor;
+ _cursor.dirty = true;
+}
+
 static Window *N3DSFrontUi()
 {
  Window *w;
@@ -107,12 +121,37 @@ static bool NativeN3DSTitle()
  return _game_mode == GM_MENU && w != NULL && w->window_class == WC_SELECT_GAME;
 }
 
+void N3DSRequestStationPicker(bool begin)
+{
+ if (begin) _station_picker_request = 1;
+ else if (_station_picker_active || _station_picker_request == 1) _station_picker_request = 2;
+}
+
+static void ProcessN3DSStationPicker()
+{
+ if (_station_picker_request == 0) return;
+ if (_station_picker_request == 2 && _pad_held) return;
+ const bool begin = _station_picker_request == 1 && _game_mode == GM_NORMAL;
+ _station_picker_request = 0;
+ _build_buttons.Reset();
+ _left_button_down = _left_button_clicked = _pad_held = _touch_held = false;
+ HandleMouseEvents();
+ _station_picker_active = begin;
+ _map_pad = begin;
+ if (begin) _map_ui_front = N3DSFrontUi();
+ SelectN3DSInput(begin);
+ if (!begin) CenterN3DSMapCursor();
+ _panel_needs_draw = true;
+ MarkWholeScreenDirty();
+}
+
 static void DrawN3DSPanel()
 {
  if (_map_pad && !_pad_held && N3DSFrontUi() != _map_ui_front) {
-  /* Reveal errors, bridge choices, station joins and newly opened details. */
+  /* Reveal new dialogs, preserving their pending tool workflow. */
   _map_pad = false;
   SelectN3DSInput(false);
+  if (_game_mode != GM_MENU) CenterN3DSMapCursor();
  }
  if (_game_mode == GM_MENU && _map_pad) {
   _map_pad = false;
@@ -145,10 +184,10 @@ static void DrawN3DSPanel()
 	DrawPixelInfo *saved = _cur_dpi;
 	_cur_dpi = &panel;
 	DrawFrameRect(0, 0, 319, 239, COLOUR_GREY, FR_NONE);
-	DoDrawStringCentered(160, 12, "MAP CONTROL", TC_WHITE);
+	DoDrawStringCentered(160, 12, _station_picker_active ? "SELECT STATION" : "MAP CONTROL", TC_WHITE);
 	DrawFrameRect(6, 34, 313, 193, COLOUR_GREY, FR_LOWERED);
 	DoDrawStringCentered(160, 85, "Drag gently to move the cursor", TC_WHITE);
-	DoDrawStringCentered(160, 105, "L: click / hold L and drag to build", TC_WHITE);
+	DoDrawStringCentered(160, 105, _station_picker_active ? "L / A: choose station   B: cancel" : "L: click / hold L and drag to build", TC_WHITE);
 	DoDrawStringCentered(160, 207, "SELECT / X: return to tools", TC_WHITE);
 	DoDrawStringCentered(160, 223, "Circle Pad: scroll   R/Y: zoom   B: cancel", TC_WHITE);
 	_cur_dpi = saved;
@@ -620,6 +659,8 @@ static int PollEvent()
     _build_buttons.Set(ev.jbutton.button, down);
     _pad_held = _build_buttons.Held();
     if (!was_held && _pad_held) {
+     /* A in normal mode inspects, even if a tool was selected in the UI. */
+     if (!_map_pad) ResetObjectToPlace();
      /* End any UI touch gesture before beginning a map gesture. */
      _left_button_down = false;
      _left_button_clicked = false;
@@ -634,17 +675,24 @@ static int PollEvent()
 				switch (ev.jbutton.button) {
 					case 2: HandleKeypress(uint32(WKC_ESC) << 16); break;
 					case 7: // SELECT lets the left thumb switch modes without dropping the stylus.
-     case 3:
+     case 3: {
      if (_game_mode == GM_MENU) break;
-						_build_buttons.Reset();
+      /* Abort placement before releasing a drag: exiting must not build it. */
+      if (_map_pad) ResetObjectToPlace();
+      const bool leaving_construction = _map_pad;
+      DeleteWindowByClass(WC_DROPDOWN_MENU);
+      _build_buttons.Reset();
       _left_button_down = _left_button_clicked = _pad_held = _touch_held = false;
 						HandleMouseEvents();
 						_map_pad = !_map_pad;
       if (_map_pad) _map_ui_front = N3DSFrontUi();
 						SelectN3DSInput(_map_pad);
-						_panel_needs_draw = true;
+      /* Do this after restoring UI input, which saves the old map position. */
+      if (leaving_construction) CenterN3DSMapCursor();
+      _panel_needs_draw = true;
 						MarkWholeScreenDirty();
 						break;
+     }
 					case 5: HandleKeypress(uint32(WKC_MINUS) << 16); break; // Normal mode: L zooms out.
      case 4: if (_map_pad) HandleKeypress(uint32(WKC_MINUS) << 16); break; // Construction: Y zooms out.
 					case 6: HandleKeypress(uint32(WKC_EQUALS) << 16); break;
@@ -747,6 +795,7 @@ void VideoDriver_SDL::MainLoop()
 
 		while (PollEvent() == -1) {}
 		if (_exit_game) return;
+		ProcessN3DSStationPicker();
 
 		mod = SDL_CALL SDL_GetModState();
 		keys = SDL_CALL SDL_GetKeyState(&numkeys);

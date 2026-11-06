@@ -3,6 +3,7 @@
 /** @file order_gui.cpp GUI related to orders. */
 
 #include "stdafx.h"
+#include "n3ds_ui.h"
 #include "station_map.h"
 #include "window_gui.h"
 #include "command_func.h"
@@ -455,7 +456,10 @@ private:
 			_place_clicked_vehicle = NULL;
 			SetObjectToPlaceWnd(ANIMCURSOR_PICKSTATION, PAL_NONE, VHM_RECT, w);
 			w->goto_type = OPOS_GOTO;
-		} else {
+#ifdef N3DS
+   N3DSRequestStationPicker(true);
+#endif
+  } else {
 			ResetObjectToPlace();
 		}
 	}
@@ -1080,7 +1084,12 @@ public:
 
 			if (DoCommandP(this->vehicle->tile, this->vehicle->index + (this->OrderGetSel() << 16), cmd.Pack(), CMD_INSERT_ORDER | CMD_MSG(STR_8833_CAN_T_INSERT_NEW_ORDER))) {
 				/* With quick goto the Go To button stays active */
-				if (!_settings_client.gui.quick_goto) ResetObjectToPlace();
+				#ifdef N3DS
+    /* One station per map-selection trip; return to the order list. */
+    ResetObjectToPlace();
+#else
+    if (!_settings_client.gui.quick_goto) ResetObjectToPlace();
+#endif
 			}
 		}
 	}
@@ -1106,7 +1115,10 @@ public:
 		}
 		this->RaiseWidget(ORDER_WIDGET_GOTO);
 		this->InvalidateWidget(ORDER_WIDGET_GOTO);
-	}
+#ifdef N3DS
+  N3DSRequestStationPicker(false);
+#endif
+ }
 
 	virtual void OnMouseLoop()
 	{

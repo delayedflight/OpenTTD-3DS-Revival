@@ -1,10 +1,10 @@
 # OpenTTD 3DS Revival implementation guide
 
-This guide describes the r3c mode-sensitive control refinement of the r3a repair, based on EnergeticBark/OpenTTD-3DS v1.0.1, OpenTTD 0.7.0. The tested r1b repair and r2 UI prototype are preserved separately. r3 needs independent physical-console validation.
+This guide describes the r3d inspection-centre refinement of the r3a repair, based on EnergeticBark/OpenTTD-3DS v1.0.1, OpenTTD 0.7.0. The tested r1b repair and r2 UI prototype are preserved separately. r3 needs independent physical-console validation.
 
 ## Build and project layout
 
-The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3c/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
+The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3d/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
 
 The upstream checkout, the r1b source, and r2 source are kept separately in the development project. Private saves and crash dumps are local evidence, not release assets. Never test against the user's only save or write a release directly onto their SD card.
 
@@ -116,3 +116,31 @@ It verifies independent/overlapping A/L presses, both release orders, duplicate 
 X/SELECT explicitly selects the control scheme; the selected construction tool does not determine it. In normal tools/windows mode, L zooms out and R zooms in. In map-pad mode, L becomes click/hold, A remains an alternative, R zooms in and Y zooms out. Switching back restores L zoom-out. Y has no zoom action in normal mode.
 
 The shared-button classifier receives `_map_pad`. Switching modes still resets the held-button mask and mouse latch before selecting the new layer, so a shoulder held across the toggle cannot become an unintended build press. Popup-driven returns to the UI also restore normal shoulder behaviour after the final build button is released. Scaling and renderer code are unchanged.
+
+## r3d exit-to-inspection behaviour
+
+Leaving map-pad mode with X/SELECT first calls `ResetObjectToPlace`, before releasing mouse/button state, so an in-progress placement is aborted rather than committed accidentally. It then switches to normal UI input and centres the stored upper-map cursor. The order matters: `SelectN3DSInput(false)` saves the old free cursor position, so centring must happen afterward. The centre is based on the actual upper status-bar top: 200,114 for a 400x240 display with a 12-pixel information bar.
+
+Normal UI touch movement continues to update only the UI cursor. Circle Pad scrolling moves the world beneath the stored map cursor. Normal-mode A clears any active tool before dispatching the map click, allowing station/vehicle inspection even after selecting a tool below. Construction mode retains free stylus positioning and L/A placement; L/R zoom remains normal outside that mode. Scaling is unchanged. Automatic popup returns also centre the stored cursor but retain pending picker/tool callbacks; the explicit X/SELECT exit is the abort action. Normal-mode A cancels a retained tool before inspection.
+
+## r3d automatic AI Debug policy and touch menus
+
+On 3DS, `AIInstance::Died` logs a short company/script diagnostic to boot.log instead of automatically opening AI Debug. The existing AI log remains available through Help > AI Debug. The normal non-dummy AI crash notification is retained, and desktop builds keep their original automatic debug behaviour. DummyAI stops therefore stop stealing the lower screen without disabling AI simulation or hiding genuine AI failure notifications.
+
+3DS dropdowns use a two-tap interaction: tap the toolbar/menu button, lift the stylus, then tap the desired item. Releasing on the parent button no longer executes the default item. X/SELECT closes a pending dropdown before changing control modes. This changes interaction, not scaling, and permits reliable menu access and auditing with both stylus and emulator controls.
+
+## r3d compact menus and one-shot orders
+
+The main toolbar again uses the original 22-pixel row and two switchable pages. Construction toolbars anchor beneath its actual height. Vehicle group windows use a 140-pixel sidebar instead of 200, retaining the vehicle pane and all group commands. Group names truncate before counts. Vehicle details lose five pixels of unused horizontal allowance to fit the 400-pixel logical desktop. Other large dialogs remain audit items.
+
+Orders > Go to requests the lower map-selection pad after the input callback completes. Existing engine tile validation and CMD_INSERT_ORDER perform the actual order insertion. A successful insertion resets placement even when quick_goto is enabled on 3DS, giving one destination per round trip. OnPlaceObjectAbort queues the return; the video loop waits for L/A release before revealing Orders and restoring normal L/R zoom. Invalid destinations keep selection active. B cancels via the existing placement-abort callback. Desktop quick_goto behaviour is unchanged.
+
+The queued picker state must be reviewed for window closure, new dialogs, mode changes and held-button transitions. Emulator and host tests cannot establish physical-console stylus feel or memory stability.
+
+Run the exit regression from the extracted source package:
+
+```sh
+python3 source/docs/revival/tests/inspection-exit.py /tmp/openttd-inspection-check
+```
+
+It extracts the actual cursor-selection, centring and X/SELECT handler bodies and checks cancellation before release, independent UI/map cursor storage, both toggle buttons, status-bar-aware centring and the title-menu guard with sanitizers.

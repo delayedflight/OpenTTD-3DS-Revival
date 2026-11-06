@@ -3,6 +3,7 @@
 /** @file ai_instance.cpp Implementation of AIInstance. */
 
 #include "../stdafx.h"
+#include "../n3ds_bootlog.h"
 #include "../debug.h"
 #include "../settings_type.h"
 #include "../vehicle_base.h"
@@ -254,7 +255,12 @@ void AIInstance::Died()
 	this->instance = NULL;
 	this->engine = NULL;
 
-	ShowAIDebugWindow(_current_company);
+#ifdef N3DS
+ N3DSBootLog(false, "AI company %u stopped (%s); automatic debug popup suppressed; open AI Debug manually for details.",
+  (unsigned int)_current_company, GetCompany(_current_company)->ai_info->GetMainScript());
+#else
+ ShowAIDebugWindow(_current_company);
+#endif
 	if (strcmp(GetCompany(_current_company)->ai_info->GetMainScript(), "%_dummy") != 0) {
 		ShowErrorMessage(INVALID_STRING_ID, STR_AI_PLEASE_REPORT_CRASH, 0, 0);
 	}

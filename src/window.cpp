@@ -2181,20 +2181,7 @@ static void LayoutN3DSToolbars()
  Window *w;
  bool changed = false;
  FOR_ALL_WINDOWS_FROM_BACK(w) {
-  if (w->window_class == WC_MAIN_TOOLBAR && _game_mode == GM_NORMAL) {
-   if (w->height != 96 || w->width != 400) changed = true;
-   w->left = w->top = 0;
-   w->width = 400; w->height = 96;
-   for (uint i = 0; i < w->widget_count; i++) {
-    Widget &wi = w->widget[i];
-    if (i >= 27) { wi.type = WWT_EMPTY; continue; }
-    wi.type = (i == 3) ? WWT_IMGBTN_2 : WWT_IMGBTN;
-    wi.left = (i % 9) * 400 / 9;
-    wi.right = ((i % 9) + 1) * 400 / 9 - 1;
-    wi.top = (i / 9) * 32;
-    wi.bottom = wi.top + 31;
-   }
-  } else if (w->window_class == WC_BUILD_TOOLBAR) {
+  if (w->window_class == WC_BUILD_TOOLBAR) {
    uint buttons = 0;
    for (uint i = 0; i < w->widget_count; i++) {
     Widget &wi = w->widget[i];
@@ -2212,7 +2199,10 @@ static void LayoutN3DSToolbars()
     }
    }
    w->width = 400; w->height = 14 + ((buttons + 7) / 8) * 32;
-   if (changed) { w->left = 0; w->top = 96; }
+   if (changed) {
+    const Window *main_toolbar = FindWindowById(WC_MAIN_TOOLBAR, 0);
+    w->left = 0; w->top = main_toolbar != NULL ? main_toolbar->height : 22;
+   }
   }
  }
  if (changed) MarkWholeScreenDirty();

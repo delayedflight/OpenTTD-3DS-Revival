@@ -236,6 +236,10 @@ struct DropdownWindow : Window {
 
 void ShowDropDownList(Window *w, DropDownList *list, int selected, int button, uint width, bool auto_width, bool instant_close)
 {
+#ifdef N3DS
+ /* Touch users open a menu, lift the stylus, then choose an item. */
+ instant_close = false;
+#endif
 	DeleteWindowById(WC_DROPDOWN_MENU, 0);
 
 	w->LowerWidget(button);

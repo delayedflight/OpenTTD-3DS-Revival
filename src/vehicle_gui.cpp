@@ -1285,7 +1285,15 @@ struct VehicleDetailsWindow : Window {
 
 	/** Initialize a newly created vehicle details window */
 	VehicleDetailsWindow(const WindowDesc *desc, WindowNumber window_number) : Window(desc, window_number)
-	{
+ {
+#ifdef N3DS
+  /* Recover the five pixels that put the right-hand controls off-screen. */
+  for (uint i = 0; i < this->widget_count; i++) {
+   Widget &wi = this->widget[i];
+   if (wi.left >= 353) wi.left -= 5;
+   if (wi.right >= 352) wi.right -= 5;
+  }
+#endif
 		const Vehicle *v = GetVehicle(this->window_number);
 
 		switch (v->type) {
@@ -1545,7 +1553,11 @@ struct VehicleDetailsWindow : Window {
 
 /** Vehicle details window descriptor. */
 static const WindowDesc _vehicle_details_desc(
-	WDP_AUTO, WDP_AUTO, 405, 113, 405, 113,
+	#ifdef N3DS
+ WDP_AUTO, WDP_AUTO, 400, 113, 400, 113,
+#else
+ WDP_AUTO, WDP_AUTO, 405, 113, 405, 113,
+#endif
 	WC_VEHICLE_DETAILS, WC_VEHICLE_VIEW,
 	WDF_STD_TOOLTIPS | WDF_STD_BTN | WDF_DEF_WIDGET | WDF_UNCLICK_BUTTONS | WDF_STICKY_BUTTON | WDF_RESIZABLE,
 	_vehicle_details_widgets

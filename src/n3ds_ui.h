@@ -9,6 +9,8 @@ extern void *_n3ds_cursor_surface;
 extern bool _n3ds_map_input;
 extern int _n3ds_scroll_factor;
 extern Point _n3ds_map_cursor;
+/** Defer station-picker mode changes until after the current input callback. */
+void N3DSRequestStationPicker(bool begin);
 /** Scope the cursor position and drawing surface to the active game mode. */
 struct N3DSMapCursorScope {
  Point saved;
