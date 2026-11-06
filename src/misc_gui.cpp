@@ -3,6 +3,7 @@
 /** @file misc_gui.cpp GUIs for a number of misc windows. */
 
 #include "stdafx.h"
+#include "n3ds_ui.h"
 #include "openttd.h"
 #include "debug.h"
 #include "landscape.h"
@@ -1396,7 +1397,7 @@ void BuildFileList()
 	}
 }
 
-static void DrawFiosTexts(uint maxw)
+static void DrawFiosTexts(uint maxw, int top = 27)
 {
 	static const char *path = NULL;
 	static StringID str = STR_4006_UNABLE_TO_READ_DRIVE;
@@ -1408,8 +1409,8 @@ static void DrawFiosTexts(uint maxw)
 	}
 
 	if (str != STR_4006_UNABLE_TO_READ_DRIVE) SetDParam(0, tot);
-	DrawString(2, 37, str, TC_FROMSTRING);
-	DoDrawStringTruncated(path, 2, 27, TC_BLACK, maxw);
+	DrawStringTruncated(2,top+10,str,TC_FROMSTRING,maxw);
+	DoDrawStringTruncated(path,2,top,TC_BLACK,maxw);
 }
 
 static void MakeSortedSaveGameList()
@@ -1538,7 +1539,39 @@ public:
 		}
 
 		this->FindWindowPlacementAndResize(desc);
+#ifdef N3DS
+		this->OnN3DSScreenChange(N3DSUpperUiActive());
+#endif
 	}
+
+#ifdef N3DS
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		this->n3ds_native_layout=true;
+		const bool saving=_saveload_mode==SLD_SAVE_GAME||_saveload_mode==SLD_SAVE_SCENARIO;
+		const bool content=_saveload_mode==SLD_LOAD_SCENARIO||_saveload_mode==SLD_LOAD_HEIGHTMAP;
+		const int width=upper?400:320,rows=saving?5:(content?6:7),bottom=58+rows*22-1;
+		bool changed=this->width!=width||this->height!=218;
+		this->width=width;this->height=218;this->vscroll.cap=rows;
+		N3DSWidgetRect(this,SLWW_SORT_BYNAME,0,width/2-1,14,35);
+		N3DSWidgetRect(this,SLWW_SORT_BYDATE,width/2,width-1,14,35);
+		N3DSWidgetRect(this,4,0,width-23,36,57);N3DSWidgetRect(this,5,0,width-1,58,217);
+		N3DSWidgetRect(this,SLWW_HOME_BUTTON,width-22,width-1,36,57);
+		N3DSWidgetRect(this,SLWW_DRIVES_DIRECTORIES_LIST,0,width-23,58,bottom);
+		N3DSWidgetRect(this,8,width-22,width-1,58,bottom);
+		if(saving){
+			N3DSWidgetRect(this,9,0,width-1,168,189);
+			N3DSWidgetRect(this,SLWW_SAVE_OSK_TITLE,3,width-4,168,189);
+			N3DSWidgetRect(this,SLWW_DELETE_SELECTION,0,width/2-1,190,211);
+			N3DSWidgetRect(this,SLWW_SAVE_GAME,width/2,width-1,190,211);this->HideWidget(13);
+		}else{
+			this->SetWidgetHiddenState(SLWW_CONTENT_DOWNLOAD,!content);
+			if(content)N3DSWidgetRect(this,SLWW_CONTENT_DOWNLOAD,0,width-1,190,211);
+			this->HideWidget(10);
+		}
+		Window::OnN3DSScreenChange(upper);if(changed)MarkWholeScreenDirty();
+	}
+#endif
 
 	virtual ~SaveLoadWindow()
 	{
@@ -1555,7 +1588,11 @@ public:
 
 		SetVScrollCount(this, _fios_items.Length());
 		this->DrawWidgets();
+		#ifdef N3DS
+		DrawFiosTexts(this->widget[4].right-4,this->widget[4].top+1);
+#else
 		DrawFiosTexts(this->width);
+#endif
 
 		if (_savegame_sort_dirty) {
 			_savegame_sort_dirty = false;
@@ -1566,13 +1603,29 @@ public:
 		GfxFillRect(widg->left + 1, widg->top + 1, widg->right, widg->bottom, 0xD7);
 		this->DrawSortButtonState(_savegame_sort_order & SORT_BY_NAME ? SLWW_SORT_BYNAME : SLWW_SORT_BYDATE, _savegame_sort_order & SORT_DESCENDING ? SBS_DOWN : SBS_UP);
 
-		y = widg->top + 1;
+		y = widg->top +
+#ifdef N3DS
+6;
+#else
+1;
+#endif
 		for (uint pos = this->vscroll.pos; pos < _fios_items.Length(); pos++) {
 			const FiosItem *item = _fios_items.Get(pos);
 
-			DoDrawStringTruncated(item->title, 4, y, _fios_colours[item->type], this->width - 18);
-			y += 10;
-			if (y >= this->vscroll.cap * 10 + widg->top + 1) break;
+			DoDrawStringTruncated(item->title, 4, y, _fios_colours[item->type], widg->right-widg->left-7);
+			y +=
+#ifdef N3DS
+22;
+#else
+10;
+#endif
+			if (y >= this->vscroll.cap *
+#ifdef N3DS
+22 + widg->top + 6
+#else
+10 + widg->top + 1
+#endif
+) break;
 		}
 
 		if (_saveload_mode == SLD_SAVE_GAME || _saveload_mode == SLD_SAVE_SCENARIO) {
@@ -1604,7 +1657,12 @@ public:
 				break;
 
 			case SLWW_DRIVES_DIRECTORIES_LIST: { // Click the listbox
+				#ifdef N3DS
+				int y=(pt.y-this->widget[widget].top)/22;
+				if(pt.y<this->widget[widget].top||y>=this->vscroll.cap)return;
+#else
 				int y = (pt.y - this->widget[widget].top - 1) / 10;
+#endif
 
 				if (y < 0 || (y += this->vscroll.pos) >= this->vscroll.count) return;
 

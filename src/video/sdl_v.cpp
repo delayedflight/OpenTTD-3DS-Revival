@@ -186,7 +186,7 @@ bool N3DSIsCanvasWindow(WindowClass cls)
 /** Several unrelated dialogs share WC_GAME_OPTIONS: inspect the window's layout. */
 bool N3DSUsesScrollableWorkspace(const Window *w)
 {
- return N3DSIsCanvasWindow(w->window_class)||(N3DSIsManagementWindow(w->window_class)&&!w->n3ds_native_layout);
+ return (N3DSIsCanvasWindow(w->window_class)||N3DSIsManagementWindow(w->window_class))&&!w->n3ds_native_layout;
 }
 
 bool N3DSUsesScreenPin(WindowClass cls)
@@ -225,7 +225,7 @@ static bool NativeN3DSOrdersRow(int y)
    if(y>=w->top&&y<w->top+w->height)return true;
    continue;
   }
-  if ((N3DSIsManagementWindow(w->window_class)||N3DSIsConstructionWindow(w->window_class)) && w->left >= 40 && w->left+w->width <= 360) {
+  if ((w->n3ds_native_layout||N3DSIsManagementWindow(w->window_class)||N3DSIsConstructionWindow(w->window_class)) && w->left >= 40 && w->left+w->width <= 360) {
    if (y >= w->top && y < w->top+w->height) return true;
    continue;
   }
@@ -265,7 +265,7 @@ static bool NativeN3DSToolbarRow(int y)
 static bool NativeN3DSTitle()
 {
  Window *w = N3DSFrontUi();
- return _game_mode == GM_MENU && w != NULL && (w->window_class == WC_SELECT_GAME || N3DSIsManagementWindow(w->window_class));
+ return _game_mode == GM_MENU && w != NULL && (w->window_class == WC_SELECT_GAME || w->n3ds_native_layout || N3DSIsManagementWindow(w->window_class));
 }
 
 void N3DSRequestStationPicker(bool begin)

@@ -2246,7 +2246,7 @@ void Window::OnN3DSScreenChange(bool upper)
   if(changed)MarkWholeScreenDirty();return;
  }
 
- if(!N3DSIsConstructionWindow(this->window_class)&&!N3DSIsManagementWindow(this->window_class))return;
+ if(!N3DSIsConstructionWindow(this->window_class)&&!N3DSIsManagementWindow(this->window_class)&&!this->n3ds_native_layout)return;
  if(this->window_class==WC_BUILD_VEHICLE || this->window_class==WC_VEHICLE_DEPOT) {
   const int target=upper?400:320;
   const int step=max(1,(int)this->resize.step_width);
@@ -2287,7 +2287,7 @@ static void LayoutN3DSToolbars()
    }
    w->width=width;w->height=14+((buttons+7)/8)*32;
   }
-  if(N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class)||(_game_mode==GM_NORMAL&&N3DSIsCanvasWindow(w->window_class)))w->OnN3DSScreenChange(upper);
+  if(w->n3ds_native_layout||N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class)||(_game_mode==GM_NORMAL&&N3DSIsCanvasWindow(w->window_class)))w->OnN3DSScreenChange(upper);
  }
  if(changed)MarkWholeScreenDirty();
 }

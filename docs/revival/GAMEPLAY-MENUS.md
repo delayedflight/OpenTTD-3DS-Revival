@@ -1,4 +1,4 @@
-# Gameplay menu coverage — r3k
+# Gameplay menu coverage — r3l
 
 | Menu family | Handling |
 | --- | --- |
@@ -8,9 +8,11 @@
 | Town details and local authority | Native content; edge scrollbars when needed |
 | Graphs, legends, performance and league tables | Native graph/table proportions; edge scrollbars; Key and other header controls preserved |
 | World map, extra viewport, signs and land information | Native rendering and viewport translation; edge scrollbars as needed |
-| News, history, message options, subsidies | Shared native workspace; news animation yields position control |
+| News popups | Dedicated bottom-anchored native cards; resized camera views |
+| History, message options, subsidies | Shared native workspace; news animation yields position control |
 | Timetables, refit, replacement, waypoint details and previews | Shared native workspace |
-| Save/load, text entry, confirmations and on-screen keyboard windows | Shared native workspace; existing commands retained |
+| Save/load | Dedicated native browser in title/gameplay with 22-pixel rows |
+| Text entry, confirmations and on-screen keyboard windows | Shared native workspace; existing commands retained |
 | NewGRF and AI configuration/debug | Shared native workspace, including settings-class variants |
 | Music controls, playlists and transparency | Shared native workspace; existing audio capabilities unchanged |
 | Network/client/password/status dialogs | Shared layout route; original networking availability unchanged |

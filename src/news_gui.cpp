@@ -8,6 +8,7 @@
 #include "window_gui.h"
 #include "n3ds_ui.h"
 #include "viewport_func.h"
+#include "zoom_func.h"
 #include "news_type.h"
 #include "settings_type.h"
 #include "transparency.h"
@@ -50,15 +51,37 @@ static void DrawNewsBankrupcy(Window *w, const NewsItem *ni)
 {
 	const CompanyNewsInformation *cni = (const CompanyNewsInformation*)ni->free_data;
 
-	DrawCompanyManagerFace(cni->face, cni->colour, 2, 23);
-	GfxFillRect(3, 23, 3 + 91, 23 + 118, PALETTE_TO_STRUCT_GREY, FILLRECT_RECOLOUR);
+	DrawCompanyManagerFace(cni->face, cni->colour, 2,
+#ifdef N3DS
+35
+#else
+23
+#endif
+);
+	GfxFillRect(3,
+#ifdef N3DS
+35,3+91,35+118,
+#else
+23,3+91,23+118,
+#endif
+ PALETTE_TO_STRUCT_GREY, FILLRECT_RECOLOUR);
 
 	SetDParamStr(0, cni->president_name);
-	DrawStringMultiCenter(49, 148, STR_JUST_RAW_STRING, 94);
+	DrawStringMultiCenter(49,
+#ifdef N3DS
+171,
+#else
+148,
+#endif
+ STR_JUST_RAW_STRING, 94);
 
 	switch (ni->subtype) {
 		case NS_COMPANY_TROUBLE:
-			DrawStringCentered(w->width >> 1, 1, STR_7056_TRANSPORT_COMPANY_IN_TROUBLE, TC_FROMSTRING);
+			#ifdef N3DS
+			DrawStringMultiCenter(w->width>>1,14,STR_7056_TRANSPORT_COMPANY_IN_TROUBLE,w->width-48);
+#else
+			DrawStringCentered(w->width>>1,1,STR_7056_TRANSPORT_COMPANY_IN_TROUBLE,TC_FROMSTRING);
+#endif
 
 			SetDParam(0, ni->params[2]);
 
@@ -70,7 +93,11 @@ static void DrawNewsBankrupcy(Window *w, const NewsItem *ni)
 			break;
 
 		case NS_COMPANY_MERGER:
-			DrawStringCentered(w->width >> 1, 1, STR_7059_TRANSPORT_COMPANY_MERGER, TC_FROMSTRING);
+			#ifdef N3DS
+			DrawStringMultiCenter(w->width>>1,14,STR_7059_TRANSPORT_COMPANY_MERGER,w->width-48);
+#else
+			DrawStringCentered(w->width>>1,1,STR_7059_TRANSPORT_COMPANY_MERGER,TC_FROMSTRING);
+#endif
 			SetDParam(0, ni->params[2]);
 			SetDParam(1, ni->params[3]);
 			SetDParam(2, ni->params[4]);
@@ -82,7 +109,11 @@ static void DrawNewsBankrupcy(Window *w, const NewsItem *ni)
 			break;
 
 		case NS_COMPANY_BANKRUPT:
-			DrawStringCentered(w->width >> 1, 1, STR_705C_BANKRUPT, TC_FROMSTRING);
+			#ifdef N3DS
+			DrawStringMultiCenter(w->width>>1,14,STR_705C_BANKRUPT,w->width-48);
+#else
+			DrawStringCentered(w->width>>1,1,STR_705C_BANKRUPT,TC_FROMSTRING);
+#endif
 			SetDParam(0, ni->params[2]);
 			DrawStringMultiCenter(
 				((w->width - 101) >> 1) + 98,
@@ -92,7 +123,11 @@ static void DrawNewsBankrupcy(Window *w, const NewsItem *ni)
 			break;
 
 		case NS_COMPANY_NEW:
-			DrawStringCentered(w->width >> 1, 1, STR_705E_NEW_TRANSPORT_COMPANY_LAUNCHED, TC_FROMSTRING);
+			#ifdef N3DS
+			DrawStringMultiCenter(w->width>>1,14,STR_705E_NEW_TRANSPORT_COMPANY_LAUNCHED,w->width-48);
+#else
+			DrawStringCentered(w->width>>1,1,STR_705E_NEW_TRANSPORT_COMPANY_LAUNCHED,TC_FROMSTRING);
+#endif
 			SetDParam(0, ni->params[2]);
 			SetDParam(1, ni->params[3]);
 			DrawStringMultiCenter(
@@ -183,6 +218,39 @@ struct NewsWindow : Window {
 		this->FindWindowPlacementAndResize(desc);
 	}
 
+#ifdef N3DS
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		this->n3ds_native_layout=true;
+		NewsMode mode=_news_subtype_data[this->ni->subtype].display_mode;
+		int width=upper?400:320,height=mode==NM_NORMAL?218:(mode==NM_THIN?164:128);
+		bool changed=this->width!=width||this->height!=height;
+		this->width=width;this->height=height;
+		if(mode==NM_NORMAL||mode==NM_THIN){
+			N3DSWidgetRect(this,0,0,width-1,0,height-1);N3DSWidgetRect(this,1,0,21,0,21);
+		}else{
+			N3DSWidgetRect(this,0,0,width-1,14,height-1);N3DSWidgetRect(this,1,0,21,0,13);
+			N3DSWidgetRect(this,2,22,width-1,0,13);N3DSWidgetRect(this,3,2,width-3,16,92);
+		}
+		Window::OnN3DSScreenChange(upper);
+		/* Preserve the classic bottom-anchored notification placement. */
+		if(this->top!=240-height){this->top=240-height;changed=true;}
+
+		if(this->viewport!=NULL){
+			int top=(mode==NM_NORMAL||mode==NM_THIN)?80:17;
+			int view_height=(mode==NM_NORMAL||mode==NM_THIN)?height-top-2:75;
+			ViewportData *vp=this->viewport;int vw=ScaleByZoom(width-4,vp->zoom),vh=ScaleByZoom(view_height,vp->zoom);
+			if(vp->width!=width-4||vp->height!=view_height){
+				int dx=(vp->virtual_width-vw)/2,dy=(vp->virtual_height-vh)/2;
+				vp->scrollpos_x+=dx;vp->dest_scrollpos_x+=dx;vp->virtual_left+=dx;
+				vp->scrollpos_y+=dy;vp->dest_scrollpos_y+=dy;vp->virtual_top+=dy;changed=true;
+			}
+			vp->left=this->left+2;vp->top=this->top+top;vp->width=width-4;vp->height=view_height;vp->virtual_width=vw;vp->virtual_height=vh;
+		}
+		if(changed)MarkWholeScreenDirty();
+	}
+#endif
+
 	void DrawNewsBorder()
 	{
 		int left = 0;
@@ -217,11 +285,16 @@ struct NewsWindow : Window {
 				DrawString(2, 1, STR_00C6, TC_FROMSTRING);
 
 				SetDParam(0, this->ni->date);
-				DrawStringRightAligned(428, 1, STR_01FF, TC_FROMSTRING);
+				DrawStringRightAligned(this->width-2, 1, STR_01FF, TC_FROMSTRING);
 
 				if (!(this->ni->flags & NF_VIEWPORT)) {
 					CopyInDParam(0, this->ni->params, lengthof(this->ni->params));
-					DrawStringMultiCenter(215, display_mode == NM_NORMAL ? 76 : 56,
+					DrawStringMultiCenter(this->width/2,
+#ifdef N3DS
+						this->height/2,
+#else
+						display_mode == NM_NORMAL ? 76 : 56,
+#endif
 						this->ni->string_id, this->width - 4);
 				} else {
 					/* Back up transparency options to draw news view */
@@ -238,7 +311,13 @@ struct NewsWindow : Window {
 					);
 
 					CopyInDParam(0, this->ni->params, lengthof(this->ni->params));
-					DrawStringMultiCenter(this->width / 2, 20, this->ni->string_id, this->width - 4);
+					DrawStringMultiCenter(this->width / 2,
+#ifdef N3DS
+44,
+#else
+20,
+#endif
+this->ni->string_id, this->width - 4);
 				}
 				break;
 			}
@@ -247,11 +326,21 @@ struct NewsWindow : Window {
 				this->DrawWidgets();
 				if (!(this->ni->flags & NF_VIEWPORT)) {
 					CopyInDParam(0, this->ni->params, lengthof(this->ni->params));
-					DrawStringMultiCenter(140, 38, this->ni->string_id, 276);
+					DrawStringMultiCenter(this->width/2,
+#ifdef N3DS
+						71,
+#else
+						38,
+#endif
+						this->ni->string_id,this->width-4);
 				} else {
 					this->DrawViewport();
 					CopyInDParam(0, this->ni->params, lengthof(this->ni->params));
-					DrawStringMultiCenter(this->width / 2, this->height - 16, this->ni->string_id, this->width - 4);
+					#ifdef N3DS
+					DrawStringMultiLine(6,96,this->ni->string_id,this->width-12,this->height-98);
+#else
+					DrawStringMultiCenter(this->width/2,this->height-16,this->ni->string_id,this->width-4);
+#endif
 				}
 				break;
 		}
@@ -306,7 +395,7 @@ struct NewsWindow : Window {
 	{
 		#ifdef N3DS
 		/* The native workspace owns position while the player reads or scrolls. */
-		if (_game_mode==GM_NORMAL && N3DSUsesScrollableWorkspace(this)) return;
+		if (_game_mode==GM_NORMAL && (this->n3ds_native_layout||N3DSUsesScrollableWorkspace(this))) return;
 #endif
 		/* Scroll up newsmessages from the bottom in steps of 4 pixels */
 		int y = max(this->top - 4, _screen.height - this->height - 12 - this->chat_height);
@@ -402,6 +491,10 @@ static void ShowNewspaper(NewsItem *ni)
 			}
 			break;
 	}
+#ifdef N3DS
+	w->OnN3DSScreenChange(N3DSUpperUiActive());
+#endif
+
 }
 
 /** Show news item in the ticker */

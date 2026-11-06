@@ -13,7 +13,7 @@ cpp=r'''#include <cassert>
 using std::min;
 enum{WC_MAIN_WINDOW=1,WC_STATUS_BAR,WC_TOOLTIPS,WC_DROPDOWN_MENU,WC_VEHICLE_VIEW,WC_VEHICLE_ORDERS,WC_VEHICLE_DETAILS,WC_TRAINS_LIST,WC_ROADVEH_LIST,WC_SHIPS_LIST,WC_AIRCRAFT_LIST,WC_OTHER};
 const int GM_NORMAL=1;int _game_mode=GM_NORMAL;struct Window;bool N3DSUsesScrollableWorkspace(const Window*){return false;}bool N3DSIsCanvasWindow(int){return false;}bool N3DSIsManagementWindow(int){return false;}bool N3DSIsConstructionWindow(int){return false;}
-struct Window{int window_class,left,width,top,height;Window*z_back;};Window*_z_front_window;
+struct Window{int window_class,left,width,top,height;Window*z_back;bool n3ds_native_layout;};Window*_z_front_window;
 #define FOR_ALL_WINDOWS_FROM_FRONT(w) for(w=_z_front_window;w!=nullptr;w=w->z_back)
 '''+block(s,'static bool NativeN3DSOrdersRow(int y)')+r'''
 struct Point{int x,y;};struct Viewport{int left=3,top=44,width=226,height=100,virtual_width=226,virtual_height=100;};
