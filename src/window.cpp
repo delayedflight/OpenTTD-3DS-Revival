@@ -2437,6 +2437,14 @@ int PositionMainToolbar(Window *w)
 		w = FindWindowById(WC_MAIN_TOOLBAR, 0);
 	}
 
+#ifdef N3DS
+	if (_game_mode == GM_NORMAL && w != NULL) {
+		w->width = 320;
+		w->left = 40;
+		SetDirtyBlocks(0, 0, _screen.width, w->height);
+		return w->left;
+	}
+#endif
 	switch (_settings_client.gui.toolbar_pos) {
 		case 1:  w->left = (_screen.width - w->width) / 2; break;
 		case 2:  w->left = _screen.width - w->width; break;

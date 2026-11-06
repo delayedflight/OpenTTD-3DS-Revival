@@ -144,3 +144,11 @@ python3 source/docs/revival/tests/inspection-exit.py /tmp/openttd-inspection-che
 ```
 
 It extracts the actual cursor-selection, centring and X/SELECT handler bodies and checks cancellation before release, independent UI/map cursor storage, both toggle buttons, status-bar-aware centring and the title-menu guard with sanitizers.
+
+## r3e native toolbar row
+
+The gameplay main toolbar is 320 pixels wide at logical x=40, with 14 buttons on each of the original two pages. Its 22-pixel strip is copied from x=40 at 1:1 instead of resampling 400→320. Touch input in that strip adds 40 to physical x; input elsewhere retains its prior mapping. Thus sprite proportions and hit areas agree. Dropdowns below the strip remain in the fitted desktop, so their horizontal anchor converts the native button position back to desktop coordinates. The title screen, construction bars, vehicle windows and upper map retain their prior mapping. Icons remain original pixel art, with no added height or second toolbar row.
+
+Rows covered by a foreground dialog temporarily use the regular desktop mapping to avoid a scaling seam through that dialog. The native-strip predicate checks front-to-back window order for this case. The host toolbar regression includes overlapping-dialog and below-toolbar cases. Reproduce with `python3 source/docs/revival/tests/native-toolbar.py /tmp/openttd-native-toolbar`.
+
+The native toolbar was visually checked after loading a disposable Flufingwell copy in Azahar's original-3DS configuration. Both-page geometry and touch coverage are host-tested; physical stylus operation still needs hardware confirmation. The last dialog-occlusion guard is host-tested and compiled, rather than visually exercised through a large dialog.

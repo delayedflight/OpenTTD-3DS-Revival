@@ -927,6 +927,10 @@ static void SplitToolbar(Window *w)
 	static const byte *arrangements[] = { arrange14, arrange15, arrange16, arrange17, arrange18, arrange19 };
 
 	uint max_icons = max(TBP_TOOLBAR_MINBUTTON, (ToolBarProperties)((w->width + TBP_BUTTONWIDTH / 2) / TBP_BUTTONWIDTH));
+#ifdef N3DS
+	/* Rounding to fifteen would squeeze 22-pixel sprites into 21-pixel cells. */
+	if (w->width == 320) max_icons = TBP_TOOLBAR_MINBUTTON;
+#endif
 
 	assert(max_icons >= TBP_TOOLBAR_MINBUTTON && max_icons <= TBP_NORMAL_MAXBUTTON);
 
@@ -1119,6 +1123,11 @@ struct MainToolbarWindow : Window {
 
 	virtual void OnResize(Point new_size, Point delta)
 	{
+#ifdef N3DS
+		/* Fourteen full-size buttons, with the original two-page switcher. */
+		this->width = 320;
+		this->left = 40;
+#endif
 		if (this->width <= TBP_NORMAL_MAXBUTTON * TBP_BUTTONWIDTH) {
 			SplitToolbar(this);
 		} else {

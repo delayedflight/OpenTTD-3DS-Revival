@@ -115,6 +115,22 @@ static Window *N3DSFrontUi()
 }
 static Window *_map_ui_front;
 
+/** The main icon row is copied at 1:1; the remaining desktop keeps its fit. */
+static bool NativeN3DSToolbarRow(int y)
+{
+ if (_game_mode != GM_NORMAL) return false;
+ const Window *w = FindWindowById(WC_MAIN_TOOLBAR, 0);
+ if (w == NULL || w->left != 40 || w->width != 320 || y < w->top || y >= w->top + w->height) return false;
+ /* Large dialogs may cover the toolbar: keep their rows consistently fitted. */
+ const Window *v;
+ FOR_ALL_WINDOWS_FROM_FRONT(v) {
+  if (v == w) break;
+  if (v->window_class == WC_MAIN_WINDOW || v->window_class == WC_STATUS_BAR) continue;
+  if (y >= v->top && y < v->top + v->height && v->left < 360 && v->left + v->width > 40) return false;
+ }
+ return true;
+}
+
 static bool NativeN3DSTitle()
 {
  Window *w = N3DSFrontUi();
@@ -165,7 +181,7 @@ static void DrawN3DSPanel()
 		for (int y = 0; y < 240; y++) {
 			const byte *src = (const byte *)_ui_surface->pixels + y * _ui_surface->pitch;
 			byte *dst = (byte *)_sdl_screen->pixels + (y + 240) * _sdl_screen->pitch + 40 * bytes;
-			if (native_title) {
+			if (native_title || NativeN3DSToolbarRow(y)) {
     memcpy(dst, src + 40 * bytes, 320 * bytes);
    } else if (bytes == 1) {
     for (int x = 0; x < 320; x++) dst[x] = src[x * 5 / 4];
@@ -206,7 +222,7 @@ static void MoveN3DSTouch(int x, int y)
 			_n3ds_map_cursor = _cursor.pos;
 		}
 	} else {
-		int nx = max(0, min(399, NativeN3DSTitle() ? x + 40 : x * 400 / 320));
+		int nx = max(0, min(399, (NativeN3DSTitle() || NativeN3DSToolbarRow(y)) ? x + 40 : x * 400 / 320));
 		int ny = max(0, min(239, y));
 		_cursor.delta.x = nx - _cursor.pos.x;
 		_cursor.delta.y = ny - _cursor.pos.y;

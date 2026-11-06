@@ -304,8 +304,15 @@ void ShowDropDownList(Window *w, DropDownList *list, int selected, int button, u
 
 	if (auto_width) width = max(width, max_item_width);
 
+	int left = w->left + wi->left;
+#ifdef N3DS
+	/* The native toolbar sits above the horizontally fitted dialog desktop. */
+	if (w->window_class == WC_MAIN_TOOLBAR && w->width == 320 && w->left == 40) {
+		left = wi->left * 400 / 320;
+	}
+#endif
 	DropdownWindow *dw = new DropdownWindow(
-		w->left + wi->left,
+		left,
 		top,
 		width,
 		height + 4,
