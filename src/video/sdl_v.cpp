@@ -614,7 +614,7 @@ static int PollEvent()
 		case SDL_JOYBUTTONDOWN:
 		case SDL_JOYBUTTONUP: {
 			bool down = ev.type == SDL_JOYBUTTONDOWN;
-			if (N3DSBuildButtons::Recognises(ev.jbutton.button)) {
+			if (N3DSBuildButtons::Recognises(ev.jbutton.button, _map_pad)) {
     if (_game_mode == GM_MENU && down) break;
     const bool was_held = _build_buttons.Held();
     _build_buttons.Set(ev.jbutton.button, down);
@@ -645,7 +645,8 @@ static int PollEvent()
 						_panel_needs_draw = true;
 						MarkWholeScreenDirty();
 						break;
-					case 4: HandleKeypress(uint32(WKC_MINUS) << 16); break; // Y: zoom out
+					case 5: HandleKeypress(uint32(WKC_MINUS) << 16); break; // Normal mode: L zooms out.
+     case 4: if (_map_pad) HandleKeypress(uint32(WKC_MINUS) << 16); break; // Construction: Y zooms out.
 					case 6: HandleKeypress(uint32(WKC_EQUALS) << 16); break;
 					case 0: if (_game_mode != GM_MENU) HandleKeypress(uint32(WKC_PAUSE) << 16); break;
 				}

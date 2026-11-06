@@ -4,6 +4,11 @@
 #include <iostream>
 int main()
 {
+ assert(N3DSBuildButtons::Recognises(1, false));
+ assert(!N3DSBuildButtons::Recognises(5, false));
+ assert(N3DSBuildButtons::Recognises(5, true));
+ assert(!N3DSBuildButtons::Recognises(4, true));
+ assert(!N3DSBuildButtons::Recognises(6, false));
  N3DSBuildButtons b;
  assert(!b.Held());
  b.Set(5, true); assert(b.Held()); // L alone starts a build gesture.

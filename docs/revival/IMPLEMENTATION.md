@@ -1,10 +1,10 @@
 # OpenTTD 3DS Revival implementation guide
 
-This guide describes the r3b control refinement of the r3a repair, based on EnergeticBark/OpenTTD-3DS v1.0.1, OpenTTD 0.7.0. The tested r1b repair and r2 UI prototype are preserved separately. r3 needs independent physical-console validation.
+This guide describes the r3c mode-sensitive control refinement of the r3a repair, based on EnergeticBark/OpenTTD-3DS v1.0.1, OpenTTD 0.7.0. The tested r1b repair and r2 UI prototype are preserved separately. r3 needs independent physical-console validation.
 
 ## Build and project layout
 
-The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3b/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
+The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3c/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
 
 The upstream checkout, the r1b source, and r2 source are kept separately in the development project. Private saves and crash dumps are local evidence, not release assets. Never test against the user's only save or write a release directly onto their SD card.
 
@@ -40,7 +40,7 @@ The map and UI retain separate cursor positions. During gameplay, `N3DSMapCursor
 
 The cursor backup buffer records its owning surface in `_n3ds_cursor_surface`. Undrawing must restore the pixels to that surface, not whichever destination is currently selected. A mode change forces a cursor redraw even if it has not moved. Before a video-mode change, the previous cursor is undrawn before SDL frees either backing surface. This prevents title/game transitions and resolution changes from restoring stale cursor pixels to the wrong screen.
 
-B sends Escape (cancel placement); R zooms in and Y zooms out using the existing shortcuts; START toggles pause. L no longer zooms out. These reuse OpenTTD's handlers rather than introducing parallel construction commands. SDL's 3DS joystick button numbers are used here, not raw HID key bit positions.
+B sends Escape (cancel placement) and START toggles pause. In normal tools/windows mode L/R zoom out/in. In map-pad mode L builds, R zooms in and Y zooms out using the existing shortcuts. These reuse OpenTTD's handlers rather than introducing parallel construction commands. SDL's 3DS joystick button numbers are used here, not raw HID key bit positions.
 
 ## Scrolling
 
@@ -110,3 +110,9 @@ clang++ -std=c++11 -fsanitize=address,undefined source/docs/revival/tests/build-
 ```
 
 It verifies independent/overlapping A/L presses, both release orders, duplicate key events, mode reset and zoom-button isolation. The SDL event path preserves the mouse-click latch when the stylus lifts while a build button remains held. Hardware testing should explicitly include reanchoring the stylus mid-drag and releasing L to commit a road/rail segment.
+
+## r3c mode-sensitive shoulder controls
+
+X/SELECT explicitly selects the control scheme; the selected construction tool does not determine it. In normal tools/windows mode, L zooms out and R zooms in. In map-pad mode, L becomes click/hold, A remains an alternative, R zooms in and Y zooms out. Switching back restores L zoom-out. Y has no zoom action in normal mode.
+
+The shared-button classifier receives `_map_pad`. Switching modes still resets the held-button mask and mouse latch before selecting the new layer, so a shoulder held across the toggle cannot become an unintended build press. Popup-driven returns to the UI also restore normal shoulder behaviour after the final build button is released. Scaling and renderer code are unchanged.
