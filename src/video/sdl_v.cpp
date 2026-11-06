@@ -5,6 +5,7 @@
 #ifdef WITH_SDL
 
 #include "../stdafx.h"
+#include "../n3ds_bootlog.h"
 #include "../openttd.h"
 #include "../gfx_func.h"
 #include "../sdl.h"
@@ -440,20 +441,26 @@ const char *VideoDriver_SDL::Start(const char * const *parm)
 	#else
 	const char *s = SdlOpen(SDL_INIT_VIDEO|SDL_INIT_JOYSTICK);
 	#endif /* N3DS */ 
+	N3DSBootLog(false, "SDL init: %s", s == NULL ? "ready" : s);
 	if (s != NULL) return s;
 
 	SDL_CALL SDL_VideoDriverName(buf, 30);
 	DEBUG(driver, 1, "SDL: using driver '%s'", buf);
 
 	GetVideoModes();
-	CreateMainSurface(_cur_resolution.width, _cur_resolution.height);
+	N3DSBootLog(false, "Creating SDL surface %dx%d", _cur_resolution.width, _cur_resolution.height);
+	if (!CreateMainSurface(_cur_resolution.width, _cur_resolution.height)) {
+		N3DSBootLog(false, "SDL surface failed: %s", SDL_GetError());
+		return "Could not create SDL surface";
+	}
+	N3DSBootLog(false, "SDL surface ready");
 	MarkWholeScreenDirty();
 
 	SDL_CALL SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 	SDL_CALL SDL_EnableUNICODE(1);
 	
 	#ifdef N3DS
-	printf("**** Starting OpenTTD 0.7.0 ****\n");
+	printf("**** OpenTTD 0.7.0 revival r1b diagnostic ****\n");
 	printf("Don't worry if you get a \"Game Load Failed\" error.That's just the title screen savegame.\n\n");
 	// Enable the 3DS's controls to be used as a joystick.
 	_3ds_joystick = SDL_JoystickOpen(0);
@@ -469,6 +476,7 @@ void VideoDriver_SDL::Stop()
 
 void VideoDriver_SDL::MainLoop()
 {
+	N3DSBootLog(false, "Entering game loop");
 	uint32 cur_ticks = SDL_CALL SDL_GetTicks();
 	uint32 last_cur_ticks = cur_ticks;
 	uint32 next_tick = cur_ticks + 30;

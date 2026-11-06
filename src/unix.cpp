@@ -3,6 +3,7 @@
 /** @file unix.cpp Implementation of Unix specific file handling. */
 
 #include "stdafx.h"
+#include "n3ds_bootlog.h"
 #include "openttd.h"
 #include "variables.h"
 #include "textbuf_gui.h"
@@ -234,6 +235,9 @@ void cocoaReleaseAutoreleasePool();
 int CDECL main(int argc, char *argv[])
 {
 	int ret;
+#ifdef N3DS
+	N3DSPrepareStartup(argc, argv);
+#endif
 
 #ifdef WITH_COCOA
 	cocoaSetupAutoreleasePool();
@@ -254,6 +258,7 @@ int CDECL main(int argc, char *argv[])
 	cocoaReleaseAutoreleasePool();
 #endif
 
+	N3DSBootLog(false, "main returning: %d", ret);
 	return ret;
 }
 

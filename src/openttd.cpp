@@ -3,6 +3,7 @@
 /** @file openttd.cpp Functions related to starting OpenTTD. */
 
 #include "stdafx.h"
+#include "n3ds_bootlog.h"
 
 #define VARDEF
 #include "variables.h"
@@ -85,16 +86,15 @@ void CDECL usererror(const char *s, ...)
 	va_list va;
 	char buf[512];
 
-	// 3DS DEBUGGING
-	#ifdef N3DS
-	FILE *file = fopen("ottd_fatal_user.txt","w");
-	fputs(s, file);
-	fclose(file);
-	#endif
-
 	va_start(va, s);
 	vsnprintf(buf, lengthof(buf), s, va);
 	va_end(va);
+
+	N3DSBootLog(false, "Fatal: %s", buf);
+#ifdef N3DS
+	FILE *file = fopen("ottd_fatal_user.txt", "w");
+	if (file != NULL) { fputs(buf, file); fclose(file); }
+#endif
 
 	ShowOSErrorBox(buf, false);
 	if (_video_driver != NULL) _video_driver->Stop();
@@ -112,16 +112,15 @@ void CDECL error(const char *s, ...)
 	va_list va;
 	char buf[512];
 
-	// 3DS DEBUGGING
-	#ifdef N3DS
-	FILE *file = fopen("ottd_fatal.txt","w");
-	fputs(s, file);
-	fclose(file);
-	#endif
-
 	va_start(va, s);
 	vsnprintf(buf, lengthof(buf), s, va);
 	va_end(va);
+
+	N3DSBootLog(false, "Fatal: %s", buf);
+#ifdef N3DS
+	FILE *file = fopen("ottd_fatal.txt", "w");
+	if (file != NULL) { fputs(buf, file); fclose(file); }
+#endif
 
 	ShowOSErrorBox(buf, true);
 	if (_video_driver != NULL) _video_driver->Stop();
@@ -533,8 +532,11 @@ int ttd_main(int argc, char *argv[])
 	SetDebugString("4");
 #endif
 
+	N3DSBootLog(false, "Determining paths");
 	DeterminePaths(argv[0]);
+	N3DSBootLog(false, "Scanning graphics sets");
 	FindGraphicsSets();
+	N3DSBootLog(false, "Graphics scan complete");
 
 #if defined(UNIX) && !defined(__MORPHOS__)
 	/* We must fork here, or we'll end up without some resources we need (like sockets) */
@@ -544,6 +546,7 @@ int ttd_main(int argc, char *argv[])
 
 	AI::Initialize();
 	LoadFromConfig();
+	N3DSBootLog(false, "Configuration loaded");
 	AI::Uninitialize(true);
 	CheckConfig();
 	LoadFromHighScore();
@@ -564,7 +567,9 @@ int ttd_main(int argc, char *argv[])
 #endif /* ENABLE_NETWORK */
 
 	/* enumerate language files */
+	N3DSBootLog(false, "Loading languages");
 	InitializeLanguagePacks();
+	N3DSBootLog(false, "Languages ready");
 
 	/* initialize screenshot formats */
 	InitializeScreenshotFormats();
@@ -574,11 +579,13 @@ int ttd_main(int argc, char *argv[])
 
 	/* initialize all variables that are allocated dynamically */
 	InitializeDynamicVariables();
+	N3DSBootLog(false, "Dynamic variables ready");
 
 	/* Sample catalogue */
 	DEBUG(misc, 1, "Loading sound effects...");
 	MxInitialize(11025);
 	SoundInitialize("sample.cat");
+	N3DSBootLog(false, "Sound catalogue ready");
 
 	/* Initialize FreeType */
 	InitFreeType();
@@ -593,6 +600,7 @@ int ttd_main(int argc, char *argv[])
 			usererror("Failed to select requested graphics set '%s'", graphics_set);
 	}
 
+	N3DSBootLog(false, "Graphics set selected");
 	/* Initialize game palette */
 	GfxInitPalettes();
 
@@ -605,6 +613,7 @@ int ttd_main(int argc, char *argv[])
 
 	DEBUG(driver, 1, "Loading drivers...");
 
+	N3DSBootLog(false, "Selecting sound driver");
 	if (sounddriver == NULL) sounddriver = _ini_sounddriver;
 	_sound_driver = (SoundDriver*)SoundDriverFactoryBase::SelectDriver(sounddriver, Driver::DT_SOUND);
 	if (_sound_driver == NULL) {
@@ -613,6 +622,7 @@ int ttd_main(int argc, char *argv[])
 			usererror("Failed to select requested sound driver '%s'", sounddriver);
 	}
 
+	N3DSBootLog(false, "Sound driver ready; selecting music driver");
 	if (musicdriver == NULL) musicdriver = _ini_musicdriver;
 	_music_driver = (MusicDriver*)MusicDriverFactoryBase::SelectDriver(musicdriver, Driver::DT_MUSIC);
 	if (_music_driver == NULL) {
@@ -621,6 +631,7 @@ int ttd_main(int argc, char *argv[])
 			usererror("Failed to select requested music driver '%s'", musicdriver);
 	}
 
+	N3DSBootLog(false, "Music driver ready; selecting video driver");
 	if (videodriver == NULL) videodriver = _ini_videodriver;
 	_video_driver = (VideoDriver*)VideoDriverFactoryBase::SelectDriver(videodriver, Driver::DT_VIDEO);
 	if (_video_driver == NULL) {
@@ -629,6 +640,7 @@ int ttd_main(int argc, char *argv[])
 			usererror("Failed to select requested video driver '%s'", videodriver);
 	}
 
+	N3DSBootLog(false, "Video driver ready");
 	_savegame_sort_order = SORT_BY_DATE | SORT_DESCENDING;
 	/* Initialize the zoom level of the screen to normal */
 	_screen.zoom = ZOOM_LVL_NORMAL;
