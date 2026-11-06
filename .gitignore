@@ -10,3 +10,22 @@ bundle/*
 config.*
 objs/*
 src/rev.cpp
+
+# Local revival artifacts and private evidence
+/.DS_Store
+**/.DS_Store
+/builds/
+/logs/
+/outputs/
+/work/
+/WAV Sample/
+*.sav
+*.scn
+*.dmp
+*.wav
+*.mp3
+*.cat
+*.3dsx
+*.elf
+__pycache__/
+*.pyc

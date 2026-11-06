@@ -1,0 +1,170 @@
+[
+  {
+    "release": "r1",
+    "commit": "dc189474c4cd978686ef8df265bade07e35a935f",
+    "tag": "revival-r1",
+    "source_archive": "outputs/releases/r1/source/OpenTTD-3DS-Revival-r1-source.tar.gz",
+    "source_sha256": "69a5c3de453d5c7c89f2904572f1574f9e4dcdaec48407fc79a48eff5582cfca",
+    "executable_sha256": "069ac836c051de147c54a3f49d3b2ba329f75993183fbba153d3538d1e63f546"
+  },
+  {
+    "release": "r1b",
+    "commit": "0cf132305a5bf4ff499cc26babfa878c0e49f45b",
+    "tag": "revival-r1b",
+    "source_archive": "outputs/releases/r1b/source/OpenTTD-3DS-Revival-r1b-source.tar.gz",
+    "source_sha256": "796ebe520cb87ce23b049b294d789e7dec93bb9205642be269479b867149de8f",
+    "executable_sha256": "6dcc255f5990d561bb4cff244e36ae6ea752e46daeb8f8f3871974719d2ab67f"
+  },
+  {
+    "release": "r2",
+    "commit": "8014dbad04436343098f7193f6085e583a5705b1",
+    "tag": "revival-r2",
+    "source_archive": "outputs/releases/r2/source/OpenTTD-3DS-Revival-r2-source.tar.gz",
+    "source_sha256": "6a642d4757c76f24f61cd8fdcaaaa0cd782fffa3a5627f8c4afa76153099708d",
+    "executable_sha256": "2d878448287e3638eaa761e2631926a2e6ae2644572a5444c590c8c2d2559ed6"
+  },
+  {
+    "release": "r3",
+    "commit": "b707f03f53b6a2c85d68ca928dc6e1807e3527b4",
+    "tag": "revival-r3",
+    "source_archive": "outputs/releases/r3/source/OpenTTD-3DS-Revival-r3-source.tar.gz",
+    "source_sha256": "c9b82e67118d39561ab9638062bedbc661b7c696e3da20fd4ed56e6c0226990c",
+    "executable_sha256": "7485452eae938441ac7bb197147caef1cd3472a3fc0cf1407344ec00302e45d7"
+  },
+  {
+    "release": "r3a",
+    "commit": "d2fc55af3245ad9f009bba8e82d5473e15575088",
+    "tag": "revival-r3a",
+    "source_archive": "outputs/releases/r3a/source/OpenTTD-3DS-Revival-r3a-source.tar.gz",
+    "source_sha256": "625ec1e11af1125ef380c91fe32ab42d48466884bc77c7689709dcd1fc038788",
+    "executable_sha256": "613ee27eed64c28338c8fdc846dc53b536f34368722f6260738719026a7254fa"
+  },
+  {
+    "release": "r3b",
+    "commit": "666b071bef7f6d727feb12022ab5c0e7a9ba1192",
+    "tag": "revival-r3b",
+    "source_archive": "outputs/releases/r3b/source/OpenTTD-3DS-Revival-r3b-source.tar.gz",
+    "source_sha256": "d13a6dfb578fec304f1a559a5b60fbab2e1a556a3469408a2cda201c8580948c",
+    "executable_sha256": "042c71b2a46740bb956e076ead9f90d831cb4c8a6b6f0957290b861c368fe795"
+  },
+  {
+    "release": "r3c",
+    "commit": "c900be6002129f688450930433b1d27cbfa93392",
+    "tag": "revival-r3c",
+    "source_archive": "outputs/releases/r3c/source/OpenTTD-3DS-Revival-r3c-source.tar.gz",
+    "source_sha256": "5321c64a8e4bde0d27b2ecbefab957555bd232747c8e8dce12cd3c0af558aa34",
+    "executable_sha256": "3d3581e93485180206a183515cca7c273437891dada5a9d612516c32f708cab6"
+  },
+  {
+    "release": "r3d",
+    "commit": "10cd4a6c2532ad2b92ae813c7f5307775fb3c73f",
+    "tag": "revival-r3d",
+    "source_archive": "outputs/releases/r3d/source/OpenTTD-3DS-Revival-r3d-source.tar.gz",
+    "source_sha256": "0956eaecaa812ea773f44d07ddc48e2faffc603dea4729d5111897bcc97f1c50",
+    "executable_sha256": "bcd320f65861ea369f54b2a56782ed9e01449986846ba091e46a2dd97ace2cf5"
+  },
+  {
+    "release": "r3e",
+    "commit": "2ba8299a34c6f0d81a6bf9f8408a1e6089ae1236",
+    "tag": "revival-r3e",
+    "source_archive": "outputs/releases/r3e/source/OpenTTD-3DS-Revival-r3e-source.tar.gz",
+    "source_sha256": "67a93dece0e6c32ba2a9b2d669cef4d2d88608c9ec12626d7a9d0bd786ca8c5e",
+    "executable_sha256": "b69fd815e94c24eec4921a9b88bb8a2939fc518e1cbcd9bd32c12c1cb3d51d35"
+  },
+  {
+    "release": "r3f",
+    "commit": "706db1d3c3764f3fc88756b4142a194f07b0e4af",
+    "tag": "revival-r3f",
+    "source_archive": "outputs/releases/r3f/source/OpenTTD-3DS-Revival-r3f-source.tar.gz",
+    "source_sha256": "6c14ac99e428cf6c4da65b6a6bb03aa140f3b4c805811128b5034a78cb5adeb4",
+    "executable_sha256": "25b9c08832c2ec59c4e8f5882a01e9b61a5d4f0a0e15d89535098abae8548de5"
+  },
+  {
+    "release": "r3g",
+    "commit": "5dd75942ce44031988ccb8441c220d5067db893e",
+    "tag": "revival-r3g",
+    "source_archive": "outputs/releases/r3g/source/OpenTTD-3DS-Revival-r3g-source.tar.gz",
+    "source_sha256": "a5ee5cff426f26c5115f4e8fd09921e20ab39c4fe6427c1cff26af9e7ae6233b",
+    "executable_sha256": "19c307d21aa9b032db57ff6f3bbad5469e05f789b218993fde1119da1d11c298"
+  },
+  {
+    "release": "r3h",
+    "commit": "d6c5e027f47bb30dc411f44f4bcd85a5dfd6d45e",
+    "tag": "revival-r3h",
+    "source_archive": "outputs/releases/r3h/source/OpenTTD-3DS-Revival-r3h-source.tar.gz",
+    "source_sha256": "cbda5ed8755abcfd71073e98471b0261a8cb10caa00c4712999f62ec93cecf05",
+    "executable_sha256": "c4af460b03a145ec82046ba191b01c9faf4ab6f7b4440f45367e2b1811cb264a"
+  },
+  {
+    "release": "r3i",
+    "commit": "e215f0920f7f96b5499cd7c1699ed4734b2ef644",
+    "tag": "revival-r3i",
+    "source_archive": "outputs/releases/r3i/source/OpenTTD-3DS-Revival-r3i-source.tar.gz",
+    "source_sha256": "cb3d0f72c1e5fb3234064d65ea5300d7ebf2c348df8237afa4d893831354f43c",
+    "executable_sha256": "1a906b3f5cee16e79a1e12ad0497b5adaf77e179f6d23dfea1de5b24d5ec328e"
+  },
+  {
+    "release": "r3j",
+    "commit": "aa5d2f1d8ed509cd30c9bfa4dc201f9cf1cae822",
+    "tag": "revival-r3j",
+    "source_archive": "outputs/releases/r3j/source/OpenTTD-3DS-Revival-r3j-source.tar.gz",
+    "source_sha256": "0b90daccc401b969db9e525834554e89a3f41b16237496625881510103c2d431",
+    "executable_sha256": "cbfe358fc002e35215920e4235ace760fe870709a571a37e1dde23ee56cb1168"
+  },
+  {
+    "release": "r3k",
+    "commit": "8951a012e8227e515633e0c6030c43c407b59964",
+    "tag": "revival-r3k",
+    "source_archive": "outputs/releases/r3k/source/OpenTTD-3DS-Revival-r3k-source.tar.gz",
+    "source_sha256": "bc7360f02350c607514ef2243f14e71f3f1b22bf62b652cd196b008124831356",
+    "executable_sha256": "f11d96211f4912ee57fe3aae99f0472f903beb207a24fd28162c74da7eda5d18"
+  },
+  {
+    "release": "r3l",
+    "commit": "656c01ce4d154b6822324fcacd3ed3c525942093",
+    "tag": "revival-r3l",
+    "source_archive": "outputs/releases/r3l/source/OpenTTD-3DS-Revival-r3l-source.tar.gz",
+    "source_sha256": "9940f1ceea9528f4abd87ae6f3aefbf3e8d45452e2c14b3b7ccf77fdf6e875b2",
+    "executable_sha256": "5e1f7662f1032aeda4df3794a36d8e0cfca895571a6e7c5d7b1fdf8eab375a4b"
+  },
+  {
+    "release": "r3m",
+    "commit": "9aa22171223d20ed7c004c937b790821218d7326",
+    "tag": "revival-r3m",
+    "source_archive": "outputs/releases/r3m/source/OpenTTD-3DS-Revival-r3m-source.tar.gz",
+    "source_sha256": "46fd69318a77d0a5561f6c070847b0cab9c31209605c4d06c39958c917e3f761",
+    "executable_sha256": "974704fe1f9d2cf06cd2736950265e4b29760c84e760d2e65342b9441556c66d"
+  },
+  {
+    "release": "r3n",
+    "commit": "18d97710dd4e800ca9b2c5b41ce9c2ff36c209be",
+    "tag": "revival-r3n",
+    "source_archive": "outputs/releases/r3n/source/OpenTTD-3DS-Revival-r3n-source.tar.gz",
+    "source_sha256": "bb9f8460e7506070f8dc6aaccf6bc94298c83c2ebd8794525ecdf655f5fe913c",
+    "executable_sha256": "c50634f1198c23ab6a2b0461a1bbc8a2d125af9ba5eca79fcc59bfdf2d27b09f"
+  },
+  {
+    "release": "r3o",
+    "commit": "ee5590fce72ff661d7e5a4b9bf3d3e0ce670b048",
+    "tag": "revival-r3o",
+    "source_archive": "outputs/releases/r3o/source/OpenTTD-3DS-Revival-r3o-source.tar.gz",
+    "source_sha256": "98f93196788223c41a2fbe82fbd09047f4dfeba37157d4ee28d1cedcefc6ef13",
+    "executable_sha256": "671d15a557a8674ff6b550970abc68bb3e92b21155c17f2badf99d04f62c6336"
+  },
+  {
+    "release": "r3p",
+    "commit": "6b54da961806c44f92eea6a282e090d4c732800f",
+    "tag": "revival-r3p",
+    "source_archive": "outputs/releases/r3p/source/OpenTTD-3DS-Revival-r3p-source.tar.gz",
+    "source_sha256": "22574253d5d8bd31680dd084bb68e059879fd6ef90e3ece23e6ae7d13086815e",
+    "executable_sha256": "51005f76866194a04ae5ed5a249263782e8d63ca0a012b4bb1d291c9d527d332"
+  },
+  {
+    "release": "r3q",
+    "commit": "d0f04159eaa124424d656dc486a23ea39beccd47",
+    "tag": "revival-r3q",
+    "source_archive": "outputs/releases/r3q/source/OpenTTD-3DS-Revival-r3q-source.tar.gz",
+    "source_sha256": "1637c7db23a27187ca363b94a5ebf3bbb86b9720973eb99e91769886151312fd",
+    "executable_sha256": "79dc5eccc7852f55700a5a76d0837a69edc0f123884c10e244f73b1997fd2717"
+  }
+]
