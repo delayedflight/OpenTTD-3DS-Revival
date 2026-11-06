@@ -59,7 +59,8 @@ Company::~Company()
 	if (CleaningPool()) return;
 
 	DeleteCompanyWindows(this->index);
-	this->name_1 = 0;
+	/* The pool reads this validity marker after destruction. */
+	const_cast<volatile uint16 &>(this->name_1) = 0;
 }
 
 /**

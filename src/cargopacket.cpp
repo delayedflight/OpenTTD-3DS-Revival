@@ -32,7 +32,8 @@ CargoPacket::CargoPacket(StationID source, uint16 count)
 
 CargoPacket::~CargoPacket()
 {
-	this->count = 0;
+	/* The pool reads this validity marker after destruction. */
+	const_cast<volatile uint16 &>(this->count) = 0;
 }
 
 bool CargoPacket::SameSource(const CargoPacket *cp) const

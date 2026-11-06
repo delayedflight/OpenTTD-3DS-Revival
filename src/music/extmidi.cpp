@@ -2,7 +2,7 @@
 
 /** @file extmidi.cpp Playing music via an external player. */
 
-#ifndef __MORPHOS__
+#if !defined(__MORPHOS__) && !defined(N3DS)
 #include "../stdafx.h"
 #include "../debug.h"
 #include "extmidi.h"

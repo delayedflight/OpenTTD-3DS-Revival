@@ -512,11 +512,13 @@ void VideoDriver_SDL::MainLoop()
 
 			/* determine which directional keys are down */
 			#ifdef N3DS
+			/* Current 3ds-sdl exposes the D-pad as a hat, not joystick buttons. */
+			const Uint8 dpad = SDL_JoystickGetHat(_3ds_joystick, 0);
 			_dirkeys =
-				(SDL_JoystickGetButton(_3ds_joystick, 9) ? 1 : 0) |
-				(SDL_JoystickGetButton(_3ds_joystick, 10) ? 2 : 0) |
-				(SDL_JoystickGetButton(_3ds_joystick, 11) ? 4 : 0) |
-				(SDL_JoystickGetButton(_3ds_joystick, 8) ? 8 : 0);
+				((dpad & SDL_HAT_LEFT)  ? 1 : 0) |
+				((dpad & SDL_HAT_UP)    ? 2 : 0) |
+				((dpad & SDL_HAT_RIGHT) ? 4 : 0) |
+				((dpad & SDL_HAT_DOWN)  ? 8 : 0);
 			#else
 			_dirkeys =
 				(keys[SDLK_LEFT]  ? 1 : 0) |
