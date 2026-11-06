@@ -803,7 +803,7 @@ static void AssignWidgetToWindow(Window *w, const Widget *widget)
 		for (const Widget *wi = widget; wi->type != WWT_LAST; wi++) index++;
 
 		#ifdef N3DS
-		bool canvas_pin=_game_mode==GM_NORMAL&&N3DSIsCanvasWindow(w->window_class);
+		bool canvas_pin=(_game_mode == GM_NORMAL || _game_mode == GM_EDITOR)&&N3DSIsCanvasWindow(w->window_class);
 		bool caption=false,header_control=false;
 		for(const Widget *wi=widget;wi->type!=WWT_LAST;wi++){
 			if(wi->type==WWT_CAPTION)caption=true;
@@ -2225,7 +2225,7 @@ void N3DSWidgetRect(Window *w, uint id, int l, int r, int t, int b)
 
 void Window::OnN3DSScreenChange(bool upper)
 {
- if(_game_mode==GM_NORMAL&&N3DSUsesScrollableWorkspace(this)){
+ if((_game_mode == GM_NORMAL || _game_mode == GM_EDITOR)&&N3DSUsesScrollableWorkspace(this)){
   const int width=N3DSMenuScrollBar::ViewWidth(this->height,upper);
   this->n3ds_canvas_x=Clamp(this->n3ds_canvas_x,0,max(0,this->width-width));
   this->n3ds_canvas_y=Clamp(this->n3ds_canvas_y,0,max(0,this->height-196));
@@ -2287,7 +2287,7 @@ static void LayoutN3DSToolbars()
    }
    w->width=width;w->height=14+((buttons+7)/8)*32;
   }
-  if(w->n3ds_native_layout||N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class)||(_game_mode==GM_NORMAL&&N3DSIsCanvasWindow(w->window_class)))w->OnN3DSScreenChange(upper);
+  if(w->n3ds_native_layout||N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class)||((_game_mode == GM_NORMAL || _game_mode == GM_EDITOR)&&N3DSIsCanvasWindow(w->window_class)))w->OnN3DSScreenChange(upper);
  }
  if(changed)MarkWholeScreenDirty();
 }
@@ -2522,7 +2522,7 @@ int PositionMainToolbar(Window *w)
 	}
 
 #ifdef N3DS
-	if (_game_mode == GM_NORMAL && w != NULL) {
+	if ((_game_mode == GM_NORMAL || _game_mode == GM_EDITOR) && w != NULL) {
 		w->width = 320;
 		w->left = 40;
 		SetDirtyBlocks(0, 0, _screen.width, w->height);

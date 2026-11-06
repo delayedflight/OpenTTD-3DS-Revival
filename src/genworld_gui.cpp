@@ -3,6 +3,7 @@
 /** @file genworld_gui.cpp GUI to configure and show progress during map generation. */
 
 #include "stdafx.h"
+#include "n3ds_ui.h"
 #include "openttd.h"
 #include "heightmap.h"
 #include "gui.h"
@@ -188,6 +189,7 @@ static const Widget _generate_landscape_widgets[] = {
 { WWT_PUSHTXTBTN, RESIZE_NONE, COLOUR_ORANGE, 163, 235, 206, 217, 0x0,                         STR_NORTHEAST},                          // GLAND_WATER_NE
 { WWT_PUSHTXTBTN, RESIZE_NONE, COLOUR_ORANGE, 163, 235, 218, 229, 0x0,                         STR_SOUTHEAST},                          // GLAND_WATER_SE
 { WWT_PUSHTXTBTN, RESIZE_NONE, COLOUR_ORANGE, 90, 162, 218, 229, 0x0,                         STR_SOUTHWEST},                          // GLAND_WATER_SW
+{WWT_IMGBTN,RESIZE_NONE,COLOUR_ORANGE,0,21,194,215,SPR_SWITCH_TOOLBAR,STR_EMPTY},
 {   WIDGETS_END},
 };
 #else
@@ -325,6 +327,9 @@ static const Widget _heightmap_load_widgets[] = {
 {       WWT_TEXT, RESIZE_NONE, COLOUR_ORANGE,  12, 110, 215, 225, STR_HEIGHTMAP_ROTATION,       STR_NULL},                              // GLAND_HEIGHTMAP_ROTATION_TEXT
 {   WWT_DROPDOWN, RESIZE_NONE, COLOUR_ORANGE, 114, 231, 214, 225, STR_0225,                     STR_NULL},                              // GLAND_HEIGHTMAP_ROTATION_PULLDOWN
 
+#ifdef N3DS
+{WWT_IMGBTN,RESIZE_NONE,COLOUR_ORANGE,0,21,194,215,SPR_SWITCH_TOOLBAR,STR_EMPTY},
+#endif
 {   WIDGETS_END},
 };
 
@@ -393,7 +398,49 @@ struct GenerateLandscapeWindow : public QueryStringBaseWindow {
 		this->mode = (glwp_modes)this->window_number;
 
 		this->FindWindowPlacementAndResize(desc);
+#ifdef N3DS
+		this->OnN3DSScreenChange(N3DSUpperUiActive());
+#endif
 	}
+
+#ifdef N3DS
+
+ int n3ds_page=0;
+ virtual void OnN3DSScreenChange(bool upper)
+ {
+  this->n3ds_native_layout=true;this->width=320;this->height=218;
+  const int page_button=this->widget_count-1;
+  for(int i=3;i<page_button;i++)this->SetWidgetHiddenState(i,true);
+  N3DSWidgetRect(this,2,0,319,14,217);
+  N3DSWidgetRect(this,page_button,4,35,194,215);this->SetWidgetHiddenState(page_button,false);
+  N3DSWidgetRect(this,GLAND_GENERATE_BUTTON,160,315,194,215);this->SetWidgetHiddenState(GLAND_GENERATE_BUTTON,false);
+  if(this->n3ds_page==0){
+   for(int i=0;i<4;i++){int id=GLAND_TEMPERATE+i;this->SetWidgetHiddenState(id,false);N3DSWidgetRect(this,id,3+i*79,79+i*79,17,71);}
+   int ids[]={GLAND_MAPSIZE_X_TEXT,GLAND_MAPSIZE_X_PULLDOWN,GLAND_MAPSIZE_Y_TEXT,GLAND_MAPSIZE_Y_PULLDOWN,GLAND_START_DATE_TEXT1,GLAND_START_DATE_DOWN,GLAND_START_DATE_TEXT,GLAND_START_DATE_UP,GLAND_SNOW_LEVEL_TEXT1,GLAND_SNOW_LEVEL_DOWN,GLAND_SNOW_LEVEL_TEXT,GLAND_SNOW_LEVEL_UP};
+   for(uint i=0;i<lengthof(ids);i++)this->SetWidgetHiddenState(ids[i],false);
+   N3DSWidgetRect(this,GLAND_MAPSIZE_X_TEXT,4,95,78,89);
+   N3DSWidgetRect(this,GLAND_MAPSIZE_X_PULLDOWN,96,193,74,95);
+   N3DSWidgetRect(this,GLAND_MAPSIZE_Y_TEXT,194,215,78,89);
+   N3DSWidgetRect(this,GLAND_MAPSIZE_Y_PULLDOWN,216,315,74,95);
+   int labels[]={GLAND_START_DATE_TEXT1,GLAND_SNOW_LEVEL_TEXT1};int downs[]={GLAND_START_DATE_DOWN,GLAND_SNOW_LEVEL_DOWN};
+   for(int i=0;i<2;i++){int y=98+i*24;N3DSWidgetRect(this,labels[i],4,95,y+4,y+15);N3DSWidgetRect(this,downs[i],96,117,y,y+21);N3DSWidgetRect(this,downs[i]+1,118,293,y,y+21);N3DSWidgetRect(this,downs[i]+2,294,315,y,y+21);}
+   if(mode==GLWP_GENERATE){
+    for(int i=GLAND_RANDOM_TEXT;i<=GLAND_RANDOM_BUTTON;i++)this->SetWidgetHiddenState(i,false);
+    N3DSWidgetRect(this,GLAND_RANDOM_TEXT,4,95,150,161);N3DSWidgetRect(this,GLAND_RANDOM_EDITBOX,96,315,146,167);N3DSWidgetRect(this,GLAND_RANDOM_BUTTON,160,315,170,191);
+   }
+  }else if(this->n3ds_page==1){
+   int labels[]={GLAND_TOWN_TEXT,GLAND_INDUSTRY_TEXT,GLAND_TREE_TEXT,GLAND_LANDSCAPE_TEXT,GLAND_TERRAIN_TEXT,GLAND_WATER_TEXT,GLAND_SMOOTHNESS_TEXT};
+   int count=mode==GLWP_GENERATE?7:4;
+   for(int i=0;i<count;i++){int id=labels[i],y=18+i*24;this->SetWidgetHiddenState(id,false);this->SetWidgetHiddenState(id+1,false);N3DSWidgetRect(this,id,4,133,y+4,y+15);N3DSWidgetRect(this,id+1,134,315,y,y+21);}
+  }else{
+   this->SetWidgetHiddenState(GLAND_BORDER_TYPES,false);this->SetWidgetHiddenState(GLAND_BORDERS_RANDOM,false);
+   N3DSWidgetRect(this,GLAND_BORDER_TYPES,4,133,22,33);N3DSWidgetRect(this,GLAND_BORDERS_RANDOM,134,315,18,39);
+   for(int i=0;i<4;i++){int label=GLAND_WATER_NW_TEXT+i,id=GLAND_WATER_NW+i,y=48+i*32;this->SetWidgetHiddenState(label,false);this->SetWidgetHiddenState(id,false);N3DSWidgetRect(this,label,4,133,y+4,y+15);N3DSWidgetRect(this,id,134,315,y,y+21);}
+  }
+  Window::OnN3DSScreenChange(upper);
+ }
+
+#endif
 
 	virtual void OnPaint()
 	{
@@ -467,11 +514,20 @@ struct GenerateLandscapeWindow : public QueryStringBaseWindow {
 		SetDParam(3, _settings_newgame.game_creation.snow_line_height); // GLAND_SNOW_LEVEL_TEXT
 
 		this->DrawWidgets();
+#ifdef N3DS
+  const char *page_name=this->n3ds_page==0?(mode==GLWP_GENERATE?"World 1/3":"World 1/2"):(this->n3ds_page==1?(mode==GLWP_GENERATE?"Terrain 2/3":"Terrain 2/2"):"Borders 3/3");
+  DoDrawString(page_name,42,200,TC_BLACK);
+#endif
 
-		this->DrawEditBox(GLAND_RANDOM_EDITBOX);
 
-		if (mode != GLWP_GENERATE) {
-			char buffer[512];
+		if (!this->IsWidgetHidden(GLAND_RANDOM_EDITBOX)) this->DrawEditBox(GLAND_RANDOM_EDITBOX);
+
+		if (mode != GLWP_GENERATE
+#ifdef N3DS
+ && this->n3ds_page==0
+#endif
+ ) {
+   char buffer[512];
 
 			if (_settings_newgame.game_creation.heightmap_rotation == HM_CLOCKWISE) {
 				SetDParam(0, this->y);
@@ -481,17 +537,30 @@ struct GenerateLandscapeWindow : public QueryStringBaseWindow {
 				SetDParam(1, this->y);
 			}
 			GetString(buffer, STR_HEIGHTMAP_SIZE, lastof(buffer));
-			DrawStringRightAligned(326, 91, STR_HEIGHTMAP_SIZE, TC_BLACK);
+			#ifdef N3DS
+   DrawStringRightAligned(315, 178, STR_HEIGHTMAP_SIZE, TC_BLACK);
+#else
+   DrawStringRightAligned(326, 91, STR_HEIGHTMAP_SIZE, TC_BLACK);
+#endif
 
-			DrawString( 12,  91, STR_HEIGHTMAP_NAME, TC_BLACK);
+			#ifndef N3DS
+   DrawString(12,91,STR_HEIGHTMAP_NAME,TC_BLACK);
+#endif
 			SetDParamStr(0, this->name);
-			DrawStringTruncated(114,  91, STR_JUST_RAW_STRING, TC_ORANGE, 326 - 114 - GetStringBoundingBox(buffer).width - 5);
+			#ifdef N3DS
+   DrawStringTruncated(4,170,STR_JUST_RAW_STRING,TC_ORANGE,180);
+#else
+   DrawStringTruncated(114,91,STR_JUST_RAW_STRING,TC_ORANGE,326-114-GetStringBoundingBox(buffer).width-5);
+#endif
 		}
 	}
 
 	virtual void OnClick(Point pt, int widget)
 	{
-		switch (widget) {
+		#ifdef N3DS
+ if(widget==(int)this->widget_count-1){this->n3ds_page=(this->n3ds_page+1)%(this->mode==GLWP_GENERATE?3:2);this->SetFocusedWidget(this->n3ds_page==0?GLAND_RANDOM_EDITBOX:1);this->OnN3DSScreenChange(N3DSUpperUiActive());this->SetDirty();return;}
+#endif
+ switch (widget) {
 			case 0: delete this; break;
 
 			case GLAND_TEMPERATE:
@@ -630,13 +699,13 @@ struct GenerateLandscapeWindow : public QueryStringBaseWindow {
 
 	virtual void OnMouseLoop()
 	{
-		this->HandleEditBox(GLAND_RANDOM_EDITBOX);
+		if (!this->IsWidgetHidden(GLAND_RANDOM_EDITBOX)) this->HandleEditBox(GLAND_RANDOM_EDITBOX);
 	}
 
 	virtual EventState OnKeyPress(uint16 key, uint16 keycode)
 	{
-		EventState state;
-		this->HandleEditBoxKey(GLAND_RANDOM_EDITBOX, key, keycode, state);
+		EventState state=ES_NOT_HANDLED;
+		if (!this->IsWidgetHidden(GLAND_RANDOM_EDITBOX)) this->HandleEditBoxKey(GLAND_RANDOM_EDITBOX, key, keycode, state);
 		/* the seed is unsigned, therefore atoi cannot be used.
 		 * As UINT32_MAX is a 'magic' value (use random seed) it
 		 * should not be possible to be entered into the input
@@ -817,7 +886,36 @@ struct CreateScenarioWindow : public Window
 	{
 		this->LowerWidget(_settings_newgame.game_creation.landscape + CSCEN_TEMPERATE);
 		this->FindWindowPlacementAndResize(desc);
+#ifdef N3DS
+		this->OnN3DSScreenChange(N3DSUpperUiActive());
+#endif
 	}
+
+#ifdef N3DS
+
+ virtual void OnN3DSScreenChange(bool upper)
+ {
+  this->n3ds_native_layout=true;this->width=320;this->height=218;
+  N3DSWidgetRect(this,2,0,319,14,217);
+  for(int i=0;i<4;i++)N3DSWidgetRect(this,CSCEN_TEMPERATE+i,3+i*79,79+i*79,17,71);
+  N3DSWidgetRect(this,CSCEN_MAPSIZE_X_TEXT,4,95,78,89);
+  N3DSWidgetRect(this,CSCEN_MAPSIZE_X_PULLDOWN,96,193,74,95);
+  N3DSWidgetRect(this,CSCEN_MAPSIZE_Y_TEXT,194,215,78,89);
+  N3DSWidgetRect(this,CSCEN_MAPSIZE_Y_PULLDOWN,216,315,74,95);
+  N3DSWidgetRect(this,CSCEN_START_DATE_LABEL,4,95,102,113);
+  N3DSWidgetRect(this,CSCEN_START_DATE_DOWN,96,117,98,119);
+  N3DSWidgetRect(this,CSCEN_START_DATE_TEXT,118,293,98,119);
+  N3DSWidgetRect(this,CSCEN_START_DATE_UP,294,315,98,119);
+  N3DSWidgetRect(this,CSCEN_FLAT_LAND_HEIGHT_LABEL,4,207,130,141);
+  N3DSWidgetRect(this,CSCEN_FLAT_LAND_HEIGHT_DOWN,208,229,126,147);
+  N3DSWidgetRect(this,CSCEN_FLAT_LAND_HEIGHT_TEXT,230,293,126,147);
+  N3DSWidgetRect(this,CSCEN_FLAT_LAND_HEIGHT_UP,294,315,126,147);
+  N3DSWidgetRect(this,CSCEN_EMPTY_WORLD,4,157,174,205);
+  N3DSWidgetRect(this,CSCEN_RANDOM_WORLD,160,315,174,205);
+  Window::OnN3DSScreenChange(upper);
+ }
+
+#endif
 
 	virtual void OnPaint()
 	{
@@ -1031,6 +1129,15 @@ public:
 	GenerateProgressWindow() : Window(&_generate_progress_desc)
 	{
 		this->FindWindowPlacementAndResize(&_generate_progress_desc);
+#ifdef N3DS
+  this->n3ds_native_layout=true;this->width=320;this->height=112;
+  N3DSWidgetRect(this,GPWW_CAPTION,0,319,0,13);
+  N3DSWidgetRect(this,GPWW_BACKGROUND,0,319,14,111);
+  N3DSWidgetRect(this,GPWW_ABORT,20,299,82,103);
+  Window::OnN3DSScreenChange(false);
+  this->widget[GPWW_CAPTION].right=319;
+#endif
+
 	}
 
 	virtual void OnClick(Point pt, int widget)
@@ -1056,15 +1163,15 @@ public:
 		DrawFrameRect(19, 20, (this->width - 18), 37, COLOUR_GREY, FR_BORDERONLY);
 		DrawFrameRect(20, 21, (int)((this->width - 40) * _tp.percent / 100) + 20, 36, COLOUR_MAUVE, FR_NONE);
 		SetDParam(0, _tp.percent);
-		DrawStringCentered(90, 25, STR_PROGRESS, TC_FROMSTRING);
+		DrawStringCentered(this->width / 2, 25, STR_PROGRESS, TC_FROMSTRING);
 
 		/* Tell which class we are generating */
-		DrawStringCentered(90, 46, _tp.cls, TC_FROMSTRING);
+		DrawStringCentered(this->width / 2, 46, _tp.cls, TC_FROMSTRING);
 
 		/* And say where we are in that class */
 		SetDParam(0, _tp.current);
 		SetDParam(1, _tp.total);
-		DrawStringCentered(90, 58, STR_GENERATION_PROGRESS, TC_FROMSTRING);
+		DrawStringCentered(this->width / 2, 58, STR_GENERATION_PROGRESS, TC_FROMSTRING);
 
 		this->SetDirty();
 	}

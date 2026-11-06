@@ -3,6 +3,7 @@
 /** @file toolbar_gui.cpp Code related to the (main) toolbar. */
 
 #include "stdafx.h"
+#include "n3ds_ui.h"
 #include "openttd.h"
 #include "gui.h"
 #include "window_gui.h"
@@ -1231,6 +1232,27 @@ static ToolbarButtonProc * const _scen_toolbar_button_procs[] = {
 
 struct ScenarioEditorToolbarWindow : Window {
 public:
+#ifdef N3DS
+ bool n3ds_second_page=false;
+ virtual void OnN3DSScreenChange(bool upper)
+ {
+  this->width=320;this->height=22;this->left=40;this->top=0;
+  for(uint i=0;i<this->widget_count;i++)this->SetWidgetHiddenState(i,true);
+  static const int first[]={0,1,2,3,8,9,10,11,12,13,14,15,16};
+  static const int second[]={17,24,26};
+  int count=this->n3ds_second_page?3:13;
+  for(int i=0;i<count;i++){int id=this->n3ds_second_page?second[i]:first[i];this->SetWidgetHiddenState(id,false);int l=this->n3ds_second_page?i*22:i*320/14;int r=this->n3ds_second_page?l+21:(i+1)*320/14-1;N3DSWidgetRect(this,id,l,r,0,21);}
+  this->widget[18].type=WWT_IMGBTN;this->widget[18].data=SPR_SWITCH_TOOLBAR;
+  this->SetWidgetHiddenState(18,false);N3DSWidgetRect(this,18,13*320/14,319,0,21);
+  if(this->n3ds_second_page){
+   for(int i=TBSE_DATEPANEL;i<=TBSE_DATEFORWARD;i++)this->SetWidgetHiddenState(i,false);
+   N3DSWidgetRect(this,TBSE_DATEPANEL,66,296,0,21);
+   N3DSWidgetRect(this,TBSE_DATEBACKWARD,66,87,0,21);
+   N3DSWidgetRect(this,TBSE_DATEFORWARD,275,296,0,21);
+  }
+ }
+#endif
+
 	ScenarioEditorToolbarWindow(const WindowDesc *desc) : Window(desc)
 	{
 		CLRBITS(this->flags4, WF_WHITE_BORDER_MASK);
@@ -1238,6 +1260,9 @@ public:
 		this->FindWindowPlacementAndResize(desc);
 		PositionMainToolbar(this);
 		DoZoomInOutWindow(ZOOM_NONE, this);
+#ifdef N3DS
+ this->OnN3DSScreenChange(false);
+#endif
 	}
 
 	virtual void OnPaint()
@@ -1251,12 +1276,14 @@ public:
 
 		this->DrawWidgets();
 
+		if (!this->IsWidgetHidden(TBSE_DATEPANEL)) {
 		SetDParam(0, ConvertYMDToDate(_settings_newgame.game_creation.starting_year, 0, 1));
 		DrawStringCenteredTruncated(this->widget[TBSE_DATEBACKWARD].right, this->widget[TBSE_DATEFORWARD].left, 6, STR_00AF, TC_FROMSTRING);
 
+		}
 		/* We hide this panel when the toolbar space gets too small */
 		const Widget *panel = &this->widget[TBSE_SPACERPANEL];
-		if (panel->left != panel->right) {
+		if (!this->IsWidgetHidden(TBSE_SPACERPANEL) && panel->left != panel->right) {
 			DrawStringCenteredTruncated(panel->left + 1, panel->right - 1,  1, STR_0221_OPENTTD, TC_FROMSTRING);
 			DrawStringCenteredTruncated(panel->left + 1, panel->right - 1, 11, STR_0222_SCENARIO_EDITOR, TC_FROMSTRING);
 		}
@@ -1265,7 +1292,11 @@ public:
 	virtual void OnClick(Point pt, int widget)
 	{
 		if (_game_mode == GM_MENU) return;
-		_scen_toolbar_button_procs[widget](this);
+		#ifdef N3DS
+ if(widget==18){this->n3ds_second_page=!this->n3ds_second_page;this->OnN3DSScreenChange(false);this->SetDirty();return;}
+#endif
+ if(widget<0 || (uint)widget>=lengthof(_scen_toolbar_button_procs) || _scen_toolbar_button_procs[widget]==NULL)return;
+ _scen_toolbar_button_procs[widget](this);
 	}
 
 	virtual void OnDropdownSelect(int widget, int index)
@@ -1322,7 +1353,10 @@ public:
 
 	virtual void OnResize(Point new_size, Point delta)
 	{
-		/* There are 16 buttons plus some spacings if the space allows it.
+		#ifdef N3DS
+ this->OnN3DSScreenChange(false);return;
+#endif
+ /* There are 16 buttons plus some spacings if the space allows it.
 		 * Furthermore there are two panels of which one is non - essential
 		 * and that one can be removed if the space is too small. */
 		uint buttons_width;

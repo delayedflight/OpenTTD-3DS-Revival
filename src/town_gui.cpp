@@ -762,6 +762,9 @@ public:
 	FoundTownWindow(const WindowDesc *desc, WindowNumber window_number) : Window(desc, window_number)
 	{
 		this->FindWindowPlacementAndResize(desc);
+#ifdef N3DS
+		this->OnN3DSScreenChange(N3DSUpperUiActive());
+#endif
 		town_layout = _settings_game.economy.town_layout;
 		city = false;
 		this->UpdateButtons();
@@ -781,6 +784,27 @@ public:
 
 		this->SetDirty();
 	}
+
+#ifdef N3DS
+
+ virtual void OnN3DSScreenChange(bool upper)
+ {
+  this->n3ds_native_layout=true;this->width=upper?400:320;this->height=202;int width=this->width;
+  N3DSWidgetRect(this,3,0,width-1,14,201);
+  N3DSWidgetRect(this,TSEW_NEWTOWN,4,width/2-2,16,37);
+  N3DSWidgetRect(this,TSEW_RANDOMTOWN,width/2+1,width-5,16,37);
+  N3DSWidgetRect(this,TSEW_MANYRANDOMTOWNS,4,width-5,40,61);
+  N3DSWidgetRect(this,TSEW_TOWNSIZE,4,width-5,64,75);
+  for(int i=0;i<4;i++)N3DSWidgetRect(this,TSEW_SIZE_SMALL+i,i*width/4,(i+1)*width/4-1,77,98);
+  N3DSWidgetRect(this,TSEW_CITY,4,width-5,101,122);
+  N3DSWidgetRect(this,TSEW_TOWNLAYOUT,4,width-5,125,136);
+  for(int i=0;i<4;i++)N3DSWidgetRect(this,TSEW_LAYOUT_ORIGINAL+i,(i%2)*width/2,(i%2+1)*width/2-1,138+(i/2)*22,159+(i/2)*22);
+  N3DSWidgetRect(this,TSEW_LAYOUT_RANDOM,4,width-5,182,203);
+  this->height=206;N3DSWidgetRect(this,3,0,width-1,14,205);
+  Window::OnN3DSScreenChange(upper);
+ }
+
+#endif
 
 	virtual void OnPaint()
 	{

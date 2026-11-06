@@ -18,7 +18,7 @@ cpp='''#define N3DS 1
 using std::min;using std::max;using uint=unsigned;using WindowNumber=int;using byte=unsigned char;
 template<class T>T Clamp(T a,T l,T h){return min(max(a,l),h);}
 '''.replace('SCROLL_HEADER',str(root/'src/n3ds_menu_scroll.h'))+types[enum_start:enum_end]+'\n'+'\n'.join(block(v,m) for m in ['bool N3DSIsMapConstructionWindow','bool N3DSIsConstructionWindow','bool N3DSIsManagementWindow','bool N3DSIsCanvasWindow','bool N3DSUsesScreenPin'])+'''
-const int GM_NORMAL=1,GM_MENU=0,WWT_CAPTION=1,WWT_STICKYBOX=2,STR_NULL=0,COLOUR_GREY=0,FR_NONE=0,FR_LOWERED=1,TC_WHITE=0,ZOOM_LVL_NORMAL=0;
+const int GM_EDITOR=2,GM_NORMAL=1,GM_MENU=0,WWT_CAPTION=1,WWT_STICKYBOX=2,STR_NULL=0,COLOUR_GREY=0,FR_NONE=0,FR_LOWERED=1,TC_WHITE=0,ZOOM_LVL_NORMAL=0;
 int _game_mode=GM_NORMAL;bool _upper_ui=false,_map_pad=false,_touch_held=false,_pad_held=false,_left_button_down=false,_panel_needs_draw=false;
 struct Point{int x,y;};struct Viewport{int left=43,top=39;};struct Widget{int type=0,left=0,right=0,top=0,bottom=0,tooltips=0;};
 struct Window{bool n3ds_native_layout=false;WindowClass window_class=WC_FINANCES;int window_number=7,left=40,top=22,width=640,height=400,n3ds_canvas_x=0,n3ds_canvas_y=0,widget_count=0;Viewport*viewport=nullptr;Widget widget[20];struct{int step_width=1,width=36;}resize;struct{int cap=0;}vscroll;void HideWidget(int){};void OnResize(Point,Point){};void SetWidgetHiddenState(int,bool){};void OnN3DSScreenChange(bool);Window*z_back=nullptr;}menu;

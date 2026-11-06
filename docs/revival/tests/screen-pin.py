@@ -12,7 +12,7 @@ cpp=r'''#define N3DS 1
 #include <iostream>
 using WindowClass=int;using WindowNumber=int;
 enum{WC_TRAINS_LIST=1,WC_ROADVEH_LIST,WC_SHIPS_LIST,WC_AIRCRAFT_LIST,WC_VEHICLE_DETAILS,WC_VEHICLE_ORDERS,WC_VEHICLE_VIEW,WC_OTHER};
-const int GM_NORMAL=1,GM_MENU=0,WDF_STICKY_BUTTON=1,WWT_STICKYBOX=1,WF_STICKY=4;
+const int GM_EDITOR=2,GM_NORMAL=1,GM_MENU=0,WDF_STICKY_BUTTON=1,WWT_STICKYBOX=1,WF_STICKY=4;
 bool _upper_ui=false,_upper_request_pending=false,_upper_request_value=false,_left_button_down=false,_touch_held=false,_pad_held=false;
 int _upper_request_class=0,_upper_request_number=0,_game_mode=GM_NORMAL,transfers=0;bool exists=true;
 struct Widget{int type=WWT_STICKYBOX;};struct Window{int window_class=WC_TRAINS_LIST,window_number=7,desc_flags=WDF_STICKY_BUTTON,flags4=0;void InvalidateWidget(int){}}menu;
@@ -29,6 +29,7 @@ int main(){
  _pad_held=true;Click(&menu,&wi,2);ProcessN3DSMenuScreenChange();assert(_upper_ui);_pad_held=false;ProcessN3DSMenuScreenChange();assert(!_upper_ui&&transfers==2);
  Click(&menu,&wi,2);exists=false;ProcessN3DSMenuScreenChange();assert(!_upper_ui);exists=true;
  Click(&menu,&wi,2);_game_mode=GM_MENU;ProcessN3DSMenuScreenChange();assert(!_upper_ui);_game_mode=GM_NORMAL;
+ _game_mode=GM_EDITOR;Click(&menu,&wi,2);ProcessN3DSMenuScreenChange();assert(_upper_ui);Click(&menu,&wi,2);ProcessN3DSMenuScreenChange();assert(!_upper_ui);_game_mode=GM_NORMAL;
  menu.window_class=WC_OTHER;Click(&menu,&wi,2);assert(menu.flags4==WF_STICKY&&!_upper_request_pending);
  N3DSRequestMenuScreenChange(WC_OTHER,7);assert(!_upper_request_pending);
  for(int cls=WC_TRAINS_LIST;cls<=WC_VEHICLE_VIEW;cls++)assert(N3DSUsesScreenPin(cls));

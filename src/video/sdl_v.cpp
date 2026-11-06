@@ -132,7 +132,7 @@ static Window *_map_ui_front;
 static void SetN3DSUpperUi(bool upper, bool preserve_placement)
 {
  if (_upper_ui == upper) return;
- if (upper && (_game_mode != GM_NORMAL || _map_pad)) return;
+ if (upper && ((_game_mode != GM_NORMAL && _game_mode != GM_EDITOR) || _map_pad)) return;
  Window *front = N3DSFrontUi();
  if (upper && (front == NULL || front->window_class == WC_MAIN_TOOLBAR)) return;
  if (!preserve_placement && (_pad_held || _touch_held)) ResetObjectToPlace();
@@ -155,7 +155,7 @@ static void SetN3DSUpperUi(bool upper, bool preserve_placement)
 
 bool N3DSIsMapConstructionWindow(WindowClass cls)
 {
- return cls==WC_BUILD_TOOLBAR||cls==WC_SCEN_BUILD_TOOLBAR||cls==WC_BUILD_STATION||cls==WC_BUS_STATION||cls==WC_TRUCK_STATION||cls==WC_BUILD_DEPOT||cls==WC_BUILD_SIGNAL||cls==WC_SCEN_LAND_GEN||cls==WC_BUILD_TREES||cls==WC_BUILD_INDUSTRY;
+ return cls==WC_BUILD_TOOLBAR||cls==WC_SCEN_BUILD_TOOLBAR||cls==WC_BUILD_STATION||cls==WC_BUS_STATION||cls==WC_TRUCK_STATION||cls==WC_BUILD_DEPOT||cls==WC_BUILD_SIGNAL||cls==WC_FOUND_TOWN||cls==WC_SCEN_LAND_GEN||cls==WC_BUILD_TREES||cls==WC_BUILD_INDUSTRY;
 }
 bool N3DSIsConstructionWindow(WindowClass cls)
 {
@@ -196,7 +196,7 @@ bool N3DSUsesScreenPin(WindowClass cls)
 
 void N3DSRequestMenuScreenChange(WindowClass cls, WindowNumber number)
 {
- if (!N3DSUsesScreenPin(cls) || _game_mode!=GM_NORMAL) return;
+ if (!N3DSUsesScreenPin(cls) || (_game_mode != GM_NORMAL && _game_mode != GM_EDITOR)) return;
  _upper_request_class=cls; _upper_request_number=number;
  _upper_request_value=!_upper_ui; _upper_request_pending=true;
 }
@@ -206,13 +206,13 @@ static void ProcessN3DSMenuScreenChange()
  if (!_upper_request_pending) return;
  if (_left_button_down || _touch_held || _pad_held) return;
  _upper_request_pending=false;
- if (_game_mode==GM_NORMAL && FindWindowById(_upper_request_class,_upper_request_number)!=NULL) SetN3DSUpperUi(_upper_request_value);
+ if ((_game_mode == GM_NORMAL || _game_mode == GM_EDITOR) && FindWindowById(_upper_request_class,_upper_request_number)!=NULL) SetN3DSUpperUi(_upper_request_value);
 }
 
 static void CheckN3DSUpperUi()
 {
  if (!_upper_ui) return;
- if (_game_mode != GM_NORMAL || FindWindowById(_upper_ui_class, _upper_ui_number) == NULL) SetN3DSUpperUi(false);
+ if ((_game_mode != GM_NORMAL && _game_mode != GM_EDITOR) || FindWindowById(_upper_ui_class, _upper_ui_number) == NULL) SetN3DSUpperUi(false);
 }
 
 /** A fixed Orders pane uses native pixels while it is the foreground UI. */
@@ -221,7 +221,7 @@ static bool NativeN3DSOrdersRow(int y)
  Window *w;
  FOR_ALL_WINDOWS_FROM_FRONT(w) {
   if (w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR || w->window_class == WC_TOOLTIPS || w->window_class == WC_DROPDOWN_MENU) continue;
-  if (_game_mode==GM_NORMAL && N3DSUsesScrollableWorkspace(w)) {
+  if ((_game_mode == GM_NORMAL || _game_mode == GM_EDITOR) && N3DSUsesScrollableWorkspace(w)) {
    if(y>=w->top&&y<w->top+w->height)return true;
    continue;
   }
@@ -249,7 +249,7 @@ static bool NativeN3DSDropdownRow(int y)
 /** The main icon row is copied at 1:1; the remaining desktop keeps its fit. */
 static bool NativeN3DSToolbarRow(int y)
 {
- if (_game_mode != GM_NORMAL) return false;
+ if ((_game_mode != GM_NORMAL && _game_mode != GM_EDITOR)) return false;
  const Window *w = FindWindowById(WC_MAIN_TOOLBAR, 0);
  if (w == NULL || w->left != 40 || w->width != 320 || y < w->top || y >= w->top + w->height) return false;
  /* Large dialogs may cover the toolbar: keep their rows consistently fitted. */
@@ -278,7 +278,7 @@ static void ProcessN3DSStationPicker()
 {
  if (_station_picker_request == 0) return;
  if (_station_picker_request == 2 && _pad_held) return;
- const bool begin = _station_picker_request == 1 && _game_mode == GM_NORMAL;
+ const bool begin = _station_picker_request == 1 && (_game_mode == GM_NORMAL || _game_mode == GM_EDITOR);
  if (begin && _upper_ui) SetN3DSUpperUi(false, true);
  _station_picker_request = 0;
  _build_buttons.Reset();
@@ -300,7 +300,7 @@ static int _canvas_target_x,_canvas_target_y,_canvas_drag_axis=0,_canvas_grab=0;
 static Window *N3DSCanvasFront()
 {
  Window *w=N3DSFrontUi();
- if(_game_mode!=GM_NORMAL||_map_pad||w==NULL||!N3DSUsesScrollableWorkspace(w))return NULL;
+ if((_game_mode != GM_NORMAL && _game_mode != GM_EDITOR)||_map_pad||w==NULL||!N3DSUsesScrollableWorkspace(w))return NULL;
  return w;
 }
 static bool N3DSCanvasOverflow(const Window *w)

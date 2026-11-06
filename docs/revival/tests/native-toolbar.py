@@ -14,7 +14,7 @@ cpp=r'''#define N3DS 1
 #include <iostream>
 using std::max;using byte=unsigned char;using uint=unsigned;using ToolBarProperties=unsigned;
 const uint TBP_TOOLBAR_MINBUTTON=14,TBP_BUTTONWIDTH=22,TBP_NORMAL_MAXBUTTON=19;
-const int TB_LOWER=2,WWT_EMPTY=0,WWT_IMGBTN=1,GM_NORMAL=1,WC_MAIN_TOOLBAR=1,WC_MAIN_WINDOW=2,WC_STATUS_BAR=3;
+const int TB_LOWER=2,WWT_EMPTY=0,WWT_IMGBTN=1,GM_EDITOR=2,GM_NORMAL=1,WC_MAIN_TOOLBAR=1,WC_MAIN_WINDOW=2,WC_STATUS_BAR=3;
 int _toolbar_mode=0,_game_mode=GM_NORMAL;
 struct Widget{int type,left,right;};
 struct Window{int width=320,left=40,top=0,height=22,window_class=1;Window *z_back=nullptr;uint widget_count=29;Widget widget[29];}bar;
@@ -38,6 +38,7 @@ int main(){
  assert(all.size()==27); // Same tool IDs as the original arrange14 pages (11 unused).
  assert(NativeN3DSToolbarRow(0)&&NativeN3DSToolbarRow(21));assert(!NativeN3DSToolbarRow(-1)&&!NativeN3DSToolbarRow(22));
  _game_mode=0;assert(!NativeN3DSToolbarRow(0));_game_mode=GM_NORMAL;
+ _game_mode=GM_EDITOR;assert(NativeN3DSToolbarRow(0)&&NativeN3DSToolbarRow(21));_game_mode=GM_NORMAL;
  bar.width=400;assert(!NativeN3DSToolbarRow(0));bar.width=320;
  Window dialog;dialog.window_class=9;dialog.z_back=&bar;_z_front_window=&dialog;
  assert(!NativeN3DSToolbarRow(0));dialog.top=22;assert(NativeN3DSToolbarRow(0));

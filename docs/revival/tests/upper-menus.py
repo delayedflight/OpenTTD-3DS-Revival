@@ -18,7 +18,7 @@ template<class T>T Clamp(T a,T l,T h){return min(max(a,l),h);}
 struct Point{int x,y;};struct {Point pos,delta;bool dirty=false,in_window=false;int wheel=0;} _cursor;
 struct Window{int window_class=2,window_number=7;void OnN3DSScreenChange(bool){}}menu;
 using WindowClass=int;using WindowNumber=int;
-const int GM_NORMAL=1,GM_MENU=0,WC_MAIN_TOOLBAR=1,WKC_ESC=1,WKC_PAUSE=2;
+const int GM_EDITOR=2,GM_NORMAL=1,GM_MENU=0,WC_MAIN_TOOLBAR=1,WKC_ESC=1,WKC_PAUSE=2;
 int _game_mode=1,_upper_ui_class=0,_upper_ui_number=0;
 void MoveN3DSCanvasDrag(int,int){};bool _canvas_touch=false;bool _upper_ui=false,_map_pad=false,_pad_held=false,_touch_held=false,_left_button_down=false,_left_button_clicked=false,_n3ds_map_input=false,_panel_needs_draw=false;
 Point _ui_cursor{200,120},_n3ds_map_cursor{200,114};int _last_touch_x=0,_last_touch_y=0;
@@ -48,6 +48,7 @@ int main(){
  SetN3DSUpperUi(true);Buttons(true,5);int before=resets;SetN3DSUpperUi(false,true);assert(resets==before&&!_upper_ui&&!_pad_held);
  construction=true;SetN3DSUpperUi(true);before=resets;Buttons(true,3);assert(!_upper_ui&&_map_pad&&_n3ds_map_input&&resets==before&&_map_ui_front==front);construction=false;_map_pad=false;
  _map_pad=true;SetN3DSUpperUi(true);assert(!_upper_ui);_map_pad=false;
+ _game_mode=GM_EDITOR;SetN3DSUpperUi(true);assert(_upper_ui);SetN3DSUpperUi(false);assert(!_upper_ui);
  _game_mode=GM_MENU;SetN3DSUpperUi(true);assert(!_upper_ui);_game_mode=GM_NORMAL;
  menu.window_class=WC_MAIN_TOOLBAR;SetN3DSUpperUi(true);assert(!_upper_ui);menu.window_class=2;
  SetN3DSUpperUi(true);exists=false;CheckN3DSUpperUi();assert(!_upper_ui);

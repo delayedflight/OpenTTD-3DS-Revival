@@ -20,7 +20,7 @@ struct Point {int x,y;};
 struct {Point pos,delta;bool dirty=false,in_window=false;} _cursor;
 struct {int width=400,height=240;} _screen;
 struct Window {int top=228;} bar;
-const int WC_STATUS_BAR=1, WC_DROPDOWN_MENU=2, GM_MENU=0, GM_NORMAL=1;
+const int WC_STATUS_BAR=1, WC_DROPDOWN_MENU=2, GM_MENU=0, GM_EDITOR=2,GM_NORMAL=1;
 bool bar_present=true;
 const Window *FindWindowById(int,int){return bar_present?&bar:nullptr;}
 bool _n3ds_map_input=true,_map_pad=true,_pad_held=true,_touch_held=true;

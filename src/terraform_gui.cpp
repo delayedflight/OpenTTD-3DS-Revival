@@ -3,6 +3,7 @@
 /** @file terraform_gui.cpp GUI related to terraforming the map. */
 
 #include "stdafx.h"
+#include "n3ds_ui.h"
 #include "openttd.h"
 #include "clear_map.h"
 #include "company_func.h"
@@ -598,7 +599,26 @@ struct ScenarioEditorLandscapeGenerationWindow : Window {
 	{
 		this->widget[ETTW_PLACE_DESERT_LIGHTHOUSE].tooltips = (_settings_game.game_creation.landscape == LT_TROPIC) ? STR_028F_DEFINE_DESERT_AREA : STR_028D_PLACE_LIGHTHOUSE;
 		this->FindWindowPlacementAndResize(desc);
+#ifdef N3DS
+		this->OnN3DSScreenChange(N3DSUpperUiActive());
+#endif
 	}
+
+#ifdef N3DS
+
+ virtual void OnN3DSScreenChange(bool upper)
+ {
+  this->n3ds_native_layout=true;this->width=upper?400:320;this->height=164;
+  N3DSWidgetRect(this,ETTW_BACKGROUND,0,this->width-1,14,163);
+  for(int i=ETTW_BUTTONS_START;i<ETTW_BUTTONS_END;i++){int col=i-ETTW_BUTTONS_START;N3DSWidgetRect(this,i,col*this->width/7,(col+1)*this->width/7-1,16,47);}
+  N3DSWidgetRect(this,ETTW_DECREASE_SIZE,8,39,65,96);
+  N3DSWidgetRect(this,ETTW_INCREASE_SIZE,this->width-40,this->width-9,65,96);
+  N3DSWidgetRect(this,ETTW_NEW_SCENARIO,4,this->width-5,114,135);
+  N3DSWidgetRect(this,ETTW_RESET_LANDSCAPE,4,this->width-5,138,159);
+  Window::OnN3DSScreenChange(upper);
+ }
+
+#endif
 
 	virtual void OnPaint() {
 		this->DrawWidgets();
@@ -608,7 +628,13 @@ struct ScenarioEditorLandscapeGenerationWindow : Window {
 
 		assert(n != 0);
 		do {
-			DrawSprite(SPR_WHITE_POINT, PAL_NONE, 88 + coords[0], 55 + coords[1]);
+			DrawSprite(SPR_WHITE_POINT, PAL_NONE, 
+#ifdef N3DS
+ this->width / 2 + coords[0], 81 + coords[1]
+#else
+ 88 + coords[0], 55 + coords[1]
+#endif
+);
 			coords += 2;
 		} while (--n);
 

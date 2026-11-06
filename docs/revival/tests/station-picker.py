@@ -13,7 +13,7 @@ cpp=r'''#include <cassert>
 struct Buttons {void Reset(){}} _build_buttons;
 bool _upper_ui=false;void SetN3DSUpperUi(bool b,bool preserve=false){_upper_ui=b;}
 bool _station_picker_active=false,_pad_held=false,_touch_held=false,_left_button_down=false,_left_button_clicked=false,_map_pad=false,_panel_needs_draw=false;
-int _station_picker_request=0,_game_mode=1,GM_NORMAL=1,centres=0;bool map_input=false;void *_map_ui_front;
+int _station_picker_request=0,_game_mode=1,GM_EDITOR=2,GM_NORMAL=1,centres=0;bool map_input=false;void *_map_ui_front;
 void HandleMouseEvents(){} void *N3DSFrontUi(){return (void*)1;} void SelectN3DSInput(bool b){map_input=b;} void CenterN3DSMapCursor(){centres++;} void MarkWholeScreenDirty(){}
 '''
 cpp+=body('void N3DSRequestStationPicker(bool begin)')+'\n'+body('static void ProcessN3DSStationPicker()')

@@ -20,7 +20,7 @@ cpp='''#define N3DS 1
 #include <iostream>
 #include <cstdint>
 using std::min;using std::max;using uint=unsigned;using uint16=uint16_t;using WindowClass=int;
-const int GM_MENU=0,GM_NORMAL=1;int _game_mode=GM_NORMAL;bool N3DSIsManagementWindow(int){return false;}
+const int GM_MENU=0,GM_EDITOR=2,GM_NORMAL=1;int _game_mode=GM_NORMAL;bool N3DSIsManagementWindow(int){return false;}
 enum{WWT_PANEL,WWT_LABEL,WWT_EMPTY,WWT_CAPTION,WWT_STICKYBOX,WWT_TEXTBTN,WWT_DROPDOWN,WWT_EDITBOX,WWT_IMGBTN,WWT_IMGBTN_2,WWT_PUSHIMGBTN};
 template<class T>T Clamp(T a,T l,T h){return min(max(a,l),h);}struct Window;bool N3DSUsesScrollableWorkspace(const Window*){return false;}bool N3DSIsCanvasWindow(int){return false;}
 struct Widget{int type=WWT_PANEL,left=0,right=147,top=0,bottom=13,tooltips=0;};
