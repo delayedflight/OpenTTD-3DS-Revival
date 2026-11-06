@@ -7,6 +7,7 @@
 #include "../stdafx.h"
 #include "../n3ds_bootlog.h"
 #include "../n3ds_ui.h"
+#include "../n3ds_controls.h"
 #include "../openttd.h"
 #include "../gfx_func.h"
 #include "../sdl.h"
@@ -34,6 +35,7 @@ static int _panel_x, _panel_y;
 static int _last_touch_x, _last_touch_y;
 static bool _touch_held;
 static bool _pad_held;
+static N3DSBuildButtons _build_buttons;
 static bool _map_pad;
 static bool _panel_needs_draw = true;
 static SDL_Surface *_ui_surface;
@@ -146,9 +148,9 @@ static void DrawN3DSPanel()
 	DoDrawStringCentered(160, 12, "MAP CONTROL", TC_WHITE);
 	DrawFrameRect(6, 34, 313, 193, COLOUR_GREY, FR_LOWERED);
 	DoDrawStringCentered(160, 85, "Drag gently to move the cursor", TC_WHITE);
-	DoDrawStringCentered(160, 105, "A: click / hold A and drag to build", TC_WHITE);
-	DoDrawStringCentered(160, 207, "X: return to tools and windows", TC_WHITE);
-	DoDrawStringCentered(160, 223, "Circle Pad: scroll   L/R: zoom   B: cancel", TC_WHITE);
+	DoDrawStringCentered(160, 105, "L: click / hold L and drag to build", TC_WHITE);
+	DoDrawStringCentered(160, 207, "SELECT / X: return to tools", TC_WHITE);
+	DoDrawStringCentered(160, 223, "Circle Pad: scroll   R/Y: zoom   B: cancel", TC_WHITE);
 	_cur_dpi = saved;
 }
 
@@ -588,7 +590,8 @@ static int PollEvent()
 			if (ev.button.button == SDL_BUTTON_LEFT) {
 				_touch_held = false;
 				_left_button_down = _pad_held;
-				_left_button_clicked = false;
+    /* L/A may remain held while the stylus lifts and reanchors. */
+    if (!_pad_held) _left_button_clicked = false;
 				HandleMouseEvents();
 			}
 			break;
@@ -611,19 +614,30 @@ static int PollEvent()
 		case SDL_JOYBUTTONDOWN:
 		case SDL_JOYBUTTONUP: {
 			bool down = ev.type == SDL_JOYBUTTONDOWN;
-			if (ev.jbutton.button == 1) {
-				if (down) SelectN3DSInput(true);
-				_pad_held = down;
-				_left_button_down = down;
-				if (!down) _left_button_clicked = false;
-				HandleMouseEvents();
-				if (!down) SelectN3DSInput(_map_pad);
-			} else if (down) {
+			if (N3DSBuildButtons::Recognises(ev.jbutton.button)) {
+    if (_game_mode == GM_MENU && down) break;
+    const bool was_held = _build_buttons.Held();
+    _build_buttons.Set(ev.jbutton.button, down);
+    _pad_held = _build_buttons.Held();
+    if (!was_held && _pad_held) {
+     /* End any UI touch gesture before beginning a map gesture. */
+     _left_button_down = false;
+     _left_button_clicked = false;
+     HandleMouseEvents();
+     SelectN3DSInput(true);
+    }
+    _left_button_down = _pad_held;
+    if (!_pad_held) _left_button_clicked = false;
+    HandleMouseEvents();
+    if (!_pad_held) SelectN3DSInput(_map_pad);
+   } else if (down) {
 				switch (ev.jbutton.button) {
 					case 2: HandleKeypress(uint32(WKC_ESC) << 16); break;
-					case 3:
+					case 7: // SELECT lets the left thumb switch modes without dropping the stylus.
+     case 3:
      if (_game_mode == GM_MENU) break;
-						_left_button_down = _left_button_clicked = _pad_held = _touch_held = false;
+						_build_buttons.Reset();
+      _left_button_down = _left_button_clicked = _pad_held = _touch_held = false;
 						HandleMouseEvents();
 						_map_pad = !_map_pad;
       if (_map_pad) _map_ui_front = N3DSFrontUi();
@@ -631,7 +645,7 @@ static int PollEvent()
 						_panel_needs_draw = true;
 						MarkWholeScreenDirty();
 						break;
-					case 5: HandleKeypress(uint32(WKC_MINUS) << 16); break;
+					case 4: HandleKeypress(uint32(WKC_MINUS) << 16); break; // Y: zoom out
 					case 6: HandleKeypress(uint32(WKC_EQUALS) << 16); break;
 					case 0: if (_game_mode != GM_MENU) HandleKeypress(uint32(WKC_PAUSE) << 16); break;
 				}

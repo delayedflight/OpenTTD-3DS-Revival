@@ -1,10 +1,10 @@
 # OpenTTD 3DS Revival implementation guide
 
-This guide describes the r3a cursor refinement of the r3 prototype, based on EnergeticBark/OpenTTD-3DS v1.0.1, OpenTTD 0.7.0. The tested r1b repair and r2 UI prototype are preserved separately. r3 needs independent physical-console validation.
+This guide describes the r3b control refinement of the r3a repair, based on EnergeticBark/OpenTTD-3DS v1.0.1, OpenTTD 0.7.0. The tested r1b repair and r2 UI prototype are preserved separately. r3 needs independent physical-console validation.
 
 ## Build and project layout
 
-The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3a/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
+The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3b/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
 
 The upstream checkout, the r1b source, and r2 source are kept separately in the development project. Private saves and crash dumps are local evidence, not release assets. Never test against the user's only save or write a release directly onto their SD card.
 
@@ -34,13 +34,13 @@ SDL dual-screen touch events include the crop offset and lower-screen offset. Su
 
 `FindWindowFromPt` filters by input layer: normal touch input can select UI windows but cannot click through to the upper map. Map input can select only the main window. This is separate from drawing: visual z-order alone is insufficient to prevent clicks on the wrong display.
 
-X toggles between the UI desktop and a relative map-control pad. If a map action opens a new UI window (an error, bridge choice, station join or vehicle detail), the pad returns to the UI after A is released so the new dialog is visible. Tooltip windows are ignored for this transition. On the pad, dragging moves the upper cursor one logical pixel per touch pixel. The first touch records an anchor; lifting and touching again does not jump the cursor. Touching the pad does not itself place anything. A presses the map's left button; holding A while dragging supports normal construction drags. Releasing A restores the selected input mode. Switching modes releases button state before changing layers to prevent a stuck drag.
+SELECT or X toggles between the UI desktop and a relative map-control pad, allowing a left-thumb mode switch while the right hand keeps the stylus. If a map action opens a new UI window (an error, bridge choice, station join or vehicle detail), the pad returns to the UI after the final L/A build button is released so the new dialog is visible. Tooltip windows are ignored for this transition. On the pad, dragging moves the upper cursor one logical pixel per touch pixel. The first touch records an anchor; lifting and touching again does not jump the cursor. Touching the pad does not itself place anything. L presses the map's left button; holding L while dragging supports normal construction drags. A remains an alternative. `src/n3ds_controls.h` tracks both buttons as a bitmask: releasing either one leaves the drag held if the other remains pressed. Releasing the last one restores the selected input mode. Lifting the stylus while a build button remains held does not reset the mouse-click latch, so the stylus can be repositioned without ending or restarting the drag. Switching modes releases button state before changing layers to prevent a stuck drag.
 
 The map and UI retain separate cursor positions. During gameplay, `N3DSMapCursorScope` temporarily uses the map position and upper surface for drawing. In `GM_MENU`, it instead keeps the input position and draws on the UI surface, so the pointer follows the title menu and its dialogs below. The scope restores the input position, screen destination on exit, then leaves the drawing context at the persistent root `_screen` rather than a window painter’s temporary stack context.
 
 The cursor backup buffer records its owning surface in `_n3ds_cursor_surface`. Undrawing must restore the pixels to that surface, not whichever destination is currently selected. A mode change forces a cursor redraw even if it has not moved. Before a video-mode change, the previous cursor is undrawn before SDL frees either backing surface. This prevents title/game transitions and resolution changes from restoring stale cursor pixels to the wrong screen.
 
-B sends Escape (cancel placement); L/R send the existing zoom shortcuts; START toggles pause. These reuse OpenTTD's handlers rather than introducing parallel construction commands. SDL's 3DS joystick button numbers are used here, not raw HID key bit positions.
+B sends Escape (cancel placement); R zooms in and Y zooms out using the existing shortcuts; START toggles pause. L no longer zooms out. These reuse OpenTTD's handlers rather than introducing parallel construction commands. SDL's 3DS joystick button numbers are used here, not raw HID key bit positions.
 
 ## Scrolling
 
@@ -78,7 +78,7 @@ Existing SDK/compiler mixed-enum ABI warnings remain and must be disclosed. Emul
 2. Boot without autoexec scripts. Confirm the title is above and the actual menu below, with no gameplay panel at startup. Verify menu text is native width and direct touches select the matching button.
 3. Load a disposable save through the lower-screen load dialog. Confirm no UI window occludes the upper map.
 4. Open rail/road/other construction tools below; check enlarged buttons, dropdowns and child pickers. Open and close dialogs to check damaged-region repainting.
-5. Switch to the relative pad with X. Repeatedly lift and reposition without pressing A: no building should occur and the cursor should not jump. Press A to place, and hold A while dragging for construction. Return to the UI and check button state is released.
+5. Switch to the relative pad with X. Repeatedly lift and reposition without pressing L: no building should occur and the cursor should not jump. Press L to place, and hold L while dragging for construction. Return to the UI and check button state is released.
 6. Test Circle Pad and D-pad scrolling, dead zone, diagonals, L/R zoom, B cancellation and START pause. Keyboard-emulated analogue input cannot establish physical dead-zone feel; test the real pad too.
 7. Save a disposable game through the UI, reload it, and run through monthly autosaves. Confirm the title/menu state after returning from gameplay.
 8. Validate ZIP checksums, ensure the source archive includes all new headers and docs, and verify that no private saves or crash dumps are distributed.
@@ -97,3 +97,16 @@ python3 source/docs/revival/tests/check-split-scroll.py source/docs/revival/test
 ```
 
 The test compiles the actual current `DoSetViewportPosition`, `GfxScroll` and 8-bit `ScrollBuffer` bodies into a small framebuffer harness. It compares cached scrolling against a full-redraw pixel oracle. The original r3 function bodies are kept as a baseline fixture. Horizontal, vertical, diagonal and larger-than-view shifts are tested with lower UI obstacles, the upper status bar, and a secondary lower-screen viewport. AddressSanitizer and UndefinedBehaviorSanitizer are enabled. The baseline fails 18 of 20 cases; the fixed source passes all 20 without sanitizer reports. This exercises pixel routing and occlusion, not the emulator or full game simulation, and does not replace a console retest of the user's recording.
+
+## r3b construction controls regression
+
+L (SDL button 5) and A (button 1) share the map click through `N3DSBuildButtons`. SELECT (7) or X (3) switches modes. Y (4) now zooms out; R (6) zooms in. B (2) cancels; START (0) pauses. The UI layout/scaling and r3a renderer are unchanged.
+
+The state regression can be run from the extracted distribution:
+
+```sh
+clang++ -std=c++11 -fsanitize=address,undefined source/docs/revival/tests/build-buttons.cpp -o /tmp/openttd-build-buttons
+/tmp/openttd-build-buttons
+```
+
+It verifies independent/overlapping A/L presses, both release orders, duplicate key events, mode reset and zoom-button isolation. The SDL event path preserves the mouse-click latch when the stylus lifts while a build button remains held. Hardware testing should explicitly include reanchoring the stylus mid-drag and releasing L to commit a road/rail segment.
