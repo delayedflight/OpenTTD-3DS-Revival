@@ -9,6 +9,7 @@
 #include "gfx_func.h"
 #include "gui.h"
 #include "window_gui.h"
+#include "n3ds_ui.h"
 #include "textbuf_gui.h"
 #include "command_func.h"
 #include "company_func.h"
@@ -544,6 +545,21 @@ public:
 		this->last_sorting = this->towns.GetListing();
 	}
 
+#ifdef N3DS
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		this->n3ds_native_layout=true;
+		int width=upper?400:320;bool changed=this->width!=width||this->height!=190;
+		this->width=width;this->height=190;this->vscroll.cap=6;
+		N3DSWidgetRect(this,1,11,width-13,0,13);N3DSWidgetRect(this,2,width-12,width-1,0,13);
+		N3DSWidgetRect(this,TDW_SORTNAME,0,(width-22)/2-1,14,35);
+		N3DSWidgetRect(this,TDW_SORTPOPULATION,(width-22)/2,width-23,14,35);
+		N3DSWidgetRect(this,TDW_CENTERTOWN,0,width-23,36,167);
+		N3DSWidgetRect(this,6,width-22,width-1,36,167);N3DSWidgetRect(this,7,0,width-1,168,189);this->HideWidget(8);
+		Window::OnN3DSScreenChange(upper);if(changed)MarkWholeScreenDirty();
+	}
+#endif
+
 	virtual void OnPaint()
 	{
 		this->BuildTownList();
@@ -557,7 +573,12 @@ public:
 		{
 			int n = 0;
 			uint16 i = this->vscroll.pos;
-			int y = 28;
+			int y =
+#ifdef N3DS
+42;
+#else
+28;
+#endif
 
 			while (i < this->towns.Length()) {
 				const Town *t = this->towns[i];
@@ -566,9 +587,18 @@ public:
 
 				SetDParam(0, t->index);
 				SetDParam(1, t->population);
-				DrawString(2, y, STR_2057, TC_FROMSTRING);
+				#ifdef N3DS
+				DrawStringTruncated(2,y,STR_2057,TC_FROMSTRING,this->width-24);
+#else
+				DrawString(2,y,STR_2057,TC_FROMSTRING);
+#endif
 
-				y += 10;
+				y +=
+#ifdef N3DS
+22;
+#else
+10;
+#endif
 				i++;
 				if (++n == this->vscroll.cap) break; // max number of towns in 1 window
 			}
@@ -600,7 +630,13 @@ public:
 				break;
 
 			case TDW_CENTERTOWN: { // Click on Town Matrix
-				uint16 id_v = (pt.y - 28) / 10;
+				uint16 id_v = (pt.y - this->widget[TDW_CENTERTOWN].top) /
+#ifdef N3DS
+22
+#else
+10
+#endif
+;
 
 				if (id_v >= this->vscroll.cap) return; // click out of bounds
 

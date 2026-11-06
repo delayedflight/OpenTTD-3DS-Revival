@@ -169,6 +169,7 @@ struct GameOptionsWindow : Window {
 
 	virtual void OnN3DSScreenChange(bool upper)
 	{
+		this->n3ds_native_layout=true;
 		int width=upper?400:320;bool changed=this->width!=width||this->height!=204;this->width=width;this->height=204;
 		N3DSWidgetRect(this,2,0,width-1,14,203);
 		const int frames[]={3,5,7,9,11,13,15,18,20};
@@ -525,6 +526,7 @@ public:
 
 	virtual void OnN3DSScreenChange(bool upper)
 	{
+		this->n3ds_native_layout=true;
 		int width=upper?400:320;bool changed=this->width!=width||this->height!=218;this->width=width;this->height=218;
 		N3DSWidgetRect(this,GDW_UPPER_BG,0,width-1,14,57);
 		for(int i=0;i<4;i++)N3DSWidgetRect(this,GDW_LVL_EASY+i,i*(width/4),(i+1)*(width/4)-1,14,35);
@@ -1428,6 +1430,7 @@ struct GameSettingsWindow : Window {
 
 	virtual void OnN3DSScreenChange(bool upper)
 	{
+		this->n3ds_native_layout=true;
 		int width=upper?400:320;bool changed=this->width!=width||this->height!=202;this->width=width;this->height=202;
 		N3DSWidgetRect(this,SETTINGSEL_OPTIONSPANEL,0,width-23,14,201);
 		N3DSWidgetRect(this,SETTINGSEL_SCROLLBAR,width-22,width-1,14,201);this->HideWidget(SETTINGSEL_RESIZE);

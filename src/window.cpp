@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "n3ds_ui.h"
+#include "n3ds_menu_scroll.h"
 #include <stdarg.h>
 #include "openttd.h"
 #include "company_func.h"
@@ -802,7 +803,14 @@ static void AssignWidgetToWindow(Window *w, const Widget *widget)
 		for (const Widget *wi = widget; wi->type != WWT_LAST; wi++) index++;
 
 		#ifdef N3DS
-		bool add_pin=N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class);
+		bool canvas_pin=_game_mode==GM_NORMAL&&N3DSIsCanvasWindow(w->window_class);
+		bool caption=false,header_control=false;
+		for(const Widget *wi=widget;wi->type!=WWT_LAST;wi++){
+			if(wi->type==WWT_CAPTION)caption=true;
+			else if(wi->top<14&&wi->type!=WWT_CLOSEBOX&&wi->type!=WWT_PANEL&&wi->type!=WWT_EMPTY)header_control=true;
+		}
+		canvas_pin=canvas_pin&&caption&&!header_control;
+		bool add_pin=N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class)||canvas_pin;
 		for(const Widget *wi=widget;wi->type!=WWT_LAST;wi++) if(wi->type==WWT_STICKYBOX)add_pin=false;
 		w->widget = MallocT<Widget>(index + (add_pin?1:0));
 #else
@@ -815,6 +823,7 @@ static void AssignWidgetToWindow(Window *w, const Widget *widget)
 			Widget pin={WWT_STICKYBOX,RESIZE_NONE,COLOUR_DARK_GREEN,(int16)(w->width-12),(int16)(w->width-1),0,13,0,STR_NULL};
 			for (uint i=0;i<index-1;i++) if (w->widget[i].type==WWT_CAPTION) pin.colour=w->widget[i].colour;
 			w->widget[index-1]=pin;index++;
+			if(canvas_pin)for(uint i=0;i<index-1;i++)if(w->widget[i].type==WWT_CAPTION)w->widget[i].right=min((int)w->widget[i].right,w->width-13);
 		}
 #endif
 		w->widget_count = index - 1;
@@ -1241,7 +1250,7 @@ Window::Window(const WindowDesc *desc, WindowNumber window_number)
 	this->Initialize(pt.x, pt.y, desc->minimum_width, desc->minimum_height, desc->cls, desc->widgets, window_number);
 	this->desc_flags = desc->flags;
 #ifdef N3DS
-	if(N3DSIsConstructionWindow(this->window_class)||N3DSIsManagementWindow(this->window_class)) this->desc_flags|=WDF_STICKY_BUTTON;
+	if(N3DSIsConstructionWindow(this->window_class)||N3DSIsManagementWindow(this->window_class)||N3DSIsCanvasWindow(this->window_class)) this->desc_flags|=WDF_STICKY_BUTTON;
 #endif
 }
 
@@ -2216,6 +2225,27 @@ void N3DSWidgetRect(Window *w, uint id, int l, int r, int t, int b)
 
 void Window::OnN3DSScreenChange(bool upper)
 {
+ if(_game_mode==GM_NORMAL&&N3DSUsesScrollableWorkspace(this)){
+  const int width=N3DSMenuScrollBar::ViewWidth(this->height,upper);
+  this->n3ds_canvas_x=Clamp(this->n3ds_canvas_x,0,max(0,this->width-width));
+  this->n3ds_canvas_y=Clamp(this->n3ds_canvas_y,0,max(0,this->height-196));
+  const int nx=(upper?0:40)+max(0,(width-this->width)/2)-this->n3ds_canvas_x;
+  const int ny=22-this->n3ds_canvas_y;
+  if(this->viewport!=NULL){this->viewport->left+=nx-this->left;this->viewport->top+=ny-this->top;}
+  bool changed=this->left!=nx||this->top!=ny;this->left=nx;this->top=ny;
+  bool has_pin=false;
+  for(uint i=0;i<this->widget_count;i++)if(this->widget[i].type==WWT_STICKYBOX){
+   Widget &pin=this->widget[i];has_pin=true;
+   if(pin.left!=this->width-12||pin.right!=this->width-1)changed=true;
+   pin.left=this->width-12;pin.right=this->width-1;
+  }
+  if(has_pin)for(uint i=0;i<this->widget_count;i++)if(this->widget[i].type==WWT_CAPTION){
+   int right=min((int)this->widget[i].right,this->width-13);
+   if(right!=this->widget[i].right)changed=true;this->widget[i].right=right;
+  }
+  if(changed)MarkWholeScreenDirty();return;
+ }
+
  if(!N3DSIsConstructionWindow(this->window_class)&&!N3DSIsManagementWindow(this->window_class))return;
  if(this->window_class==WC_BUILD_VEHICLE || this->window_class==WC_VEHICLE_DEPOT) {
   const int target=upper?400:320;
@@ -2257,7 +2287,7 @@ static void LayoutN3DSToolbars()
    }
    w->width=width;w->height=14+((buttons+7)/8)*32;
   }
-  if(N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class))w->OnN3DSScreenChange(upper);
+  if(N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class)||(_game_mode==GM_NORMAL&&N3DSIsCanvasWindow(w->window_class)))w->OnN3DSScreenChange(upper);
  }
  if(changed)MarkWholeScreenDirty();
 }

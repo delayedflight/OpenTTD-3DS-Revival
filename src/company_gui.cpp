@@ -1267,6 +1267,7 @@ struct CompanyWindow : Window
 
 	virtual void OnN3DSScreenChange(bool upper)
 	{
+		this->n3ds_native_layout=true;
 		const int width=upper?400:320;bool changed=this->width!=width||this->height!=218;
 		this->width=width;this->height=218;
 		N3DSWidgetRect(this,CW_WIDGET_FACE,0,width-1,14,173);

@@ -22,10 +22,11 @@ cpp='''#define N3DS 1
 using std::min;using std::max;using uint=unsigned;using uint16=uint16_t;using WindowClass=int;
 const int GM_MENU=0,GM_NORMAL=1;int _game_mode=GM_NORMAL;bool N3DSIsManagementWindow(int){return false;}
 enum{WWT_PANEL,WWT_LABEL,WWT_EMPTY,WWT_CAPTION,WWT_STICKYBOX,WWT_TEXTBTN,WWT_DROPDOWN,WWT_EDITBOX,WWT_IMGBTN,WWT_IMGBTN_2,WWT_PUSHIMGBTN};
+template<class T>T Clamp(T a,T l,T h){return min(max(a,l),h);}struct Window;bool N3DSUsesScrollableWorkspace(const Window*){return false;}bool N3DSIsCanvasWindow(int){return false;}
 struct Widget{int type=WWT_PANEL,left=0,right=147,top=0,bottom=13,tooltips=0;};
 struct Point{int x,y;};struct Viewport{int left=0,top=0;};const int STR_NULL=0;
 '''+ 'enum{'+','.join(classes)+'};\n'+'\n'.join(enums)+'\n'+block(video,'bool N3DSIsMapConstructionWindow')+'\n'+block(video,'bool N3DSIsConstructionWindow')+'''
-struct Window{Widget widget[64];int width=148,height=200,left=0,top=0,window_class=WC_BUILD_STATION,widget_count=64;struct{uint16 pos=0,count=2,cap=0;}vscroll,hscroll;struct{int step_width=1,width=36,step_height=14;}resize;Viewport*viewport=nullptr;
+struct Window{bool n3ds_native_layout=false;Widget widget[64];int n3ds_canvas_x=0,n3ds_canvas_y=0;int width=148,height=200,left=0,top=0,window_class=WC_BUILD_STATION,widget_count=64;struct{uint16 pos=0,count=2,cap=0;}vscroll,hscroll;struct{int step_width=1,width=36,step_height=14;}resize;Viewport*viewport=nullptr;
 void SetWidgetHiddenState(int,bool){};void OnResize(Point,Point){};void OnN3DSScreenChange(bool);
 void Depot(int type){
 #define VEH_TRAIN 0
@@ -53,4 +54,5 @@ int main(){
  std::cout<<"actual station/airport controls fit, 22px hit targets, custom-list capacity and 20 reversible cell-aligned depot/purchase screen changes passed\\n";
 }
 '''
+cpp='#include \"'+str(root/'src/n3ds_menu_scroll.h')+'\"\n'+cpp
 f=out/'construction-layouts.cpp';f.write_text(cpp);exe=out/'construction-layouts';subprocess.run(['clang++','-std=c++11','-fsanitize=address,undefined',str(f),'-o',str(exe)],check=True);subprocess.run([str(exe)],check=True)

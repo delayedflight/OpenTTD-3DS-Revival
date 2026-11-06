@@ -7,6 +7,7 @@
 #include "../stdafx.h"
 #include "../n3ds_bootlog.h"
 #include "../n3ds_ui.h"
+#include "../n3ds_menu_scroll.h"
 #include "../n3ds_controls.h"
 #include "../openttd.h"
 #include "../gfx_func.h"
@@ -166,9 +167,31 @@ bool N3DSIsManagementWindow(WindowClass cls)
  return cls==WC_COMPANY||cls==WC_GAME_OPTIONS||cls==WC_CUSTOM_CURRENCY||cls==WC_INDUSTRY_DIRECTORY||cls==WC_STATION_LIST||cls==WC_INDUSTRY_VIEW||cls==WC_STATION_VIEW;
 }
 
+/** Remaining gameplay dialogs share a native, pannable workspace. */
+bool N3DSIsCanvasWindow(WindowClass cls)
+{
+ if(N3DSIsManagementWindow(cls)||N3DSIsConstructionWindow(cls))return false;
+ switch(cls){
+  case WC_MAIN_WINDOW:case WC_MAIN_TOOLBAR:case WC_STATUS_BAR:case WC_TOOLTIPS:
+  case WC_DROPDOWN_MENU:case WC_TOOLBAR_MENU:case WC_SELECT_GAME:
+  case WC_TRAINS_LIST:case WC_ROADVEH_LIST:case WC_SHIPS_LIST:case WC_AIRCRAFT_LIST:
+  case WC_VEHICLE_VIEW:case WC_VEHICLE_DETAILS:case WC_VEHICLE_ORDERS:
+  case WC_CONSOLE:case WC_SEND_NETWORK_MSG:case WC_GENERATE_LANDSCAPE:
+  case WC_GENERATE_PROGRESS_WINDOW:case WC_SCEN_INDUSTRY:case WC_INVALID:
+   return false;
+  default:return cls>WC_NONE&&cls<WC_INVALID;
+ }
+}
+
+/** Several unrelated dialogs share WC_GAME_OPTIONS: inspect the window's layout. */
+bool N3DSUsesScrollableWorkspace(const Window *w)
+{
+ return N3DSIsCanvasWindow(w->window_class)||(N3DSIsManagementWindow(w->window_class)&&!w->n3ds_native_layout);
+}
+
 bool N3DSUsesScreenPin(WindowClass cls)
 {
- return N3DSIsManagementWindow(cls)||N3DSIsConstructionWindow(cls)||cls==WC_TRAINS_LIST||cls==WC_ROADVEH_LIST||cls==WC_SHIPS_LIST||cls==WC_AIRCRAFT_LIST||cls==WC_VEHICLE_DETAILS||cls==WC_VEHICLE_ORDERS||cls==WC_VEHICLE_VIEW;
+ return N3DSIsCanvasWindow(cls)||N3DSIsManagementWindow(cls)||N3DSIsConstructionWindow(cls)||cls==WC_TRAINS_LIST||cls==WC_ROADVEH_LIST||cls==WC_SHIPS_LIST||cls==WC_AIRCRAFT_LIST||cls==WC_VEHICLE_DETAILS||cls==WC_VEHICLE_ORDERS||cls==WC_VEHICLE_VIEW;
 }
 
 void N3DSRequestMenuScreenChange(WindowClass cls, WindowNumber number)
@@ -198,6 +221,10 @@ static bool NativeN3DSOrdersRow(int y)
  Window *w;
  FOR_ALL_WINDOWS_FROM_FRONT(w) {
   if (w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR || w->window_class == WC_TOOLTIPS || w->window_class == WC_DROPDOWN_MENU) continue;
+  if (_game_mode==GM_NORMAL && N3DSUsesScrollableWorkspace(w)) {
+   if(y>=w->top&&y<w->top+w->height)return true;
+   continue;
+  }
   if ((N3DSIsManagementWindow(w->window_class)||N3DSIsConstructionWindow(w->window_class)) && w->left >= 40 && w->left+w->width <= 360) {
    if (y >= w->top && y < w->top+w->height) return true;
    continue;
@@ -266,6 +293,92 @@ static void ProcessN3DSStationPicker()
  MarkWholeScreenDirty();
 }
 
+/** Scrollbar gestures never reach an underlying game widget. */
+static bool _canvas_touch=false,_canvas_pending=false;
+static WindowClass _canvas_class;static WindowNumber _canvas_number;
+static int _canvas_target_x,_canvas_target_y,_canvas_drag_axis=0,_canvas_grab=0;
+static Window *N3DSCanvasFront()
+{
+ Window *w=N3DSFrontUi();
+ if(_game_mode!=GM_NORMAL||_map_pad||w==NULL||!N3DSUsesScrollableWorkspace(w))return NULL;
+ return w;
+}
+static bool N3DSCanvasOverflow(const Window *w)
+{
+ return w!=NULL&&(w->width>N3DSMenuScrollBar::ViewWidth(w->height,_upper_ui)||w->height>196);
+}
+static N3DSMenuScrollBar N3DSCanvasBar(const Window *w,bool vertical)
+{
+ N3DSMenuScrollBar bar={vertical?22:44,vertical?196:276,
+  vertical?196:N3DSMenuScrollBar::ViewWidth(w->height,_upper_ui),
+  vertical?w->height:w->width,vertical?w->n3ds_canvas_y:w->n3ds_canvas_x};
+ return bar;
+}
+static bool N3DSCanvasFooterClick(int x,int y)
+{
+ Window *w=N3DSCanvasFront();
+ if(!N3DSCanvasOverflow(w)||x<0||x>=320||y<22||y>=240||_pad_held||_left_button_down)return false;
+ bool horizontal=y>=218,vertical=!horizontal&&x>=298&&w->height>196;
+ if(!horizontal&&!vertical)return false;
+ _canvas_class=w->window_class;_canvas_number=w->window_number;
+ _canvas_target_x=w->n3ds_canvas_x;_canvas_target_y=w->n3ds_canvas_y;_canvas_drag_axis=0;
+ if(horizontal&&x<44){_canvas_target_x=_canvas_target_y=0;}
+ else{
+  N3DSMenuScrollBar bar=N3DSCanvasBar(w,vertical);int at=vertical?y:x;
+  int target=bar.offset,step=vertical?48:64;
+  if(at<bar.TrackStart())target-=step;
+  else if(at>=bar.start+bar.length-22)target+=step;
+  else if(at>=bar.ThumbStart()&&at<bar.ThumbStart()+bar.ThumbLength()){
+   _canvas_drag_axis=vertical?2:1;_canvas_grab=at-bar.ThumbStart();
+  }else target+=(at<bar.ThumbStart()?-bar.view:bar.view);
+  if(vertical)_canvas_target_y=bar.Clamp(target,0,bar.Maximum());
+  else _canvas_target_x=bar.Clamp(target,0,bar.Maximum());
+ }
+ _canvas_pending=true;_canvas_touch=true;_touch_held=true;return true;
+}
+static void MoveN3DSCanvasDrag(int x,int y)
+{
+ if(_canvas_drag_axis==0)return;Window *w=N3DSCanvasFront();
+ if(w==NULL||w->window_class!=_canvas_class||w->window_number!=_canvas_number)return;
+ bool vertical=_canvas_drag_axis==2;N3DSMenuScrollBar bar=N3DSCanvasBar(w,vertical);
+ int target=bar.OffsetForThumb(vertical?y:x,_canvas_grab);
+ if(vertical)_canvas_target_y=target;else _canvas_target_x=target;
+ _canvas_pending=true;
+}
+static void ProcessN3DSCanvasMove()
+{
+ if(!_canvas_pending||_pad_held||_left_button_down||(_touch_held&&_canvas_drag_axis==0))return;
+ _canvas_pending=false;Window *w=N3DSCanvasFront();
+ if(w==NULL||w->window_class!=_canvas_class||w->window_number!=_canvas_number)return;
+ w->n3ds_canvas_x=_canvas_target_x;w->n3ds_canvas_y=_canvas_target_y;
+ w->OnN3DSScreenChange(_upper_ui);_panel_needs_draw=true;MarkWholeScreenDirty();
+}
+static void DrawN3DSCanvasFooter()
+{
+ Window *w=N3DSCanvasFront();if(!N3DSCanvasOverflow(w))return;
+ DrawPixelInfo footer=_screen;
+ footer.dst_ptr=(byte *)_sdl_screen->pixels+240*_sdl_screen->pitch+40*_sdl_screen->format->BytesPerPixel;
+ footer.width=320;footer.height=240;footer.left=footer.top=0;footer.zoom=ZOOM_LVL_NORMAL;
+ DrawPixelInfo *saved=_cur_dpi;_cur_dpi=&footer;
+ DrawFrameRect(0,218,43,239,COLOUR_GREY,FR_NONE);DoDrawStringCentered(22,224,"Home",TC_WHITE);
+ for(int axis=0;axis<2;axis++){
+  bool vertical=axis!=0;if(vertical&&w->height<=196)continue;
+  N3DSMenuScrollBar bar=N3DSCanvasBar(w,vertical);int pos=bar.ThumbStart(),size=bar.ThumbLength();
+  if(vertical){
+   DrawFrameRect(298,22,319,217,COLOUR_GREY,FR_LOWERED);
+   DrawFrameRect(298,22,319,43,COLOUR_GREY,FR_NONE);DrawFrameRect(298,196,319,217,COLOUR_GREY,FR_NONE);
+   DoDrawStringCentered(309,28,"^",TC_WHITE);DoDrawStringCentered(309,202,"v",TC_WHITE);
+   DrawFrameRect(300,pos,317,pos+size-1,COLOUR_GREY,FR_NONE);
+  }else{
+   DrawFrameRect(44,218,319,239,COLOUR_GREY,FR_LOWERED);
+   DrawFrameRect(44,218,65,239,COLOUR_GREY,FR_NONE);DrawFrameRect(298,218,319,239,COLOUR_GREY,FR_NONE);
+   DoDrawStringCentered(55,224,"<",TC_WHITE);DoDrawStringCentered(309,224,">",TC_WHITE);
+   DrawFrameRect(pos,220,pos+size-1,237,COLOUR_GREY,FR_NONE);
+  }
+ }
+ _cur_dpi=saved;
+}
+
 static void DrawN3DSPanel()
 {
  CheckN3DSUpperUi();
@@ -299,6 +412,7 @@ static void DrawN3DSPanel()
     for (int x = 0; x < 320; x++) memcpy(dst + x * bytes, src + (x * 5 / 4) * bytes, bytes);
    }
 		}
+		DrawN3DSCanvasFooter();
 		return;
 	}
 	DrawPixelInfo panel = _screen;
@@ -319,10 +433,12 @@ static void DrawN3DSPanel()
 	DoDrawStringCentered(160, 207, _upper_ui ? "Y / SELECT: return menu to bottom" : "SELECT / X: return to tools", TC_WHITE);
 	DoDrawStringCentered(160, 223, _upper_ui ? "Circle Pad: pointer  D-pad: scroll" : "Circle Pad: scroll   R/Y: zoom   B: cancel", TC_WHITE);
 	_cur_dpi = saved;
+ DrawN3DSCanvasFooter();
 }
 
 static void MoveN3DSTouch(int x, int y)
 {
+ if(_canvas_touch){MoveN3DSCanvasDrag(x,y);return;}
  if (_upper_ui) {
   if (_touch_held) {
    const Point old = _cursor.pos;
@@ -734,6 +850,7 @@ static int PollEvent()
 		case SDL_MOUSEBUTTONDOWN:
 #ifdef N3DS
 			if (ev.button.button == SDL_BUTTON_LEFT) {
+    if(N3DSCanvasFooterClick(_panel_x,_panel_y))break;
     if (!_n3ds_map_input) MoveN3DSTouch(_panel_x, _panel_y);
     _touch_held = true;
 				_last_touch_x = _panel_x; _last_touch_y = _panel_y;
@@ -769,6 +886,7 @@ static int PollEvent()
 		case SDL_MOUSEBUTTONUP:
 #ifdef N3DS
 			if (ev.button.button == SDL_BUTTON_LEFT) {
+    if(_canvas_touch){_canvas_touch=false;_touch_held=false;_canvas_drag_axis=0;break;}
 				_touch_held = false;
 				_left_button_down = _pad_held;
     /* L/A may remain held while the stylus lifts and reanchors. */
@@ -966,6 +1084,7 @@ void VideoDriver_SDL::MainLoop()
 		while (PollEvent() == -1) {}
 		if (_exit_game) return;
 		ProcessN3DSMenuScreenChange();
+  ProcessN3DSCanvasMove();
 		ProcessN3DSStationPicker();
 
 		mod = SDL_CALL SDL_GetModState();

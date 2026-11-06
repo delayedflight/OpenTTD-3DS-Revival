@@ -187,6 +187,7 @@ public:
 
 	virtual void OnN3DSScreenChange(bool upper)
 	{
+		this->n3ds_native_layout=true;
 		int width=upper?400:320;bool changed=this->width!=width||this->height!=218;
 		this->width=width;this->height=218;this->vscroll.cap=5;
 		N3DSWidgetRect(this,DPIW_MATRIX_WIDGET,0,width-23,14,123);this->widget[DPIW_MATRIX_WIDGET].data=0x501;
@@ -901,6 +902,7 @@ public:
 
 	virtual void OnN3DSScreenChange(bool upper)
 	{
+		this->n3ds_native_layout=true;
 		int width=upper?400:320;bool changed=this->width!=width||this->height!=212;
 		this->width=width;this->height=212;this->vscroll.cap=8;
 		N3DSWidgetRect(this,IDW_DROPDOWN_ORDER,0,95,14,35);

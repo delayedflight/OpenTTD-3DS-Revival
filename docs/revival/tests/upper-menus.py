@@ -20,7 +20,7 @@ struct Window{int window_class=2,window_number=7;void OnN3DSScreenChange(bool){}
 using WindowClass=int;using WindowNumber=int;
 const int GM_NORMAL=1,GM_MENU=0,WC_MAIN_TOOLBAR=1,WKC_ESC=1,WKC_PAUSE=2;
 int _game_mode=1,_upper_ui_class=0,_upper_ui_number=0;
-bool _upper_ui=false,_map_pad=false,_pad_held=false,_touch_held=false,_left_button_down=false,_left_button_clicked=false,_n3ds_map_input=false,_panel_needs_draw=false;
+void MoveN3DSCanvasDrag(int,int){};bool _canvas_touch=false;bool _upper_ui=false,_map_pad=false,_pad_held=false,_touch_held=false,_left_button_down=false,_left_button_clicked=false,_n3ds_map_input=false,_panel_needs_draw=false;
 Point _ui_cursor{200,120},_n3ds_map_cursor{200,114};int _last_touch_x=0,_last_touch_y=0;
 N3DSBuildButtons _build_buttons;Window *front=&menu;bool exists=true;int resets=0,mouse_events=0,keys=0,redraws=0;
 #define FOR_ALL_WINDOWS_FROM_FRONT(w) for(w=front;w!=nullptr;w=nullptr)

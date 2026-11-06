@@ -6,6 +6,7 @@
 #include "openttd.h"
 #include "gui.h"
 #include "window_gui.h"
+#include "n3ds_ui.h"
 #include "viewport_func.h"
 #include "news_type.h"
 #include "settings_type.h"
@@ -303,6 +304,10 @@ struct NewsWindow : Window {
 
 	virtual void OnTick()
 	{
+		#ifdef N3DS
+		/* The native workspace owns position while the player reads or scrolls. */
+		if (_game_mode==GM_NORMAL && N3DSUsesScrollableWorkspace(this)) return;
+#endif
 		/* Scroll up newsmessages from the bottom in steps of 4 pixels */
 		int y = max(this->top - 4, _screen.height - this->height - 12 - this->chat_height);
 		if (y == this->top) return;

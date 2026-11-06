@@ -149,6 +149,10 @@ public:
 	WindowClass window_class;   ///< Window class
 	WindowNumber window_number; ///< Window number within the window class
 
+#ifdef N3DS
+	bool n3ds_native_layout = false; ///< A dedicated compact reflow is supplied.
+	int n3ds_canvas_x = 0, n3ds_canvas_y = 0; ///< Saved offsets in the native menu workspace.
+#endif
 	int left;   ///< x position of left edge of the window
 	int top;    ///< y position of top edge of the window
 	int width;  ///< width of the window (number of pixels to the right in x direction)

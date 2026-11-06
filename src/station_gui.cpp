@@ -309,6 +309,7 @@ public:
 
 	virtual void OnN3DSScreenChange(bool upper)
 	{
+		this->n3ds_native_layout=true;
 		int width=upper?400:320, cols=width/22, count=this->widget_count-SLW_CARGOSTART;
 		int sort_top=36+((count+cols-1)/cols)*22,list_top=sort_top+22;
 		bool changed=this->width!=width||this->height!=212;
