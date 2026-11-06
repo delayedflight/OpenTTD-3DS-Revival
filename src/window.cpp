@@ -477,7 +477,15 @@ static void DrawOverlappedWindow(Window *w, int left, int top, int right, int bo
  dp->dst_ptr = BlitterFactoryBase::GetCurrentBlitter()->MoveTo(_screen.dst_ptr, left, top);
 #endif
 	dp->zoom = ZOOM_LVL_NORMAL;
-	w->OnPaint();
+#ifdef N3DS
+ /* Specialised painters (e.g. the minimap) also inspect root buffer bounds. */
+ void *saved_surface = _screen.dst_ptr;
+ _screen.dst_ptr = base;
+ w->OnPaint();
+ _screen.dst_ptr = saved_surface;
+#else
+ w->OnPaint();
+#endif
 }
 
 /**

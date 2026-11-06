@@ -42,12 +42,40 @@ bool _n3ds_map_input;
 int _n3ds_scroll_factor = 10;
 Point _n3ds_map_cursor = {200, 120};
 static Point _ui_cursor = {200, 120};
+static bool NativeN3DSTitle();
+static void SelectN3DSInput(bool map);
+static bool _cursor_in_menu;
+static bool _cursor_native_title;
 
-N3DSMapCursorScope::N3DSMapCursorScope() : saved(_cursor.pos)
+N3DSMapCursorScope::N3DSMapCursorScope() : saved(_cursor.pos), saved_surface(_screen.dst_ptr)
 {
-	_cursor.pos = _n3ds_map_cursor;
+ if (_game_mode == GM_MENU) {
+  if (_n3ds_map_input) SelectN3DSInput(false);
+  const bool native = NativeN3DSTitle();
+  if (!_cursor_in_menu || native != _cursor_native_title) {
+   /* Preserve the physical touch position when title/dialog scaling changes. */
+   _cursor.pos.x = max(0, min(399, native ? _panel_x + 40 : _panel_x * 400 / 320));
+   _cursor.pos.y = max(0, min(239, _panel_y));
+   _cursor.delta.x = _cursor.delta.y = 0;
+   _ui_cursor = _cursor.pos;
+   _cursor.dirty = true;
+  }
+  saved = _cursor.pos;
+  _cursor_native_title = native;
+  _screen.dst_ptr = _n3ds_ui_pixels;
+ } else {
+  _cursor.pos = _n3ds_map_cursor;
+ }
+ _cursor_in_menu = _game_mode == GM_MENU;
+ /* A mode transition needs a redraw even if the cursor did not move. */
+ if (_n3ds_cursor_surface != _screen.dst_ptr) _cursor.dirty = true;
 }
-N3DSMapCursorScope::~N3DSMapCursorScope() { _cursor.pos = saved; }
+N3DSMapCursorScope::~N3DSMapCursorScope()
+{
+ _cursor.pos = saved;
+ _screen.dst_ptr = saved_surface;
+ _cur_dpi = &_screen;
+}
 
 static void SelectN3DSInput(bool map)
 {
@@ -343,7 +371,11 @@ static bool CreateMainSurface(int w, int h)
 		SDL_CALL SDL_FreeSurface(icon);
 	}
 
-	/* DO NOT CHANGE TO HWSURFACE, IT DOES NOT WORK */
+	#ifdef N3DS
+ /* Restore from the old cursor surface before SDL frees either buffer. */
+ UndrawMouseCursor();
+#endif
+ /* DO NOT CHANGE TO HWSURFACE, IT DOES NOT WORK */
 	#ifndef N3DS
 		newscreen = SDL_CALL SDL_SetVideoMode(w, h, bpp, SDL_SWSURFACE | SDL_HWPALETTE | (_fullscreen ? SDL_FULLSCREEN : SDL_RESIZABLE));
 	#else
@@ -519,7 +551,8 @@ static int PollEvent()
 		case SDL_MOUSEBUTTONDOWN:
 #ifdef N3DS
 			if (ev.button.button == SDL_BUTTON_LEFT) {
-				_touch_held = true;
+    if (!_n3ds_map_input) MoveN3DSTouch(_panel_x, _panel_y);
+    _touch_held = true;
 				_last_touch_x = _panel_x; _last_touch_y = _panel_y;
 				if (!_n3ds_map_input) {
 					_left_button_down = true;

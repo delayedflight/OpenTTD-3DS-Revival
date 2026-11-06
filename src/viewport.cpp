@@ -19,6 +19,7 @@
  */
 
 #include "stdafx.h"
+#include "n3ds_ui.h"
 #include "openttd.h"
 #include "landscape.h"
 #include "viewport_func.h"
@@ -208,35 +209,41 @@ void InitializeWindowViewport(Window *w, int x, int y,
 
 static Point _vp_move_offs;
 
-static void DoSetViewportPosition(const Window *w, int left, int top, int width, int height)
+static void DoSetViewportPosition(const Window *w, int left, int top, int width, int height, const Window *owner)
 {
 	FOR_ALL_WINDOWS_FROM_BACK_FROM(w, w) {
+#ifdef N3DS
+  /* Lower-screen windows cannot hide pixels from an upper-screen scroll. */
+  const bool owner_top = owner->window_class == WC_MAIN_WINDOW;
+  const bool obstacle_top = w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR;
+  if (owner_top != obstacle_top) continue;
+#endif
 		if (left + width > w->left &&
 				w->left + w->width > left &&
 				top + height > w->top &&
 				w->top + w->height > top) {
 
 			if (left < w->left) {
-				DoSetViewportPosition(w, left, top, w->left - left, height);
-				DoSetViewportPosition(w, left + (w->left - left), top, width - (w->left - left), height);
+				DoSetViewportPosition(w, left, top, w->left - left, height, owner);
+				DoSetViewportPosition(w, left + (w->left - left), top, width - (w->left - left), height, owner);
 				return;
 			}
 
 			if (left + width > w->left + w->width) {
-				DoSetViewportPosition(w, left, top, (w->left + w->width - left), height);
-				DoSetViewportPosition(w, left + (w->left + w->width - left), top, width - (w->left + w->width - left) , height);
+				DoSetViewportPosition(w, left, top, (w->left + w->width - left), height, owner);
+				DoSetViewportPosition(w, left + (w->left + w->width - left), top, width - (w->left + w->width - left) , height, owner);
 				return;
 			}
 
 			if (top < w->top) {
-				DoSetViewportPosition(w, left, top, width, (w->top - top));
-				DoSetViewportPosition(w, left, top + (w->top - top), width, height - (w->top - top));
+				DoSetViewportPosition(w, left, top, width, (w->top - top), owner);
+				DoSetViewportPosition(w, left, top + (w->top - top), width, height - (w->top - top), owner);
 				return;
 			}
 
 			if (top + height > w->top + w->height) {
-				DoSetViewportPosition(w, left, top, width, (w->top + w->height - top));
-				DoSetViewportPosition(w, left, top + (w->top + w->height - top), width , height - (w->top + w->height - top));
+				DoSetViewportPosition(w, left, top, width, (w->top + w->height - top), owner);
+				DoSetViewportPosition(w, left, top + (w->top + w->height - top), width , height - (w->top + w->height - top), owner);
 				return;
 			}
 
@@ -254,7 +261,12 @@ static void DoSetViewportPosition(const Window *w, int left, int top, int width,
 			return;
 		}
 
-		GfxScroll(left, top, width, height, xo, yo);
+		#ifdef N3DS
+  void *surface = owner->window_class == WC_MAIN_WINDOW ? _screen.dst_ptr : _n3ds_ui_pixels;
+  GfxScroll(left, top, width, height, xo, yo, surface);
+#else
+  GfxScroll(left, top, width, height, xo, yo);
+#endif
 
 		if (xo > 0) {
 			RedrawScreenRect(left, top, xo + left, top + height);
@@ -322,7 +334,7 @@ static void SetViewportPosition(Window *w, int x, int y)
 		i = top + height - _screen.height;
 		if (i >= 0) height -= i;
 
-		if (height > 0) DoSetViewportPosition(w->z_front, left, top, width, height);
+		if (height > 0) DoSetViewportPosition(w->z_front, left, top, width, height, w);
 	}
 }
 

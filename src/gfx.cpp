@@ -73,7 +73,7 @@ enum {
 static uint _dirty_bytes_per_line = 0;
 static byte *_dirty_blocks = NULL;
 
-void GfxScroll(int left, int top, int width, int height, int xo, int yo)
+void GfxScroll(int left, int top, int width, int height, int xo, int yo, void *surface)
 {
 	Blitter *blitter = BlitterFactoryBase::GetCurrentBlitter();
 
@@ -85,7 +85,7 @@ void GfxScroll(int left, int top, int width, int height, int xo, int yo)
 	NetworkUndrawChatMessage();
 #endif /* ENABLE_NETWORK */
 
-	blitter->ScrollBuffer(_screen.dst_ptr, left, top, width, height, xo, yo);
+	blitter->ScrollBuffer(surface != NULL ? surface : _screen.dst_ptr, left, top, width, height, xo, yo);
 	/* This part of the screen is now dirty. */
 	_video_driver->MakeDirty(left, top, width, height);
 }
@@ -1284,6 +1284,10 @@ void ScreenSizeChanged()
 	_cursor.visible = false;
 }
 
+#ifdef N3DS
+void *_n3ds_cursor_surface;
+#endif
+
 void UndrawMouseCursor()
 {
 	/* Don't undraw the mouse cursor if the screen is not ready */
@@ -1292,7 +1296,12 @@ void UndrawMouseCursor()
 	if (_cursor.visible) {
 		Blitter *blitter = BlitterFactoryBase::GetCurrentBlitter();
 		_cursor.visible = false;
-		blitter->CopyFromBuffer(blitter->MoveTo(_screen.dst_ptr, _cursor.draw_pos.x, _cursor.draw_pos.y), _cursor_backup.GetBuffer(), _cursor.draw_size.x, _cursor.draw_size.y);
+		#ifdef N3DS
+  void *surface = _n3ds_cursor_surface;
+#else
+  void *surface = _screen.dst_ptr;
+#endif
+  blitter->CopyFromBuffer(blitter->MoveTo(surface, _cursor.draw_pos.x, _cursor.draw_pos.y), _cursor_backup.GetBuffer(), _cursor.draw_size.x, _cursor.draw_size.y);
 		_video_driver->MakeDirty(_cursor.draw_pos.x, _cursor.draw_pos.y, _cursor.draw_size.x, _cursor.draw_size.y);
 	}
 }
@@ -1349,7 +1358,10 @@ void DrawMouseCursor()
 
 	uint8 *buffer = _cursor_backup.Allocate(blitter->BufferSize(w, h));
 
-	/* Make backup of stuff below cursor */
+	#ifdef N3DS
+ _n3ds_cursor_surface = _screen.dst_ptr;
+#endif
+ /* Make backup of stuff below cursor */
 	blitter->CopyToBuffer(blitter->MoveTo(_screen.dst_ptr, _cursor.draw_pos.x, _cursor.draw_pos.y), buffer, _cursor.draw_size.x, _cursor.draw_size.y);
 
 	/* Draw cursor on screen */

@@ -1,10 +1,10 @@
 # OpenTTD 3DS Revival implementation guide
 
-This guide describes the r3 prototype, based on EnergeticBark/OpenTTD-3DS v1.0.1, OpenTTD 0.7.0. The tested r1b repair and r2 UI prototype are preserved separately. r3 needs independent physical-console validation.
+This guide describes the r3a cursor refinement of the r3 prototype, based on EnergeticBark/OpenTTD-3DS v1.0.1, OpenTTD 0.7.0. The tested r1b repair and r2 UI prototype are preserved separately. r3 needs independent physical-console validation.
 
 ## Build and project layout
 
-The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
+The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3a/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
 
 The upstream checkout, the r1b source, and r2 source are kept separately in the development project. Private saves and crash dumps are local evidence, not release assets. Never test against the user's only save or write a release directly onto their SD card.
 
@@ -14,11 +14,19 @@ The upstream checkout, the r1b source, and r2 source are kept separately in the 
 
 r3 adds a separate UI surface. Its pitch matches the main SDL surface. `src/window.cpp` selects the destination when painting each window: `WC_MAIN_WINDOW` and `WC_STATUS_BAR` draw into the upper display, and every other window draws into the UI surface. The date/status/money bar occupies the bottom 12 pixels above, leaving all 240 touchscreen rows for UI. Map cursor motion is clamped above that information bar. Occlusion testing ignores windows on the other layer. Without that filter, an invisible menu would still cut a hole in the map beneath it.
 
+The root `_screen.dst_ptr` is scoped to the same target during each window’s `OnPaint`, then restored. This is necessary for specialised painters such as the minimap, whose absolute-buffer bounds checks also use the root surface; changing only the clipped drawing pointer leaves those checks pointed at the wrong allocation.
+
 The UI surface is cleared only in damaged regions before those regions are repainted. This matters when a window closes: its old pixels must disappear. The existing dirty-block mechanism is retained; there is no second OpenTTD simulation and no duplicated window tree. Normal clipping, z-order and original widget callbacks are retained within the UI layer.
 
 The complete 400-pixel desktop is resampled horizontally to 320 physical touchscreen pixels. Vertical coordinates remain 1:1. This is a compatibility bridge for the old window system, not a claim that every desktop dialog has been redesigned. Large dialogs can still need individual adaptations. Native-width title rendering is a special case: the 320-pixel menu is centred in the logical desktop and copied without horizontal resampling while it is frontmost.
 
 `src/n3ds_ui.h` declares the small interface shared by the video, window and cursor code. These changes are guarded by `N3DS`; desktop rendering follows its existing path.
+
+### Scroll optimisation and screen ownership
+
+`DoSetViewportPosition` has a separate occlusion walk from normal window painting. It must filter by physical screen too. In r3 this walk still treated the lower toolbar and AI Debug window as upper-map obstacles; panning skipped moving those rectangles, leaving stale map pixels and repeated fragments. r3a passes the viewport owner through recursive clipping, ignores obstacles on the other display, and preserves the upper status bar as a real upper obstacle.
+
+`GfxScroll` accepts an optional surface pointer. Upper map viewports scroll the upper backing surface; secondary viewports inside lower UI windows scroll the UI backing surface. Omitting this distinction writes cached lower-viewport pixels into the upper map. The existing fast pixel-scroll optimisation is retained rather than forcing an expensive full-map repaint each frame.
 
 ## Touch coordinates and input routing
 
@@ -28,7 +36,9 @@ SDL dual-screen touch events include the crop offset and lower-screen offset. Su
 
 X toggles between the UI desktop and a relative map-control pad. If a map action opens a new UI window (an error, bridge choice, station join or vehicle detail), the pad returns to the UI after A is released so the new dialog is visible. Tooltip windows are ignored for this transition. On the pad, dragging moves the upper cursor one logical pixel per touch pixel. The first touch records an anchor; lifting and touching again does not jump the cursor. Touching the pad does not itself place anything. A presses the map's left button; holding A while dragging supports normal construction drags. Releasing A restores the selected input mode. Switching modes releases button state before changing layers to prevent a stuck drag.
 
-The map and UI retain separate cursor positions. `N3DSMapCursorScope` temporarily substitutes the map position during upper-screen cursor drawing and restores the input position on scope exit. The existing cursor backup/restore buffer always belongs to the upper surface. Do not change the cursor's destination to the UI surface without also changing that ownership.
+The map and UI retain separate cursor positions. During gameplay, `N3DSMapCursorScope` temporarily uses the map position and upper surface for drawing. In `GM_MENU`, it instead keeps the input position and draws on the UI surface, so the pointer follows the title menu and its dialogs below. The scope restores the input position, screen destination on exit, then leaves the drawing context at the persistent root `_screen` rather than a window painter’s temporary stack context.
+
+The cursor backup buffer records its owning surface in `_n3ds_cursor_surface`. Undrawing must restore the pixels to that surface, not whichever destination is currently selected. A mode change forces a cursor redraw even if it has not moved. Before a video-mode change, the previous cursor is undrawn before SDL frees either backing surface. This prevents title/game transitions and resolution changes from restoring stale cursor pixels to the wrong screen.
 
 B sends Escape (cancel placement); L/R send the existing zoom shortcuts; START toggles pause. These reuse OpenTTD's handlers rather than introducing parallel construction commands. SDL's 3DS joystick button numbers are used here, not raw HID key bit positions.
 
@@ -77,3 +87,13 @@ Existing SDK/compiler mixed-enum ABI warnings remain and must be disclosed. Emul
 ## Known gaps
 
 Not every large legacy dialog has been redesigned. The horizontal compatibility transform can narrow text in in-game dialogs, and some original window minimum sizes exceed the available desktop. No new software keyboard is provided. This is a feature prototype, and physical stylus feel, hardware memory pressure, and longer endurance need separate checks. Network and music work remain outside this release.
+
+## Reproducing the scrolling regression
+
+From the extracted source distribution root, with Python 3 and clang++ available:
+
+```sh
+python3 source/docs/revival/tests/check-split-scroll.py source/docs/revival/tests/r3-before.cpp source /tmp/openttd-scroll-check
+```
+
+The test compiles the actual current `DoSetViewportPosition`, `GfxScroll` and 8-bit `ScrollBuffer` bodies into a small framebuffer harness. It compares cached scrolling against a full-redraw pixel oracle. The original r3 function bodies are kept as a baseline fixture. Horizontal, vertical, diagonal and larger-than-view shifts are tested with lower UI obstacles, the upper status bar, and a secondary lower-screen viewport. AddressSanitizer and UndefinedBehaviorSanitizer are enabled. The baseline fails 18 of 20 cases; the fixed source passes all 20 without sanitizer reports. This exercises pixel routing and occlusion, not the emulator or full game simulation, and does not replace a console retest of the user's recording.

@@ -81,7 +81,7 @@ enum {
 };
 
 void RedrawScreenRect(int left, int top, int right, int bottom);
-void GfxScroll(int left, int top, int width, int height, int xo, int yo);
+void GfxScroll(int left, int top, int width, int height, int xo, int yo, void *surface = NULL);
 
 void DrawSprite(SpriteID img, SpriteID pal, int x, int y, const SubSprite *sub = NULL);
 
