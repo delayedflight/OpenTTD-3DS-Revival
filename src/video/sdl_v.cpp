@@ -152,9 +152,18 @@ static void SetN3DSUpperUi(bool upper, bool preserve_placement)
  MarkWholeScreenDirty();
 }
 
+bool N3DSIsMapConstructionWindow(WindowClass cls)
+{
+ return cls==WC_BUILD_TOOLBAR||cls==WC_SCEN_BUILD_TOOLBAR||cls==WC_BUILD_STATION||cls==WC_BUS_STATION||cls==WC_TRUCK_STATION||cls==WC_BUILD_DEPOT||cls==WC_BUILD_SIGNAL||cls==WC_SCEN_LAND_GEN||cls==WC_BUILD_TREES;
+}
+bool N3DSIsConstructionWindow(WindowClass cls)
+{
+ return N3DSIsMapConstructionWindow(cls)||cls==WC_BUILD_BRIDGE||cls==WC_BUILD_VEHICLE||cls==WC_VEHICLE_DEPOT||cls==WC_SELECT_STATION||cls==WC_BUILD_INDUSTRY;
+}
+
 bool N3DSUsesScreenPin(WindowClass cls)
 {
- return cls==WC_TRAINS_LIST||cls==WC_ROADVEH_LIST||cls==WC_SHIPS_LIST||cls==WC_AIRCRAFT_LIST||cls==WC_VEHICLE_DETAILS||cls==WC_VEHICLE_ORDERS||cls==WC_VEHICLE_VIEW;
+ return N3DSIsConstructionWindow(cls)||cls==WC_TRAINS_LIST||cls==WC_ROADVEH_LIST||cls==WC_SHIPS_LIST||cls==WC_AIRCRAFT_LIST||cls==WC_VEHICLE_DETAILS||cls==WC_VEHICLE_ORDERS||cls==WC_VEHICLE_VIEW;
 }
 
 void N3DSRequestMenuScreenChange(WindowClass cls, WindowNumber number)
@@ -184,6 +193,10 @@ static bool NativeN3DSOrdersRow(int y)
  Window *w;
  FOR_ALL_WINDOWS_FROM_FRONT(w) {
   if (w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR || w->window_class == WC_TOOLTIPS || w->window_class == WC_DROPDOWN_MENU) continue;
+  if (N3DSIsConstructionWindow(w->window_class) && w->left >= 40 && w->left+w->width <= 360) {
+   if (y >= w->top && y < w->top+w->height) return true;
+   continue;
+  }
   if (w->window_class == WC_VEHICLE_VIEW && w->left == 40 && w->width <= 320) {
    if (y >= w->top && y < w->top + w->height) return true;
    continue;
@@ -296,6 +309,8 @@ static void DrawN3DSPanel()
 	DrawFrameRect(6, 34, 313, 193, COLOUR_GREY, FR_LOWERED);
 	DoDrawStringCentered(160, 85, _upper_ui ? "Touchpad: move the pointer" : "Drag gently to move the cursor", TC_WHITE);
 	DoDrawStringCentered(160, 105, _upper_ui ? "L / A: click or hold" : (_station_picker_active ? "L / A: choose station   B: cancel" : "L: click / hold L and drag to build"), TC_WHITE);
+	const Window *front = N3DSFrontUi();
+	if (_upper_ui && front != NULL && N3DSIsMapConstructionWindow(front->window_class)) DoDrawStringCentered(160, 175, "X: use selected tool on map", TC_WHITE);
 	DoDrawStringCentered(160, 207, _upper_ui ? "Y / SELECT: return menu to bottom" : "SELECT / X: return to tools", TC_WHITE);
 	DoDrawStringCentered(160, 223, _upper_ui ? "Circle Pad: pointer  D-pad: scroll" : "Circle Pad: scroll   R/Y: zoom   B: cancel", TC_WHITE);
 	_cur_dpi = saved;
@@ -789,7 +804,14 @@ static int PollEvent()
      switch (ev.jbutton.button) {
       case 7: SetN3DSUpperUi(false); break;
       case 2: HandleKeypress(uint32(WKC_ESC) << 16); break;
-      case 3: _cursor.wheel--; HandleMouseEvents(); break;
+      case 3: {
+       Window *front=N3DSFrontUi();
+       if(front!=NULL && N3DSIsMapConstructionWindow(front->window_class)) {
+        SetN3DSUpperUi(false,true);_map_pad=true;_map_ui_front=N3DSFrontUi();SelectN3DSInput(true);
+        _panel_needs_draw=true;MarkWholeScreenDirty();
+       } else { _cursor.wheel--;HandleMouseEvents(); }
+       break;
+      }
       case 6: _cursor.wheel++; HandleMouseEvents(); break;
       case 0: HandleKeypress(uint32(WKC_PAUSE) << 16); break;
      }

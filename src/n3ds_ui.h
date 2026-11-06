@@ -10,6 +10,8 @@ extern void *_n3ds_cursor_surface;
 extern bool _n3ds_map_input;
 bool N3DSUpperUiActive();
 bool N3DSUsesScreenPin(WindowClass cls);
+bool N3DSIsConstructionWindow(WindowClass cls);
+bool N3DSIsMapConstructionWindow(WindowClass cls);
 void N3DSRequestMenuScreenChange(WindowClass cls, WindowNumber number);
 struct N3DSWidgetLayout { int16 left, right, top, bottom; byte type; };
 extern int _n3ds_scroll_factor;

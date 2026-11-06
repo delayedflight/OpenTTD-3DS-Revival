@@ -711,6 +711,13 @@ struct DepotWindow : Window {
 		this->resize.step_width  = _block_sizes[type][0];
 		this->resize.step_height = _block_sizes[type][1];
 
+#ifdef N3DS
+		/* Establish a reachable minimum before the shared screen-switch resize.
+		 * Keep whole vehicle cells and the train's scrollbar space. */
+		this->hscroll.cap = min((int)this->hscroll.cap, max(1, (320 - this->width - (type == VEH_TRAIN ? 36 : 0)) / (int)this->resize.step_width));
+		this->vscroll.cap = min((int)this->vscroll.cap, max(1, (218 - this->height - (type == VEH_TRAIN ? 12 : 0)) / (int)this->resize.step_height));
+#endif
+
 		/* Enlarge the window to fit with the selected number of blocks of the selected size */
 		ResizeWindow(this,
 					_block_sizes[type][0] * this->hscroll.cap,

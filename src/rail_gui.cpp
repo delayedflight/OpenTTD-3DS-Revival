@@ -990,6 +990,26 @@ public:
 			this->vscroll.cap   = 5;
 			this->vscroll.pos   = Clamp(_railstation.station_type - 2, 0, this->vscroll.count - this->vscroll.cap);
 		}
+	
+#ifdef N3DS
+		this->width=320;this->height=newstation?218:200;
+		this->widget[BRSW_BACKGROUND].right=319;this->widget[BRSW_BACKGROUND].bottom=this->height-1;
+		if(newstation){
+			for(int id=BRSW_PLATFORM_DIR_X;id<=BRSW_HIGHLIGHT_ON;id++){this->widget[id].left+=160;this->widget[id].right+=160;this->widget[id].top-=90;this->widget[id].bottom-=90;}
+			this->widget[BRSW_NEWST_DROPDOWN].bottom=38;
+			this->widget[BRSW_NEWST_LIST].top=42;this->widget[BRSW_NEWST_LIST].bottom=151;
+			this->widget[BRSW_NEWST_SCROLL].top=42;this->widget[BRSW_NEWST_SCROLL].bottom=151;
+			this->vscroll.pos=min(this->vscroll.pos,(uint16)max(0,(int)this->vscroll.count-5));
+		}
+		for(int n=0;n<7;n++){
+			Widget &a=this->widget[BRSW_PLATFORM_NUM_1+n],&c=this->widget[BRSW_PLATFORM_LEN_1+n];
+			a.left=c.left=160+n*22;a.right=c.right=a.left+21;
+			a.top=newstation?87:38;a.bottom=a.top+21;c.top=newstation?122:82;c.bottom=c.top+21;
+		}
+		Widget &drag=this->widget[BRSW_PLATFORM_DRAG_N_DROP];drag.left=160;drag.right=313;drag.top=newstation?146:114;drag.bottom=drag.top+21;
+		for(int n=0;n<2;n++){Widget&w=this->widget[BRSW_HIGHLIGHT_OFF+n];w.left=160+n*77;w.right=w.left+76;w.top=newstation?186:154;w.bottom=w.top+21;}
+
+#endif
 	}
 
 	virtual ~BuildRailStationWindow()
@@ -1033,9 +1053,14 @@ public:
 		this->DrawWidgets();
 
 		int y_offset = newstations ? 90 : 0;
+#ifdef N3DS
+		y_offset=0;const int preview_offset=newstations?160:0;
+#else
+		const int preview_offset=0;
+#endif
 
 		/* Set up a clipping area for the '/' station preview */
-		if (FillDrawPixelInfo(&tmp_dpi, 7, 26 + y_offset, 66, 48)) {
+		if (FillDrawPixelInfo(&tmp_dpi, 7+preview_offset, 26 + y_offset, 66, 48)) {
 			old_dpi = _cur_dpi;
 			_cur_dpi = &tmp_dpi;
 			if (!DrawStationTile(32, 16, _cur_railtype, AXIS_X, _railstation.station_class, _railstation.station_type)) {
@@ -1045,7 +1070,7 @@ public:
 		}
 
 		/* Set up a clipping area for the '\' station preview */
-		if (FillDrawPixelInfo(&tmp_dpi, 75, 26 + y_offset, 66, 48)) {
+		if (FillDrawPixelInfo(&tmp_dpi, 75+preview_offset, 26 + y_offset, 66, 48)) {
 			old_dpi = _cur_dpi;
 			_cur_dpi = &tmp_dpi;
 			if (!DrawStationTile(32, 16, _cur_railtype, AXIS_Y, _railstation.station_class, _railstation.station_type)) {
@@ -1054,7 +1079,17 @@ public:
 			_cur_dpi = old_dpi;
 		}
 
-		DrawStringCentered(74, 15 + y_offset, STR_3002_ORIENTATION, TC_FROMSTRING);
+		DrawStringCentered(74+preview_offset, 15 + y_offset, STR_3002_ORIENTATION, TC_FROMSTRING);
+#ifdef N3DS
+		DrawStringCentered(237,newstations?76:26,STR_3003_NUMBER_OF_TRACKS,TC_FROMSTRING);
+		DrawStringCentered(237,newstations?111:70,STR_3004_PLATFORM_LENGTH,TC_FROMSTRING);
+		DrawStringCentered(237,newstations?174:141,STR_3066_COVERAGE_AREA_HIGHLIGHT,TC_FROMSTRING);
+		DrawPixelInfo coverage_dpi;DrawPixelInfo *coverage_saved=_cur_dpi;
+		if(FillDrawPixelInfo(&coverage_dpi,0,0,148,this->height))_cur_dpi=&coverage_dpi;
+		int text_end=DrawStationCoverageAreaText(2,newstations?156:90,SCT_ALL,rad,false);
+		text_end=DrawStationCoverageAreaText(2,text_end+4,SCT_ALL,rad,true)+4;
+		_cur_dpi=coverage_saved;
+#else
 		DrawStringCentered(74, 76 + y_offset, STR_3003_NUMBER_OF_TRACKS, TC_FROMSTRING);
 		DrawStringCentered(74, 101 + y_offset, STR_3004_PLATFORM_LENGTH, TC_FROMSTRING);
 		DrawStringCentered(74, 141 + y_offset, STR_3066_COVERAGE_AREA_HIGHLIGHT, TC_FROMSTRING);
@@ -1067,8 +1102,14 @@ public:
 			this->SetDirty();
 		}
 
+#endif
+
 		if (newstations) {
+			#ifdef N3DS
+			uint y=48;
+#else
 			uint y = 35;
+#endif
 
 			for (uint16 i = this->vscroll.pos; i < _railstation.station_count && i < (uint)(this->vscroll.pos + this->vscroll.cap); i++) {
 				const StationSpec *statspec = GetCustomStationSpec(_railstation.station_class, i);
@@ -1083,7 +1124,11 @@ public:
 					DrawStringTruncated(9, y, STR_STAT_CLASS_DFLT, i == _railstation.station_type ? TC_WHITE : TC_BLACK, 118);
 				}
 
+				#ifdef N3DS
+				y+=22;
+#else
 				y += 14;
+#endif
 			}
 		}
 	}
@@ -1220,7 +1265,13 @@ public:
 
 			case BRSW_NEWST_LIST: {
 				const StationSpec *statspec;
-				int y = (pt.y - 32) / 14;
+				int y = (pt.y - this->widget[BRSW_NEWST_LIST].top) /
+#ifdef N3DS
+22
+#else
+14
+#endif
+;
 
 				if (y >= this->vscroll.cap) return;
 				y += this->vscroll.pos;
@@ -1618,6 +1669,12 @@ public:
 		this->hscroll.cap = 5;
 		this->hscroll.count = _waypoint_count;
 		this->FindWindowPlacementAndResize(desc);
+	
+#ifdef N3DS
+		this->hscroll.cap=4;this->width=276;
+		this->SetWidgetHiddenState(BRWW_WAYPOINT_5,true);
+		this->widget[BRWW_BACKGROUND].right=275;this->widget[BRWW_SCROLL].right=275;
+#endif
 	};
 
 	virtual void OnPaint()

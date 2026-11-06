@@ -754,6 +754,12 @@ struct BuildVehicleWindow : Window {
 		if (this->eng_list.Length() > 0) this->sel_engine = this->eng_list[0];
 
 		this->FindWindowPlacementAndResize(desc);
+	
+#ifdef N3DS
+		this->widget[BUILD_VEHICLE_WIDGET_BUILD].bottom+=10;
+		this->widget[BUILD_VEHICLE_WIDGET_RENAME].bottom+=10;
+		this->height+=10;
+#endif
 	}
 
 	/* Setup widget strings to fit the different types of vehicles */
@@ -1033,9 +1039,25 @@ struct BuildVehicleWindow : Window {
 
 		if (this->sel_engine != INVALID_ENGINE) {
 			const Widget *wi = &this->widget[BUILD_VEHICLE_WIDGET_PANEL];
+#ifdef N3DS
+			DrawPixelInfo info_dpi;DrawPixelInfo *info_saved=_cur_dpi;
+			if(FillDrawPixelInfo(&info_dpi,0,wi->top,this->width,::max(1,min(196,wi->bottom+1)-wi->top))) {
+				info_dpi.top+=wi->top; /* Purchase text retains window-local coordinates. */
+				_cur_dpi=&info_dpi;
+			}
+#endif
 			int text_end = DrawVehiclePurchaseInfo(2, wi->top + 1, wi->right - wi->left - 2, this->sel_engine);
+#ifdef N3DS
+			_cur_dpi=info_saved;text_end=min(text_end,195);
+#endif
 
-			if (text_end > wi->bottom) {
+			if (
+#ifdef N3DS
+				text_end != wi->bottom
+#else
+				text_end > wi->bottom
+#endif
+			) {
 				this->SetDirty();
 				ResizeWindowForWidget(this, BUILD_VEHICLE_WIDGET_PANEL, 0, text_end - wi->bottom);
 				this->SetDirty();

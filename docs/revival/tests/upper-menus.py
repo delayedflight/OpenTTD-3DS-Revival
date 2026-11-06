@@ -25,6 +25,7 @@ Point _ui_cursor{200,120},_n3ds_map_cursor{200,114};int _last_touch_x=0,_last_to
 N3DSBuildButtons _build_buttons;Window *front=&menu;bool exists=true;int resets=0,mouse_events=0,keys=0,redraws=0;
 #define FOR_ALL_WINDOWS_FROM_FRONT(w) for(w=front;w!=nullptr;w=nullptr)
 Window *N3DSFrontUi(){return front;}Window *FindWindowById(int c,int n){return exists&&c==menu.window_class&&n==menu.window_number?&menu:nullptr;}
+Window *_map_ui_front=nullptr;bool construction=false;bool N3DSIsMapConstructionWindow(WindowClass){return construction;}
 static void SetN3DSUpperUi(bool upper,bool preserve_placement=false);
 void ResetObjectToPlace(){resets++;}void HandleMouseEvents(){mouse_events++;}void MarkWholeScreenDirty(){redraws++;}void HandleKeypress(unsigned){keys++;}
 bool NativeN3DSTitle(){return false;}bool NativeN3DSToolbarRow(int){return false;}bool NativeN3DSDropdownRow(int){return false;}bool NativeN3DSOrdersRow(int){return false;}
@@ -45,6 +46,7 @@ int main(){
  for(int bytes:{1,4}){Format fmt{bytes};int pitch=400*bytes+16,ui_pitch=400*bytes+8;std::vector<byte>ui(ui_pitch*240,0x3D),dst(pitch*480,0xCE);Surface u{ui.data(),ui_pitch,&fmt},v{dst.data(),pitch,&fmt};_ui_surface=&u;_sdl_screen=&v;Copy();for(int y=0;y<480;y++)for(int x=0;x<pitch;x++)assert(dst[y*pitch+x]==(y<240&&x<400*bytes?0x3D:0xCE));}
  Buttons(true,7);assert(!_upper_ui&&redraws>=2);
  SetN3DSUpperUi(true);Buttons(true,5);int before=resets;SetN3DSUpperUi(false,true);assert(resets==before&&!_upper_ui&&!_pad_held);
+ construction=true;SetN3DSUpperUi(true);before=resets;Buttons(true,3);assert(!_upper_ui&&_map_pad&&_n3ds_map_input&&resets==before&&_map_ui_front==front);construction=false;_map_pad=false;
  _map_pad=true;SetN3DSUpperUi(true);assert(!_upper_ui);_map_pad=false;
  _game_mode=GM_MENU;SetN3DSUpperUi(true);assert(!_upper_ui);_game_mode=GM_NORMAL;
  menu.window_class=WC_MAIN_TOOLBAR;SetN3DSUpperUi(true);assert(!_upper_ui);menu.window_class=2;

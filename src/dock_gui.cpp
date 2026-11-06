@@ -337,6 +337,11 @@ public:
 	{
 		this->LowerWidget(_settings_client.gui.station_show_coverage + BDSW_LT_OFF);
 		this->FindWindowPlacementAndResize(desc);
+	
+#ifdef N3DS
+		for(int i=0;i<2;i++)this->widget[BDSW_LT_OFF+i].bottom+=11;
+		this->height+=11;this->widget[BDSW_BACKGROUND].bottom+=11;
+#endif
 	}
 
 	virtual ~BuildDocksStationWindow()
@@ -356,8 +361,17 @@ public:
 			SetTileSelectSize(1, 1);
 		}
 
-		int text_end = DrawStationCoverageAreaText(4, 50, SCT_ALL, rad, false);
+		int text_end = DrawStationCoverageAreaText(4,
+#ifdef N3DS
+		61,
+#else
+		50,
+#endif
+		SCT_ALL, rad, false);
 		text_end = DrawStationCoverageAreaText(4, text_end + 4, SCT_ALL, rad, true) + 4;
+#ifdef N3DS
+		text_end=min(text_end,217);
+#endif
 		if (text_end != this->widget[BDSW_BACKGROUND].bottom) {
 			this->SetDirty();
 			ResizeWindowForWidget(this, 2, 0, text_end - this->widget[BDSW_BACKGROUND].bottom);

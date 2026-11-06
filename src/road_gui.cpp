@@ -838,6 +838,11 @@ public:
 		this->LowerWidget(_road_station_picker_orientation + BRSW_STATION_NE);
 		this->LowerWidget(_settings_client.gui.station_show_coverage + BRSW_LT_OFF);
 		this->FindWindowPlacementAndResize(desc);
+	
+#ifdef N3DS
+		for(int i=0;i<2;i++)this->widget[BRSW_LT_OFF+i].bottom+=10;
+		this->height+=10;this->widget[BRSW_BACKGROUND].bottom+=10;
+#endif
 	}
 
 	virtual ~BuildRoadStationWindow()
@@ -866,12 +871,20 @@ public:
 		StationPickerDrawSprite(171, 35, st, INVALID_RAILTYPE, _cur_roadtype, 4);
 		StationPickerDrawSprite(171, 85, st, INVALID_RAILTYPE, _cur_roadtype, 5);
 
-		int text_end = DrawStationCoverageAreaText(2, 146,
+		int text_end = DrawStationCoverageAreaText(2,
+#ifdef N3DS
+			156,
+#else
+			146,
+#endif
 			(this->window_class == WC_BUS_STATION) ? SCT_PASSENGERS_ONLY : SCT_NON_PASSENGERS_ONLY,
 			3, false);
 		text_end = DrawStationCoverageAreaText(2, text_end + 4,
 			(this->window_class == WC_BUS_STATION) ? SCT_PASSENGERS_ONLY : SCT_NON_PASSENGERS_ONLY,
 			3, true) + 4;
+#ifdef N3DS
+		text_end=min(text_end,217);
+#endif
 		if (text_end > this->widget[BRSW_BACKGROUND].bottom) {
 			this->SetDirty();
 			ResizeWindowForWidget(this, BRSW_BACKGROUND, 0, text_end - this->widget[BRSW_BACKGROUND].bottom);

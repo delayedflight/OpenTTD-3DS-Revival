@@ -801,8 +801,22 @@ static void AssignWidgetToWindow(Window *w, const Widget *widget)
 
 		for (const Widget *wi = widget; wi->type != WWT_LAST; wi++) index++;
 
+		#ifdef N3DS
+		bool add_pin=N3DSIsConstructionWindow(w->window_class);
+		for(const Widget *wi=widget;wi->type!=WWT_LAST;wi++) if(wi->type==WWT_STICKYBOX)add_pin=false;
+		w->widget = MallocT<Widget>(index + (add_pin?1:0));
+#else
 		w->widget = MallocT<Widget>(index);
+#endif
 		memcpy(w->widget, widget, sizeof(*w->widget) * index);
+#ifdef N3DS
+		if(add_pin) {
+			w->widget[index]=w->widget[index-1];
+			Widget pin={WWT_STICKYBOX,RESIZE_NONE,COLOUR_DARK_GREEN,(int16)(w->width-12),(int16)(w->width-1),0,13,0,STR_NULL};
+			for (uint i=0;i<index-1;i++) if (w->widget[i].type==WWT_CAPTION) pin.colour=w->widget[i].colour;
+			w->widget[index-1]=pin;index++;
+		}
+#endif
 		w->widget_count = index - 1;
 #ifdef N3DS
 		if (N3DSUsesScreenPin(w->window_class)) {
@@ -1226,6 +1240,9 @@ Window::Window(const WindowDesc *desc, WindowNumber window_number)
 	Point pt = LocalGetWindowPlacement(desc, window_number);
 	this->Initialize(pt.x, pt.y, desc->minimum_width, desc->minimum_height, desc->cls, desc->widgets, window_number);
 	this->desc_flags = desc->flags;
+#ifdef N3DS
+	if(N3DSIsConstructionWindow(this->window_class)) this->desc_flags|=WDF_STICKY_BUTTON;
+#endif
 }
 
 /** Do a search for a window at specific coordinates. For this we start
@@ -1571,7 +1588,7 @@ static bool HandleWindowDragging()
 				w->viewport->top  += ny - w->top;
 			}
 #ifdef N3DS
-			if ((w->window_class == WC_VEHICLE_VIEW && w->width <= 320 && !N3DSUpperUiActive()) || w->window_class == WC_VEHICLE_ORDERS || (w->width == 320 && (w->window_class == WC_VEHICLE_DETAILS || w->window_class == WC_TRAINS_LIST || w->window_class == WC_ROADVEH_LIST || w->window_class == WC_SHIPS_LIST || w->window_class == WC_AIRCRAFT_LIST))) { nx = 40; ny = 22; }
+			if ((N3DSIsConstructionWindow(w->window_class) && !N3DSUpperUiActive() && w->width<=320) || (w->window_class == WC_VEHICLE_VIEW && w->width <= 320 && !N3DSUpperUiActive()) || w->window_class == WC_VEHICLE_ORDERS || (w->width == 320 && (w->window_class == WC_VEHICLE_DETAILS || w->window_class == WC_TRAINS_LIST || w->window_class == WC_ROADVEH_LIST || w->window_class == WC_SHIPS_LIST || w->window_class == WC_AIRCRAFT_LIST))) { nx = N3DSIsConstructionWindow(w->window_class)?40+max(0,(320-w->width)/2):40; ny = 22; }
 #endif
 			w->left = nx;
 			w->top  = ny;
@@ -2192,37 +2209,52 @@ void InputLoop()
 }
 
 #ifdef N3DS
+void Window::OnN3DSScreenChange(bool upper)
+{
+ if(!N3DSIsConstructionWindow(this->window_class))return;
+ if(this->window_class==WC_BUILD_VEHICLE || this->window_class==WC_VEHICLE_DEPOT) {
+  const int target=upper?400:320;
+  const int step=max(1,(int)this->resize.step_width);
+  int delta=target-this->width;
+  if(delta<0) delta=-((-delta+step-1)/step)*step; else delta=(delta/step)*step;
+  if(delta!=0 && this->width+delta>=(int)this->resize.width) {
+   ResizeWindow(this,delta,0);Point size={this->width,this->height};Point diff={delta,0};this->OnResize(size,diff);
+  }
+ }
+ const int nx=upper?max(0,(400-this->width)/2):40+max(0,(320-this->width)/2);
+ const int ny=22;
+ if(this->viewport!=NULL){this->viewport->left+=nx-this->left;this->viewport->top+=ny-this->top;}
+ bool changed=this->left!=nx||this->top!=ny;this->left=nx;this->top=ny;
+ for(uint i=0;i<this->widget_count;i++){
+  Widget &wi=this->widget[i];
+  if(wi.type==WWT_CAPTION)wi.right=this->width-13;
+  if(wi.type==WWT_STICKYBOX){wi.left=this->width-12;wi.right=this->width-1;wi.tooltips=STR_NULL;}
+ }
+ if(changed)MarkWholeScreenDirty();
+}
+
 /** Reflow only toolbar widgets; preserve their IDs and original callbacks. */
 static void LayoutN3DSToolbars()
 {
- Window *w;
- bool changed = false;
+ Window *w;bool changed=false;const bool upper=N3DSUpperUiActive();const int width=upper?400:320;
  FOR_ALL_WINDOWS_FROM_BACK(w) {
-  if (w->window_class == WC_BUILD_TOOLBAR) {
-   uint buttons = 0;
-   for (uint i = 0; i < w->widget_count; i++) {
-    Widget &wi = w->widget[i];
-    if (wi.type == WWT_IMGBTN || wi.type == WWT_IMGBTN_2) {
-     if (wi.bottom - wi.top != 31) changed = true;
-     wi.left = (buttons % 8) * 50; wi.right = wi.left + 49;
-     wi.top = 14 + (buttons / 8) * 32; wi.bottom = wi.top + 31;
-     buttons++;
-    } else if (wi.type == WWT_CAPTION) {
-     wi.right = 387;
-    } else if (wi.type == WWT_STICKYBOX) {
-     wi.left = 388; wi.right = 399;
-    } else if (wi.type == WWT_PANEL) {
-     wi.type = WWT_EMPTY; // Narrow desktop spacers are unnecessary in the grid.
-    }
+  bool grid=w->window_class==WC_BUILD_TOOLBAR||w->window_class==WC_SCEN_BUILD_TOOLBAR;
+  if(w->window_class==WC_SCEN_LAND_GEN) {grid=true;for(uint i=0;i<w->widget_count;i++)if(w->widget[i].type==WWT_TEXTBTN||w->widget[i].type==WWT_DROPDOWN||w->widget[i].type==WWT_EDITBOX)grid=false;}
+  if(grid){
+   uint buttons=0;
+   for(uint i=0;i<w->widget_count;i++){
+    Widget &wi=w->widget[i];
+    if(wi.type==WWT_IMGBTN||wi.type==WWT_IMGBTN_2||wi.type==WWT_PUSHIMGBTN){
+     int left=(buttons%8)*(width/8),top=14+(buttons/8)*32;
+     if(wi.left!=left||wi.top!=top||wi.right!=left+width/8-1||wi.bottom!=top+31)changed=true;
+     wi.left=left;wi.right=left+width/8-1;wi.top=top;wi.bottom=top+31;buttons++;
+    }else if(wi.type==WWT_PANEL)wi.type=WWT_EMPTY;
    }
-   w->width = 400; w->height = 14 + ((buttons + 7) / 8) * 32;
-   if (changed) {
-    const Window *main_toolbar = FindWindowById(WC_MAIN_TOOLBAR, 0);
-    w->left = 0; w->top = main_toolbar != NULL ? main_toolbar->height : 22;
-   }
+   w->width=width;w->height=14+((buttons+7)/8)*32;
   }
+  if(N3DSIsConstructionWindow(w->window_class))w->OnN3DSScreenChange(upper);
  }
- if (changed) MarkWholeScreenDirty();
+ if(changed)MarkWholeScreenDirty();
 }
 #endif
 

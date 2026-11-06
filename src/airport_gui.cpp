@@ -185,6 +185,18 @@ public:
 		}
 
 		this->FindWindowPlacementAndResize(desc);
+	
+#ifdef N3DS
+		this->width=320;this->height=218;
+		for(uint i=2;i<this->widget_count;i++) {
+			Widget&w=this->widget[i];
+			if(w.type==WWT_PANEL) {if(i==BAW_BOTTOMPANEL){w.left=0;w.right=319;w.top=14;w.bottom=217;}else w.type=WWT_EMPTY;}
+			if(w.type==WWT_LABEL)w.type=WWT_EMPTY;
+		}
+		for(int i=0;i<BAW_AIRPORT_COUNT;i++){Widget&w=this->widget[BAW_SMALL_AIRPORT+i];w.left=(i%2)*160;w.right=w.left+159;w.top=14+(i/2)*22;w.bottom=w.top+21;}
+		for(int i=0;i<2;i++){Widget&w=this->widget[BAW_BTN_DONTHILIGHT+i];w.left=i*160;w.right=w.left+159;w.top=140;w.bottom=161;}
+		Widget &label=this->widget[BAW_BTN_DOHILIGHT+1];label.type=WWT_LABEL;label.left=0;label.right=319;label.top=126;label.bottom=139;
+#endif
 	}
 
 	virtual ~AirportPickerWindow()
@@ -228,18 +240,25 @@ public:
 		if (_settings_game.economy.station_noise_level) {
 			/* show the noise of the selected airport */
 			SetDParam(0, airport->noise_level);
+			#ifdef N3DS
+			DrawString(2,164,STR_STATION_NOISE,TC_FROMSTRING);
+#else
 			DrawString(2, 206, STR_STATION_NOISE, TC_FROMSTRING);
+#endif
 			y_noise_offset = 10;
 		}
 
 		/* strings such as 'Size' and 'Coverage Area' */
 		int text_end = DrawStationCoverageAreaText(2, this->widget[BAW_BTN_DOHILIGHT].bottom + 4 + y_noise_offset, SCT_ALL, rad, false);
 		text_end = DrawStationCoverageAreaText(2, text_end + 4, SCT_ALL, rad, true) + 4;
+
+#ifndef N3DS
 		if (text_end != this->widget[BAW_BOTTOMPANEL].bottom) {
 			this->SetDirty();
 			ResizeWindowForWidget(this, BAW_BOTTOMPANEL, 0, text_end - this->widget[BAW_BOTTOMPANEL].bottom);
 			this->SetDirty();
 		}
+#endif
 	}
 
 	virtual void OnClick(Point pt, int widget)

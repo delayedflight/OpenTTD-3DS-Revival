@@ -56,6 +56,12 @@ public:
 		}
 		ResetObjectToPlace();
 		this->FindWindowPlacementAndResize(desc);
+	
+#ifdef N3DS
+		this->widget[BTW_TYPE_RANDOM].bottom+=10;
+		this->widget[BTW_MANY_RANDOM].top+=10;this->widget[BTW_MANY_RANDOM].bottom+=20;
+		this->height+=20;this->widget[BTW_BACKGROUND].bottom+=20;
+#endif
 	}
 
 	virtual void OnPaint()

@@ -496,7 +496,7 @@ public:
 	virtual void OnResize(Point new_size, Point delta) {}
 #ifdef N3DS
 	/** Reflow native-width vehicle panes when their display changes. */
-	virtual void OnN3DSScreenChange(bool upper) {}
+	virtual void OnN3DSScreenChange(bool upper);
 #endif
 
 	/**

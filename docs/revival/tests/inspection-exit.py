@@ -5,7 +5,7 @@ root=Path(__file__).resolve().parents[3]
 out=Path(sys.argv[1]).resolve();out.mkdir(parents=True,exist_ok=True)
 s=(root/'src/video/sdl_v.cpp').read_text()
 def body(marker):
- a=s.index(marker);i=s.index('{',a)+1;depth=1
+ a=s.rindex(marker) if marker=='case 3: {' else s.index(marker);i=s.index('{',a)+1;depth=1
  while depth:
   depth+=(s[i]=='{')-(s[i]=='}');i+=1
  return s[a:i]
