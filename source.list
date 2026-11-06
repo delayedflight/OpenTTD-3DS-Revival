@@ -241,6 +241,8 @@ news_gui.h
 news_type.h
 npf.h
 music/null_m.h
+music/n3ds_wav.h
+music/wav_stream.hpp
 sound/null_s.h
 video/null_v.h
 oldpool.h
@@ -839,6 +841,7 @@ video/null_v.cpp
 
 # Music
 music/null_m.cpp
+music/n3ds_wav.cpp
 #if DEDICATED
 #else
 #if ALLEGRO

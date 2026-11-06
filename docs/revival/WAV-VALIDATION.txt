@@ -1,0 +1,41 @@
+r3n WAV prototype validation
+
+Final build: bounded 64 KiB PCM source ring; joined libctru reader with 16 KiB
+stack, default application CPU, main-thread priority minus one (clamped to the
+supported user range). SDL output requested at 22050 Hz stereo; effects mixer
+uses the obtained output rate. The provided 44100 Hz stereo 16-bit sample is
+streamed at its normal 77.64-second duration.
+
+Pinned Docker build passes; existing mixed-enum ABI warnings remain.
+Targeted actual-source ASan/UBSan checks pass:
+- Five rates (8000,11025,22050,44100,48000), mono/stereo, exact durations.
+- Metadata chunk order/odd padding; missing/truncated/unsupported formats.
+- Ring wrapping, clipping, mute, starvation, short-read drain and restart.
+- Entire user sample: exactly 1,711,962 output frames at 22050 Hz.
+- Background refill after consuming more than prefetched data without game polls.
+- Reader allocation failure, twenty joined rapid start/stop cycles.
+- SDL callback retains effects mix; output rate, audio failures and shutdown order.
+ThreadSanitizer also passes the actual threaded driver/lifecycle harness.
+
+Emulator: Azahar 2126.2 arm64, disposable profile and final reader build.
+The first polling-only experiment completed a full title loop without underruns,
+but loading Flufingwell caused 479 underrun callback events. That implementation
+was replaced by the bounded background reader; it is not the packaged binary.
+
+The final build opened the sample, completed its full 1,711,962-frame track,
+restarted it, loaded a disposable Flufingwell copy while streaming, ran through
+the following month and created a monthly autosave in the disposable profile.
+Every recorded final-build progress/end/stop entry has underruns=0 and io_error=0.
+The in-game Jazz Jukebox showed the theme; Stop cleared it, Play restarted it.
+The initial prototype's volume UI and final actual-source mute/volume tests pass.
+The emulator's screen showed approximately 32-34 FPS at 100% emulator speed during
+active play, which is not an original-console CPU measurement.
+
+A zero-byte DSP marker was used ONLY in the emulator profile per devkitPro's audio
+example README. It is not included in the update. Hardware may need real dumped
+DSP firmware. No SD device/original save was modified. Sample WAV is unchanged.
+
+Limits: no auditory assessment from automated emulator counters; no original-3DS
+RAM/CPU measurement, prolonged SD stress or hardware sound-quality check yet.
+The reader can still underrun if actual SD access stalls longer than its buffered
+source audio. Other songs were not supplied; filename mapping is provided.
