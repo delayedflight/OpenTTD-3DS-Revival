@@ -1350,6 +1350,26 @@ struct VehicleDetailsWindow : Window {
 
 		this->tab = 0;
 
+#ifdef N3DS
+		/* Increase service controls and detail tabs from 6/12-pixel targets. */
+		Widget &service = this->widget[VLD_WIDGET_BOTTOM_RIGHT];
+		const int service_top = service.top;
+		service.left = 44; service.bottom = service_top + 21;
+		Widget &plus = this->widget[VLD_WIDGET_INCREASE_SERVICING_INTERVAL];
+		Widget &minus = this->widget[VLD_WIDGET_DECREASE_SERVICING_INTERVAL];
+		plus.left = 0; plus.right = 21; plus.top = service_top; plus.bottom = service_top + 21;
+		minus.left = 22; minus.right = 43; minus.top = service_top; minus.bottom = service_top + 21;
+		this->height += 10;
+		if (v->type == VEH_TRAIN) {
+			for (int i = VLD_WIDGET_DETAILS_CARGO_CARRIED; i <= VLD_WIDGET_DETAILS_TOTAL_CARGO; i++) {
+				this->widget[i].top = service_top + 22;
+				this->widget[i].bottom = service_top + 43;
+			}
+			this->height += 10;
+			this->resize.height = this->height;
+		}
+		this->widget[VLD_WIDGET_RESIZE].type = WWT_EMPTY;
+#endif
 		this->FindWindowPlacementAndResize(desc);
 	}
 
@@ -1461,7 +1481,11 @@ struct VehicleDetailsWindow : Window {
 		/* Draw service interval text */
 		SetDParam(0, v->service_interval);
 		SetDParam(1, v->date_of_last_service);
+#ifdef N3DS
+		DrawStringTruncated(46, this->widget[VLD_WIDGET_BOTTOM_RIGHT].top + 6, _settings_game.vehicle.servint_ispercent ? STR_SERVICING_INTERVAL_PERCENT : STR_883C_SERVICING_INTERVAL_DAYS, TC_FROMSTRING, this->width - 48);
+#else
 		DrawString(13, this->height - (v->type != VEH_TRAIN ? 11 : 23), _settings_game.vehicle.servint_ispercent ? STR_SERVICING_INTERVAL_PERCENT : STR_883C_SERVICING_INTERVAL_DAYS, TC_FROMSTRING);
+#endif
 
 		switch (v->type) {
 			case VEH_TRAIN:

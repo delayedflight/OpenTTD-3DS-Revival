@@ -261,8 +261,27 @@ public:
 			default: NOT_REACHED();
 		}
 
+#ifdef N3DS
+		/* A taller action row fits without removing groups or vehicle rows. */
+		for (uint i = 0; i < this->widget_count; i++) {
+			Widget &wi = this->widget[i];
+			if (wi.top == 182) wi.bottom = 203;
+			if (wi.top == 169) { wi.top = 179; wi.bottom = 203; }
+			if (wi.top == 52) wi.bottom = 178;
+		}
+		this->widget[GRP_WIDGET_AVAILABLE_VEHICLES].left = 140;
+		this->widget[GRP_WIDGET_AVAILABLE_VEHICLES].right = 245;
+		this->widget[GRP_WIDGET_MANAGE_VEHICLES_DROPDOWN].left = 246;
+		this->widget[GRP_WIDGET_MANAGE_VEHICLES_DROPDOWN].right = 343;
+		this->widget[GRP_WIDGET_STOP_ALL].left = 344;
+		this->widget[GRP_WIDGET_STOP_ALL].right = 365;
+		this->widget[GRP_WIDGET_START_ALL].left = 366;
+		this->widget[GRP_WIDGET_START_ALL].right = 387;
+#endif
 		this->FindWindowPlacementAndResize(desc);
+#ifndef N3DS
 		if (this->vehicle_type == VEH_TRAIN) ResizeWindow(this, 65, 0);
+#endif
 	}
 
 	~VehicleGroupWindow()
@@ -714,7 +733,7 @@ public:
 
 static WindowDesc _group_desc(
 	#ifdef N3DS
- WDP_AUTO, WDP_AUTO, 400, 194, 400, 246,
+ WDP_AUTO, WDP_AUTO, 400, 204, 400, 204,
 #else
  WDP_AUTO, WDP_AUTO, 460, 194, 460, 246,
 #endif

@@ -173,3 +173,26 @@ Tests compile actual dropdown layout/hit-test code and apply the actual Orders r
 ### r3f emulator walkthrough
 
 Using a disposable copy of the August 1980 Flufingwell game, native company and Orders loading menus were opened and selected. A long train sorting menu scrolled with its wider scrollbar, stayed open rather than selecting a row on the scrollbar tap, and selected Length correctly after scrolling. Opening an Orders dropdown did not select the option under the opening tap. The enlarged train Orders pane rendered correctly; Go to entered SELECT STATION and B returned to Orders. Successful station insertion was not confirmed in this walkthrough. Stylus-drag automation did not reliably move the map cursor. All four stopped DummyAI companies wrote the expected suppressed-popup diagnostic, without an automatic AI Debug window. Vehicle lists and train details were visually inspected and remain crowded in the prior layout.
+
+## r3g optional upper-screen menus and vehicle controls
+
+In normal UI mode, Y transfers the open menu workspace to the upper display at the native 400×240 pixel size. The lower display becomes a relative touchpad. Circle Pad moves the UI cursor; D-pad up/down emits wheel events at the pointer; L/A share click/hold; R scrolls down and X scrolls up. Y/SELECT returns menus to the lower display. B retains cancellation and START retains pause. Y remains zoom-out in construction mode. The toggle is ignored on the title screen, without an open menu, and in map-pad mode.
+
+The feature copies the existing UI surface onto the upper framebuffer at presentation time; it allocates no additional framebuffer and changes no save state or memory budget. Cursor drawing temporarily targets the UI surface; hit testing remains routed to UI windows, so a menu click cannot reach the hidden map. The UI surface is copied using its own pitch and the destination surface pitch, for 400 pixels per row and 240 rows. Returning marks the whole screen dirty to restore a fresh map instead of reusing the overwritten pixels.
+
+The menu that was active when transferring is tracked by window class/number. Closing it returns to the map. Child menus can be used in the upper workspace. Changing from an upper Orders window into station selection restores the map while preserving the pending placement callback, even if L/A is still held; the next click chooses a station. A physical console must still check stylus reanchoring and held-button feel.
+
+Vehicle group lists no longer add the desktop-only 65-pixel train expansion after being sized to 400 pixels. All four group-list types use a 400×204 layout, preserving the groups sidebar, existing drag/drop, commands, sorting and vehicle row counts. The available/manage/start/stop action row is 22 pixels tall; start/stop are 22 pixels wide. Station/shared-order simple lists keep their original narrower layout and 325-pixel train size, which already fits within 400 pixels.
+
+Vehicle details preserve their existing content and tab callbacks. Service up/down are now side-by-side 22×22 targets; train detail tabs are 22 pixels tall. The train window is 184 pixels high and fits beneath the toolbar. The service label truncates safely to available width. The resize corner is hidden in this layout. Base road, ship, aircraft and a representative four-part road vehicle fit the display; unusually long articulated NewGRF vehicles and translated text still need additional checks.
+
+Reproduce new regressions from the extracted source package:
+
+```sh
+python3 source/docs/revival/tests/upper-menus.py /tmp/openttd-upper-menus
+python3 source/docs/revival/tests/vehicle-layouts.py /tmp/openttd-vehicle-layouts
+```
+
+These use actual switching, pointer, button, framebuffer-copy, widget transform and resizing code with lightweight host stubs and ASan/UBSan. Checks cover toggle guards, relative reanchoring, A/L overlap, UI routing state, wheel/buttons, automatic return, placement-preserving handoff, framebuffer stride/bounds at 8/32-bit depth, vehicle widget bounds and 22-pixel action targets.
+
+Emulator walkthrough on a disposable Flufingwell copy: Y transferred the train list, Circle Pad/A opened a train, Y restored the map, vehicle details transferred to the top, D-pad scrolling moved through wagons, and closing details automatically restored the map. No visible map corruption was left after returning. The placement-preserving final handoff is compiled and host-tested; full successful station insertion from an upper Orders window remains a hardware/emulator follow-up. No claim of measured heap improvement or original-console validation is made.

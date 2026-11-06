@@ -49,13 +49,21 @@ int _n3ds_scroll_factor = 10;
 Point _n3ds_map_cursor = {200, 120};
 static Point _ui_cursor = {200, 120};
 static bool NativeN3DSTitle();
+static bool _upper_ui;
+static WindowClass _upper_ui_class;
+static WindowNumber _upper_ui_number;
+static void SetN3DSUpperUi(bool upper, bool preserve_placement = false);
+static void CheckN3DSUpperUi();
 static void SelectN3DSInput(bool map);
 static bool _cursor_in_menu;
 static bool _cursor_native_title;
 
 N3DSMapCursorScope::N3DSMapCursorScope() : saved(_cursor.pos), saved_surface(_screen.dst_ptr)
 {
- if (_game_mode == GM_MENU) {
+ if (_upper_ui) {
+  _cursor.pos = _ui_cursor;
+  _screen.dst_ptr = _n3ds_ui_pixels;
+ } else if (_game_mode == GM_MENU) {
   if (_n3ds_map_input) SelectN3DSInput(false);
   const bool native = NativeN3DSTitle();
   if (!_cursor_in_menu || native != _cursor_native_title) {
@@ -115,6 +123,35 @@ static Window *N3DSFrontUi()
 }
 static Window *_map_ui_front;
 
+/** Transfer the existing UI surface; no extra framebuffer is allocated. */
+static void SetN3DSUpperUi(bool upper, bool preserve_placement)
+{
+ if (_upper_ui == upper) return;
+ if (upper && (_game_mode != GM_NORMAL || _map_pad)) return;
+ Window *front = N3DSFrontUi();
+ if (upper && (front == NULL || front->window_class == WC_MAIN_TOOLBAR)) return;
+ if (!preserve_placement && (_pad_held || _touch_held)) ResetObjectToPlace();
+ _build_buttons.Reset();
+ _left_button_down = _left_button_clicked = _pad_held = _touch_held = false;
+ HandleMouseEvents();
+ SelectN3DSInput(false);
+ _upper_ui = upper;
+ if (upper) {
+  _upper_ui_class = front->window_class;
+  _upper_ui_number = front->window_number;
+  _ui_cursor = _cursor.pos;
+ }
+ _cursor.dirty = true;
+ _panel_needs_draw = true;
+ MarkWholeScreenDirty();
+}
+
+static void CheckN3DSUpperUi()
+{
+ if (!_upper_ui) return;
+ if (_game_mode != GM_NORMAL || FindWindowById(_upper_ui_class, _upper_ui_number) == NULL) SetN3DSUpperUi(false);
+}
+
 /** A fixed Orders pane uses native pixels while it is the foreground UI. */
 static bool NativeN3DSOrdersRow(int y)
 {
@@ -165,6 +202,7 @@ static void ProcessN3DSStationPicker()
  if (_station_picker_request == 0) return;
  if (_station_picker_request == 2 && _pad_held) return;
  const bool begin = _station_picker_request == 1 && _game_mode == GM_NORMAL;
+ if (begin && _upper_ui) SetN3DSUpperUi(false, true);
  _station_picker_request = 0;
  _build_buttons.Reset();
  _left_button_down = _left_button_clicked = _pad_held = _touch_held = false;
@@ -180,6 +218,11 @@ static void ProcessN3DSStationPicker()
 
 static void DrawN3DSPanel()
 {
+ CheckN3DSUpperUi();
+ if (_upper_ui) {
+  const int bytes = _sdl_screen->format->BytesPerPixel;
+  for (int y = 0; y < 240; y++) memcpy((byte *)_sdl_screen->pixels + y * _sdl_screen->pitch, (byte *)_ui_surface->pixels + y * _ui_surface->pitch, 400 * bytes);
+ }
  if (_map_pad && !_pad_held && N3DSFrontUi() != _map_ui_front) {
   /* Reveal new dialogs, preserving their pending tool workflow. */
   _map_pad = false;
@@ -190,7 +233,7 @@ static void DrawN3DSPanel()
   _map_pad = false;
   SelectN3DSInput(false);
  }
-	if (!_map_pad) {
+	if (!_map_pad && !_upper_ui) {
 		/* Fit the complete legacy 400-pixel desktop into the 320-pixel touch screen.
 			* A separate source buffer avoids aliasing during horizontal resampling. */
 		int bytes = _sdl_screen->format->BytesPerPixel;
@@ -217,17 +260,31 @@ static void DrawN3DSPanel()
 	DrawPixelInfo *saved = _cur_dpi;
 	_cur_dpi = &panel;
 	DrawFrameRect(0, 0, 319, 239, COLOUR_GREY, FR_NONE);
-	DoDrawStringCentered(160, 12, _station_picker_active ? "SELECT STATION" : "MAP CONTROL", TC_WHITE);
+	DoDrawStringCentered(160, 12, _upper_ui ? "MENU CONTROL" : (_station_picker_active ? "SELECT STATION" : "MAP CONTROL"), TC_WHITE);
 	DrawFrameRect(6, 34, 313, 193, COLOUR_GREY, FR_LOWERED);
-	DoDrawStringCentered(160, 85, "Drag gently to move the cursor", TC_WHITE);
-	DoDrawStringCentered(160, 105, _station_picker_active ? "L / A: choose station   B: cancel" : "L: click / hold L and drag to build", TC_WHITE);
-	DoDrawStringCentered(160, 207, "SELECT / X: return to tools", TC_WHITE);
-	DoDrawStringCentered(160, 223, "Circle Pad: scroll   R/Y: zoom   B: cancel", TC_WHITE);
+	DoDrawStringCentered(160, 85, _upper_ui ? "Touchpad: move the pointer" : "Drag gently to move the cursor", TC_WHITE);
+	DoDrawStringCentered(160, 105, _upper_ui ? "L / A: click or hold" : (_station_picker_active ? "L / A: choose station   B: cancel" : "L: click / hold L and drag to build"), TC_WHITE);
+	DoDrawStringCentered(160, 207, _upper_ui ? "Y / SELECT: return menu to bottom" : "SELECT / X: return to tools", TC_WHITE);
+	DoDrawStringCentered(160, 223, _upper_ui ? "Circle Pad: pointer  D-pad: scroll" : "Circle Pad: scroll   R/Y: zoom   B: cancel", TC_WHITE);
 	_cur_dpi = saved;
 }
 
 static void MoveN3DSTouch(int x, int y)
 {
+ if (_upper_ui) {
+  if (_touch_held) {
+   const Point old = _cursor.pos;
+   _cursor.pos.x = Clamp(old.x + x - _last_touch_x, 0, 399);
+   _cursor.pos.y = Clamp(old.y + y - _last_touch_y, 0, 239);
+   _cursor.delta.x = _cursor.pos.x - old.x;
+   _cursor.delta.y = _cursor.pos.y - old.y;
+   _ui_cursor = _cursor.pos;
+   _cursor.dirty = true;
+   HandleMouseEvents();
+  }
+  _last_touch_x = x; _last_touch_y = y;
+  return;
+ }
 	if (_n3ds_map_input) {
 		if (_touch_held) {
 			/* Relative one-to-one movement: lifting the stylus never jumps the cursor. */
@@ -628,7 +685,7 @@ static int PollEvent()
     if (!_n3ds_map_input) MoveN3DSTouch(_panel_x, _panel_y);
     _touch_held = true;
 				_last_touch_x = _panel_x; _last_touch_y = _panel_y;
-				if (!_n3ds_map_input) {
+				if (!_n3ds_map_input && !_upper_ui) {
 					_left_button_down = true;
 					HandleMouseEvents();
 				}
@@ -686,6 +743,27 @@ static int PollEvent()
 		case SDL_JOYBUTTONDOWN:
 		case SDL_JOYBUTTONUP: {
 			bool down = ev.type == SDL_JOYBUTTONDOWN;
+   if (down && ev.jbutton.button == 4 && (_upper_ui || !_map_pad)) {
+    SetN3DSUpperUi(!_upper_ui);
+    break;
+   }
+   if (_upper_ui) {
+    if (ev.jbutton.button == 1 || ev.jbutton.button == 5) {
+     _build_buttons.Set(ev.jbutton.button, down);
+     _left_button_down = _pad_held = _build_buttons.Held();
+     if (!_pad_held) _left_button_clicked = false;
+     HandleMouseEvents();
+    } else if (down) {
+     switch (ev.jbutton.button) {
+      case 7: SetN3DSUpperUi(false); break;
+      case 2: HandleKeypress(uint32(WKC_ESC) << 16); break;
+      case 3: _cursor.wheel--; HandleMouseEvents(); break;
+      case 6: _cursor.wheel++; HandleMouseEvents(); break;
+      case 0: HandleKeypress(uint32(WKC_PAUSE) << 16); break;
+     }
+    }
+    break;
+   }
 			if (N3DSBuildButtons::Recognises(ev.jbutton.button, _map_pad)) {
     if (_game_mode == GM_MENU && down) break;
     const bool was_held = _build_buttons.Held();
@@ -863,12 +941,31 @@ void VideoDriver_SDL::MainLoop()
 			/* Ignore the centre region to avoid Circle Pad drift. */
 			const int cx = SDL_JoystickGetAxis(_3ds_joystick, 0);
 			const int cy = SDL_JoystickGetAxis(_3ds_joystick, 1);
+   if (_upper_ui) {
+    const int dx = abs(cx) > 8000 ? (cx < 0 ? -1 : 1) * max(1, (abs(cx) - 8000) * 5 / 24760) : 0;
+    const int dy = abs(cy) > 8000 ? (cy < 0 ? -1 : 1) * max(1, (abs(cy) - 8000) * 5 / 24760) : 0;
+    const Point old = _cursor.pos;
+    _cursor.pos.x = Clamp(old.x + dx, 0, 399);
+    _cursor.pos.y = Clamp(old.y + dy, 0, 239);
+    _cursor.delta.x = _cursor.pos.x - old.x;
+    _cursor.delta.y = _cursor.pos.y - old.y;
+    _ui_cursor = _cursor.pos;
+    if (dx != 0 || dy != 0) _cursor.dirty = true;
+    static uint scroll_tick = 0;
+    if (++scroll_tick >= 4) {
+     scroll_tick = 0;
+     if (dpad & SDL_HAT_UP) _cursor.wheel--;
+     if (dpad & SDL_HAT_DOWN) _cursor.wheel++;
+    }
+    HandleMouseEvents();
+    dpad = 0;
+   }
    const int magnitude = max(abs(cx), abs(cy));
    _n3ds_scroll_factor = dpad != 0 ? 10 : max(2, min(10, 2 + (magnitude - 8000) * 8 / 24760));
-			if (cx < -8000) dpad |= SDL_HAT_LEFT;
-			if (cx > 8000) dpad |= SDL_HAT_RIGHT;
-			if (cy < -8000) dpad |= SDL_HAT_UP;
-			if (cy > 8000) dpad |= SDL_HAT_DOWN;
+			if (!_upper_ui && cx < -8000) dpad |= SDL_HAT_LEFT;
+			if (!_upper_ui && cx > 8000) dpad |= SDL_HAT_RIGHT;
+			if (!_upper_ui && cy < -8000) dpad |= SDL_HAT_UP;
+			if (!_upper_ui && cy > 8000) dpad |= SDL_HAT_DOWN;
 			_dirkeys =
 				((dpad & SDL_HAT_LEFT)  ? 1 : 0) |
 				((dpad & SDL_HAT_UP)    ? 2 : 0) |
