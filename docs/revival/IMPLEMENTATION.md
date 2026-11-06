@@ -152,3 +152,24 @@ The gameplay main toolbar is 320 pixels wide at logical x=40, with 14 buttons on
 Rows covered by a foreground dialog temporarily use the regular desktop mapping to avoid a scaling seam through that dialog. The native-strip predicate checks front-to-back window order for this case. The host toolbar regression includes overlapping-dialog and below-toolbar cases. Reproduce with `python3 source/docs/revival/tests/native-toolbar.py /tmp/openttd-native-toolbar`.
 
 The native toolbar was visually checked after loading a disposable Flufingwell copy in Azahar's original-3DS configuration. Both-page geometry and touch coverage are host-tested; physical stylus operation still needs hardware confirmation. The last dialog-occlusion guard is host-tested and compiled, rather than visually exercised through a large dialog.
+
+## r3f shared touch dropdowns and Orders pane
+
+All menus using ShowDropDownList/ShowDropDownMenu get the 3DS layout: a 320-pixel full-width popup at logical x=40,y=22, copied at native pixel proportions. Its row height is the maximum of 22 and the natural height of every item. Drawing, hit testing, scroll capacity and list height use that same uniform metric. Text/sprite content is vertically centred; masked and separator entries retain their semantics. Long lists scroll within the lower display; the scrollbar is 20 pixels wide. Opening is strictly two-tap, with drag_mode=false, so releasing over an entry after opening a popup cannot select it accidentally. Scrollbar hits cannot select a list entry. Non-3DS layout remains the legacy implementation.
+
+Orders for train/road, ship/aircraft and competitor vehicles use a fixed 320×192 pane at x=40,y=22. Six 22-pixel rows replace six 10-pixel rows, with 22-pixel action rows. Widget IDs and engine actions remain unchanged. The corner resize control is hidden and caption dragging stays anchored, preserving native mapping. The foreground Orders pane retains native mapping while a dropdown is open. Existing one-shot station selection and return-on-release remain in place.
+
+Vehicle group/list and details windows have not yet received a native-width redesign. Their dropdown selectors benefit from the shared change, but the main panels retain r3e geometry/scaling. These are the next priority; a groups/vehicles switcher and separate detail sections need a dedicated layout rather than shrinking all content indiscriminately. No claim of a completed all-window scaling audit is made.
+
+Regression recipes from the extracted source root:
+
+```sh
+python3 source/docs/revival/tests/touch-dropdown.py /tmp/openttd-dropdown
+python3 source/docs/revival/tests/touch-orders.py /tmp/openttd-orders
+```
+
+Tests compile actual dropdown layout/hit-test code and apply the actual Orders reflow to all three widget tables with ASan/UBSan. They cover long/short/sprite menus, scrolling, masked/separator entries, scrollbar exclusion, widget bounds, row capacity and fixed pane sizing. They do not replace physical stylus testing or visual checks of all translated/custom content.
+
+### r3f emulator walkthrough
+
+Using a disposable copy of the August 1980 Flufingwell game, native company and Orders loading menus were opened and selected. A long train sorting menu scrolled with its wider scrollbar, stayed open rather than selecting a row on the scrollbar tap, and selected Length correctly after scrolling. Opening an Orders dropdown did not select the option under the opening tap. The enlarged train Orders pane rendered correctly; Go to entered SELECT STATION and B returned to Orders. Successful station insertion was not confirmed in this walkthrough. Stylus-drag automation did not reliably move the map cursor. All four stopped DummyAI companies wrote the expected suppressed-popup diagnostic, without an automatic AI Debug window. Vehicle lists and train details were visually inspected and remain crowded in the prior layout.

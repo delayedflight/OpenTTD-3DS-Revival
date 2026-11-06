@@ -372,6 +372,12 @@ static Order GetOrderCmdFromTile(const Vehicle *v, TileIndex tile)
 	return order;
 }
 
+#ifdef N3DS
+static const int ORDER_ROW_HEIGHT = 22;
+#else
+static const int ORDER_ROW_HEIGHT = 10;
+#endif
+
 struct OrdersWindow : public Window {
 private:
 	/** Under what reason are we using the PlaceObject functionality? */
@@ -412,7 +418,7 @@ private:
 		 * 15 = 14 (w->widget[ORDER_WIDGET_ORDER_LIST].top) + 1 (frame-line)
 		 * 10 = order text hight
 		 */
-		int sel = (y - this->widget[ORDER_WIDGET_ORDER_LIST].top - 1) / 10;
+		int sel = (y - this->widget[ORDER_WIDGET_ORDER_LIST].top - 1) / ORDER_ROW_HEIGHT;
 
 		if ((uint)sel >= this->vscroll.cap) return INVALID_ORDER;
 
@@ -627,9 +633,24 @@ private:
 public:
 	OrdersWindow(const WindowDesc *desc, const Vehicle *v) : Window(desc, v->index)
 	{
+#ifdef N3DS
+		/* Fit the fixed native-width Orders pane; retain widget IDs/callbacks. */
+		for (uint i = 0; i < this->widget_count; i++) {
+			Widget &wi = this->widget[i];
+			wi.left = wi.left * 320 / 386;
+			wi.right = (wi.right + 1) * 320 / 386 - 1;
+			if (wi.top == 14) wi.bottom = 147;
+			if (wi.top == 76) { wi.top = 148; wi.bottom = 169; }
+			else if (wi.top == 88) { wi.top = 170; wi.bottom = 191; }
+			if (i == ORDER_WIDGET_RESIZE_BAR) wi.bottom = 191;
+		}
+		this->widget[ORDER_WIDGET_TIMETABLE_VIEW].left = 247;
+		this->widget[ORDER_WIDGET_TIMETABLE_VIEW].right = 307;
+		this->widget[ORDER_WIDGET_RESIZE].type = WWT_EMPTY;
+#endif
 		this->owner = v->owner;
 		this->vscroll.cap = 6;
-		this->resize.step_height = 10;
+		this->resize.step_height = ORDER_ROW_HEIGHT;
 		this->selected_order = -1;
 		this->vehicle = v;
 
@@ -650,6 +671,10 @@ public:
 			this->HideWidget(ORDER_WIDGET_TIMETABLE_VIEW);
 		}
 		this->FindWindowPlacementAndResize(desc);
+#ifdef N3DS
+		this->left = 40;
+		this->top = 22;
+#endif
 	}
 
 	virtual void OnInvalidateData(int data)
@@ -819,7 +844,7 @@ public:
 		SetDParam(0, this->vehicle->index);
 		this->DrawWidgets();
 
-		int y = 15;
+		int y = 15 + (ORDER_ROW_HEIGHT - 10) / 2;
 
 		int i = this->vscroll.pos;
 		order = GetVehicleOrder(this->vehicle, i);
@@ -829,7 +854,7 @@ public:
 			if (i - this->vscroll.pos >= this->vscroll.cap) break;
 
 			DrawOrderString(this->vehicle, order, i, y, i == this->selected_order, false, this->widget[ORDER_WIDGET_ORDER_LIST].right - 4);
-			y += 10;
+			y += ORDER_ROW_HEIGHT;
 
 			i++;
 			order = order->next;
@@ -1140,7 +1165,7 @@ public:
 	virtual void OnResize(Point new_size, Point delta)
 	{
 		/* Update the scroll + matrix */
-		this->vscroll.cap = (this->widget[ORDER_WIDGET_ORDER_LIST].bottom - this->widget[ORDER_WIDGET_ORDER_LIST].top) / 10;
+		this->vscroll.cap = (this->widget[ORDER_WIDGET_ORDER_LIST].bottom - this->widget[ORDER_WIDGET_ORDER_LIST].top) / ORDER_ROW_HEIGHT;
 	}
 
 	virtual void OnTimeout()
@@ -1194,7 +1219,11 @@ static const Widget _orders_train_widgets[] = {
 };
 
 static const WindowDesc _orders_train_desc(
+	#ifdef N3DS
+	WDP_AUTO, WDP_AUTO, 320, 192, 320, 192,
+#else
 	WDP_AUTO, WDP_AUTO, 386, 100, 386, 100,
+#endif
 	WC_VEHICLE_ORDERS, WC_VEHICLE_VIEW,
 	WDF_STD_TOOLTIPS | WDF_STD_BTN | WDF_DEF_WIDGET | WDF_STICKY_BUTTON | WDF_RESIZABLE,
 	_orders_train_widgets
@@ -1239,7 +1268,11 @@ static const Widget _orders_widgets[] = {
 };
 
 static const WindowDesc _orders_desc(
+	#ifdef N3DS
+	WDP_AUTO, WDP_AUTO, 320, 192, 320, 192,
+#else
 	WDP_AUTO, WDP_AUTO, 386, 100, 386, 100,
+#endif
 	WC_VEHICLE_ORDERS, WC_VEHICLE_VIEW,
 	WDF_STD_TOOLTIPS | WDF_STD_BTN | WDF_DEF_WIDGET | WDF_STICKY_BUTTON | WDF_RESIZABLE,
 	_orders_widgets
@@ -1284,7 +1317,11 @@ static const Widget _other_orders_widgets[] = {
 };
 
 static const WindowDesc _other_orders_desc(
+	#ifdef N3DS
+	WDP_AUTO, WDP_AUTO, 320, 192, 320, 192,
+#else
 	WDP_AUTO, WDP_AUTO, 386, 88, 386, 88,
+#endif
 	WC_VEHICLE_ORDERS, WC_VEHICLE_VIEW,
 	WDF_STD_TOOLTIPS | WDF_STD_BTN | WDF_DEF_WIDGET | WDF_UNCLICK_BUTTONS | WDF_STICKY_BUTTON | WDF_RESIZABLE | WDF_CONSTRUCTION,
 	_other_orders_widgets

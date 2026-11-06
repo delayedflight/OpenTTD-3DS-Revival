@@ -78,6 +78,9 @@ struct DropdownWindow : Window {
 	bool drag_mode;
 	bool instant_close;
 	int scrolling;
+#ifdef N3DS
+	int row_height; ///< Uniform height keeps scrolling and hit testing aligned.
+#endif
 
 	DropdownWindow(int x, int y, int width, int height, const Widget *widget) : Window(x, y, width, height, WC_DROPDOWN_MENU, widget)
 	{
@@ -97,7 +100,7 @@ struct DropdownWindow : Window {
 
 	bool GetDropDownItem(int &value)
 	{
-		if (GetWidgetFromPos(this, _cursor.pos.x - this->left, _cursor.pos.y - this->top) < 0) return false;
+		if (GetWidgetFromPos(this, _cursor.pos.x - this->left, _cursor.pos.y - this->top) != 0) return false;
 
 		int y     = _cursor.pos.y - this->top - 2;
 		int width = this->widget[0].right - 3;
@@ -111,6 +114,9 @@ struct DropdownWindow : Window {
 
 			const DropDownListItem *item = *it;
 			int item_height = item->Height(width);
+#ifdef N3DS
+			item_height = this->row_height;
+#endif
 
 			if (y < item_height) {
 				if (item->masked || !item->Selectable()) return false;
@@ -141,6 +147,9 @@ struct DropdownWindow : Window {
 		for (DropDownList::const_iterator it = list->begin(); it != list->end(); ++it) {
 			const DropDownListItem *item = *it;
 			int item_height = item->Height(width);
+#ifdef N3DS
+			item_height = this->row_height;
+#endif
 
 			/* Skip items that are scrolled up */
 			if (--pos >= 0) continue;
@@ -148,7 +157,12 @@ struct DropdownWindow : Window {
 			if (y + item_height < height) {
 				if (sel == item->result) GfxFillRect(x + 1, y, x + width - 1, y + item_height - 1, 0);
 
+#ifdef N3DS
+				const int content_height = item->Height(width);
+				item->Draw(x, y + max(0, (item_height - content_height) / 2), width, content_height, sel == item->result, (TextColour)this->widget[0].colour);
+#else
 				item->Draw(x, y, width, height, sel == item->result, (TextColour)this->widget[0].colour);
+#endif
 
 				if (item->masked) {
 					GfxFillRect(x, y, x + width - 1, y + item_height - 1,
@@ -240,6 +254,7 @@ void ShowDropDownList(Window *w, DropDownList *list, int selected, int button, u
  /* Touch users open a menu, lift the stylus, then choose an item. */
  instant_close = false;
 #endif
+	if (list->empty()) { DeleteDropDownList(list); return; }
 	DeleteWindowById(WC_DROPDOWN_MENU, 0);
 
 	w->LowerWidget(button);
@@ -249,6 +264,23 @@ void ShowDropDownList(Window *w, DropDownList *list, int selected, int button, u
 	 * down list window. */
 	const Widget *wi = &w->widget[button];
 
+#ifdef N3DS
+	/* A full native-width popup needs no horizontal resampling. All menu types
+	 * share one row metric, including sprite entries and separators. */
+	width = 320;
+	const int scrollbar_width = 20;
+	int row_height = 22;
+	for (DropDownList::const_iterator it = list->begin(); it != list->end(); ++it) {
+		row_height = max(row_height, (int)(*it)->Height(width - scrollbar_width - 4));
+	}
+	const int top = 22;
+	const int capacity = max(1, (240 - top - 4) / row_height);
+	const int rows = min((int)list->size(), capacity);
+	const int height = rows * row_height;
+	const int list_height = (int)list->size() * row_height;
+	const bool scroll = (int)list->size() > capacity;
+	const int left = 40;
+#else
 	/* The preferred position is just below the dropdown calling widget */
 	int top = w->top + wi->bottom + 1;
 
@@ -311,6 +343,7 @@ void ShowDropDownList(Window *w, DropDownList *list, int selected, int button, u
 		left = wi->left * 400 / 320;
 	}
 #endif
+#endif
 	DropdownWindow *dw = new DropdownWindow(
 		left,
 		top,
@@ -329,15 +362,26 @@ void ShowDropDownList(Window *w, DropDownList *list, int selected, int button, u
 		 * the scrollbar's width */
 		dw->widget[1].colour = wi->colour;
 		dw->widget[1].right  = dw->widget[0].right;
+#ifdef N3DS
+		dw->widget[1].left = dw->widget[1].right - scrollbar_width + 1;
+#else
 		dw->widget[1].left   = dw->widget[1].right - 11;
+#endif
 		dw->widget[1].bottom = dw->widget[0].bottom;
+#ifdef N3DS
+		dw->widget[0].right -= scrollbar_width;
+#else
 		dw->widget[0].right -= 12;
+#endif
 
 		/* Capacity is the average number of items visible */
 		dw->vscroll.cap   = height * (uint16)list->size() / list_height;
 		dw->vscroll.count = (uint16)list->size();
 	}
 
+#ifdef N3DS
+	dw->row_height = row_height;
+#endif
 	dw->desc_flags = WDF_DEF_WIDGET;
 	dw->flags4 &= ~WF_WHITE_BORDER_MASK;
 
@@ -347,7 +391,11 @@ void ShowDropDownList(Window *w, DropDownList *list, int selected, int button, u
 	dw->list             = list;
 	dw->selected_index   = selected;
 	dw->click_delay      = 0;
+#ifdef N3DS
+	dw->drag_mode = false; // Opening tap must not select an entry beneath its release.
+#else
 	dw->drag_mode        = true;
+#endif
 	dw->instant_close    = instant_close;
 }
 

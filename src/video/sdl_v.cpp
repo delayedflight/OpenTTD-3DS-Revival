@@ -115,6 +115,23 @@ static Window *N3DSFrontUi()
 }
 static Window *_map_ui_front;
 
+/** A fixed Orders pane uses native pixels while it is the foreground UI. */
+static bool NativeN3DSOrdersRow(int y)
+{
+ Window *w;
+ FOR_ALL_WINDOWS_FROM_FRONT(w) {
+  if (w->window_class != WC_MAIN_WINDOW && w->window_class != WC_STATUS_BAR && w->window_class != WC_TOOLTIPS && w->window_class != WC_DROPDOWN_MENU) break;
+ }
+ return w != NULL && w->window_class == WC_VEHICLE_ORDERS && w->left == 40 && w->width == 320 && y >= w->top && y < w->top + w->height;
+}
+
+/** Full-width dropdowns use the same native pixel and touch mapping. */
+static bool NativeN3DSDropdownRow(int y)
+{
+ const Window *w = FindWindowById(WC_DROPDOWN_MENU, 0);
+ return w != NULL && w->left == 40 && w->width == 320 && y >= w->top && y < w->top + w->height;
+}
+
 /** The main icon row is copied at 1:1; the remaining desktop keeps its fit. */
 static bool NativeN3DSToolbarRow(int y)
 {
@@ -181,7 +198,7 @@ static void DrawN3DSPanel()
 		for (int y = 0; y < 240; y++) {
 			const byte *src = (const byte *)_ui_surface->pixels + y * _ui_surface->pitch;
 			byte *dst = (byte *)_sdl_screen->pixels + (y + 240) * _sdl_screen->pitch + 40 * bytes;
-			if (native_title || NativeN3DSToolbarRow(y)) {
+			if (native_title || NativeN3DSToolbarRow(y) || NativeN3DSDropdownRow(y) || NativeN3DSOrdersRow(y)) {
     memcpy(dst, src + 40 * bytes, 320 * bytes);
    } else if (bytes == 1) {
     for (int x = 0; x < 320; x++) dst[x] = src[x * 5 / 4];
@@ -222,7 +239,7 @@ static void MoveN3DSTouch(int x, int y)
 			_n3ds_map_cursor = _cursor.pos;
 		}
 	} else {
-		int nx = max(0, min(399, (NativeN3DSTitle() || NativeN3DSToolbarRow(y)) ? x + 40 : x * 400 / 320));
+		int nx = max(0, min(399, (NativeN3DSTitle() || NativeN3DSToolbarRow(y) || NativeN3DSDropdownRow(y) || NativeN3DSOrdersRow(y)) ? x + 40 : x * 400 / 320));
 		int ny = max(0, min(239, y));
 		_cursor.delta.x = nx - _cursor.pos.x;
 		_cursor.delta.y = ny - _cursor.pos.y;

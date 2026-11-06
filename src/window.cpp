@@ -1556,6 +1556,9 @@ static bool HandleWindowDragging()
 				w->viewport->left += nx - w->left;
 				w->viewport->top  += ny - w->top;
 			}
+#ifdef N3DS
+			if (w->window_class == WC_VEHICLE_ORDERS) { nx = 40; ny = 22; }
+#endif
 			w->left = nx;
 			w->top  = ny;
 
