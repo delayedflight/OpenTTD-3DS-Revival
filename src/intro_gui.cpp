@@ -182,7 +182,11 @@ public:
 };
 
 static const WindowDesc _select_game_desc(
-	WDP_CENTER, WDP_CENTER, 336, 213, 336, 213,
+	#ifdef N3DS
+ WDP_CENTER, WDP_CENTER, 320, 213, 320, 213,
+#else
+ WDP_CENTER, WDP_CENTER, 336, 213, 336, 213,
+#endif
 	WC_SELECT_GAME, WC_NONE,
 	WDF_STD_TOOLTIPS | WDF_DEF_WIDGET | WDF_UNCLICK_BUTTONS,
 	_select_game_widgets

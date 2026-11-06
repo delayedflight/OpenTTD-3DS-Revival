@@ -3,6 +3,7 @@
 /** @file window.cpp Windowing system, widgets and events */
 
 #include "stdafx.h"
+#include "n3ds_ui.h"
 #include <stdarg.h>
 #include "openttd.h"
 #include "company_func.h"
@@ -25,6 +26,13 @@
 #include "widgets/dropdown_func.h"
 
 #include "table/sprites.h"
+
+#ifdef N3DS
+static bool N3DSTopWindow(const Window *w)
+{
+ return w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR;
+}
+#endif
 
 static Point _drag_delta; ///< delta between mouse cursor and upper left corner of dragged window
 static Window *_mouseover_last_w = NULL; ///< Window of the last MOUSEOVER event
@@ -416,6 +424,10 @@ static void DrawOverlappedWindow(Window *w, int left, int top, int right, int bo
 {
 	const Window *v;
 	FOR_ALL_WINDOWS_FROM_BACK_FROM(v, w->z_front) {
+#ifdef N3DS
+  /* Windows on opposite physical screens cannot occlude each other. */
+  if (N3DSTopWindow(w) != N3DSTopWindow(v)) continue;
+#endif
 		if (right > v->left &&
 				bottom > v->top &&
 				left < v->left + v->width &&
@@ -458,7 +470,12 @@ static void DrawOverlappedWindow(Window *w, int left, int top, int right, int bo
 	dp->left = left - w->left;
 	dp->top = top - w->top;
 	dp->pitch = _screen.pitch;
-	dp->dst_ptr = BlitterFactoryBase::GetCurrentBlitter()->MoveTo(_screen.dst_ptr, left, top);
+	#ifdef N3DS
+ void *base = N3DSTopWindow(w) ? _screen.dst_ptr : _n3ds_ui_pixels;
+ dp->dst_ptr = BlitterFactoryBase::GetCurrentBlitter()->MoveTo(base, left, top);
+#else
+ dp->dst_ptr = BlitterFactoryBase::GetCurrentBlitter()->MoveTo(_screen.dst_ptr, left, top);
+#endif
 	dp->zoom = ZOOM_LVL_NORMAL;
 	w->OnPaint();
 }
@@ -476,8 +493,14 @@ void DrawOverlappedWindowForAll(int left, int top, int right, int bottom)
 	Window *w;
 	DrawPixelInfo bk;
 	_cur_dpi = &bk;
+#ifdef N3DS
+ /* Clear the UI background in each dirty region, including closed windows. */
+ bk = _screen;
+ bk.dst_ptr = _n3ds_ui_pixels;
+ GfxFillRect(left, top, right - 1, bottom - 1, _colour_gradient[COLOUR_GREY][5]);
+#endif
 
-	FOR_ALL_WINDOWS_FROM_BACK(w) {
+ FOR_ALL_WINDOWS_FROM_BACK(w) {
 		if (right > w->left &&
 				bottom > w->top &&
 				left < w->left + w->width &&
@@ -691,8 +714,11 @@ static inline bool IsVitalWindow(const Window *w)
 {
 	switch (w->window_class) {
 		case WC_MAIN_TOOLBAR:
-		case WC_STATUS_BAR:
-		case WC_NEWS_WINDOW:
+#ifdef N3DS
+   return false; // Touchscreen dialogs must be able to cover the larger toolbar.
+#endif
+  case WC_STATUS_BAR:
+  case WC_NEWS_WINDOW:
 		case WC_SEND_NETWORK_MSG:
 			return true;
 
@@ -815,7 +841,9 @@ void Window::Initialize(int x, int y, int min_width, int min_height,
 	 * between on-top of chat/news and status windows, because these conflict */
 	Window *w = _z_front_window;
 	if (w != NULL && this->window_class != WC_SEND_NETWORK_MSG && this->window_class != WC_HIGHSCORE && this->window_class != WC_ENDSCREEN) {
-		if (FindWindowById(WC_MAIN_TOOLBAR, 0)     != NULL) w = w->z_back;
+		#ifndef N3DS
+  if (FindWindowById(WC_MAIN_TOOLBAR, 0)     != NULL) w = w->z_back;
+#endif
 		if (FindWindowById(WC_STATUS_BAR, 0)       != NULL) w = w->z_back;
 		if (FindWindowById(WC_NEWS_WINDOW, 0)      != NULL) w = w->z_back;
 		if (FindWindowById(WC_SEND_NETWORK_MSG, 0) != NULL) w = w->z_back;
@@ -867,8 +895,10 @@ void Window::FindWindowPlacementAndResize(int def_width, int def_height)
 		/* Think about the overlapping toolbars when determining the minimum window size */
 		int free_height = _screen.height;
 		const Window *wt = FindWindowById(WC_STATUS_BAR, 0);
-		if (wt != NULL) free_height -= wt->height;
-		wt = FindWindowById(WC_MAIN_TOOLBAR, 0);
+		#ifndef N3DS
+  if (wt != NULL) free_height -= wt->height;
+#endif
+  wt = FindWindowById(WC_MAIN_TOOLBAR, 0);
 		if (wt != NULL) free_height -= wt->height;
 
 		int enlarge_x = max(min(def_width  - this->width,  _screen.width - this->width),  0);
@@ -899,8 +929,16 @@ void Window::FindWindowPlacementAndResize(int def_width, int def_height)
 	const Window *wt = FindWindowById(WC_MAIN_TOOLBAR, 0);
 	ny = max(ny, (wt == NULL || this == wt || this->top == 0) ? 0 : wt->height);
 	nx = max(nx, 0);
+#ifdef N3DS
+ if (this->window_class != WC_MAIN_WINDOW && this->window_class != WC_MAIN_TOOLBAR && this->window_class != WC_STATUS_BAR) {
+  /* Large modal dialogs overlap the toolbar rather than falling off-screen. */
+  nx = Clamp(nx, 0, max(0, _screen.width - this->width));
+  int available = _screen.height; // Status bar now occupies the upper display.
+  ny = Clamp(ny, 0, max(0, available - this->height));
+ }
+#endif
 
-	if (this->viewport != NULL) {
+ if (this->viewport != NULL) {
 		this->viewport->left += nx - this->left;
 		this->viewport->top  += ny - this->top;
 	}
@@ -1102,7 +1140,12 @@ static Point LocalGetWindowPlacement(const WindowDesc *desc, int window_number)
 		if (pt.x > _screen.width + 10 - desc->default_width) {
 			pt.x = (_screen.width + 10 - desc->default_width) - 20;
 		}
-		pt.y = w->top + ((desc->parent_cls == WC_BUILD_TOOLBAR || desc->parent_cls == WC_SCEN_LAND_GEN) ? 36 : 10);
+		#ifdef N3DS
+  pt.y = w->top + ((desc->parent_cls == WC_BUILD_TOOLBAR || desc->parent_cls == WC_SCEN_LAND_GEN) ? w->height : 10);
+  pt.y = max(0, min(pt.y, 240 - desc->default_height));
+#else
+  pt.y = w->top + ((desc->parent_cls == WC_BUILD_TOOLBAR || desc->parent_cls == WC_SCEN_LAND_GEN) ? 36 : 10);
+#endif
 	} else {
 		switch (desc->left) {
 			case WDP_ALIGN_TBR: // Align the right side with the top toolbar
@@ -1170,8 +1213,12 @@ Window::Window(const WindowDesc *desc, WindowNumber window_number)
  * @return a pointer to the found window if any, NULL otherwise */
 Window *FindWindowFromPt(int x, int y)
 {
-	Window *w;
-	FOR_ALL_WINDOWS_FROM_FRONT(w) {
+ Window *w;
+ FOR_ALL_WINDOWS_FROM_FRONT(w) {
+#ifdef N3DS
+  if (w->window_class == WC_STATUS_BAR) continue; // Upper information bar has no lower touch target.
+  if ((w->window_class == WC_MAIN_WINDOW) != _n3ds_map_input) continue;
+#endif
 		if (IsInsideBS(x, w->left, w->width) && IsInsideBS(y, w->top, w->height)) {
 			return w;
 		}
@@ -1894,13 +1941,18 @@ static void HandleKeyScrolling()
 	 * dont has an edit-box as focused widget.
 	 */
 	if (_dirkeys && !EditBoxInGlobalFocus()) {
-		int factor = _shift_pressed ? 50 : 10;
+		#ifdef N3DS
+  int factor = _shift_pressed ? 50 : _n3ds_scroll_factor;
+#else
+  int factor = _shift_pressed ? 50 : 10;
+#endif
 		ScrollMainViewport(scrollamt[_dirkeys][0] * factor, scrollamt[_dirkeys][1] * factor);
 	}
 }
 
 void MouseLoop(MouseClick click, int mousewheel)
 {
+
 	DecreaseWindowCounters();
 	HandlePlacePresize();
 	UpdateTileSelection();
@@ -1923,7 +1975,8 @@ void MouseLoop(MouseClick click, int mousewheel)
 	if (!MaybeBringWindowToFront(w)) return;
 	ViewPort *vp = IsPtInWindowViewport(w, x, y);
 
-	/* Don't allow any action in a viewport if either in menu of in generating world */
+
+ /* Don't allow any action in a viewport if either in menu of in generating world */
 	if (vp != NULL && (_game_mode == GM_MENU || IsGeneratingWorld())) return;
 
 	if (mousewheel != 0) {
@@ -2113,11 +2166,59 @@ void InputLoop()
 	HandleAutoscroll();
 }
 
+#ifdef N3DS
+/** Reflow only toolbar widgets; preserve their IDs and original callbacks. */
+static void LayoutN3DSToolbars()
+{
+ Window *w;
+ bool changed = false;
+ FOR_ALL_WINDOWS_FROM_BACK(w) {
+  if (w->window_class == WC_MAIN_TOOLBAR && _game_mode == GM_NORMAL) {
+   if (w->height != 96 || w->width != 400) changed = true;
+   w->left = w->top = 0;
+   w->width = 400; w->height = 96;
+   for (uint i = 0; i < w->widget_count; i++) {
+    Widget &wi = w->widget[i];
+    if (i >= 27) { wi.type = WWT_EMPTY; continue; }
+    wi.type = (i == 3) ? WWT_IMGBTN_2 : WWT_IMGBTN;
+    wi.left = (i % 9) * 400 / 9;
+    wi.right = ((i % 9) + 1) * 400 / 9 - 1;
+    wi.top = (i / 9) * 32;
+    wi.bottom = wi.top + 31;
+   }
+  } else if (w->window_class == WC_BUILD_TOOLBAR) {
+   uint buttons = 0;
+   for (uint i = 0; i < w->widget_count; i++) {
+    Widget &wi = w->widget[i];
+    if (wi.type == WWT_IMGBTN || wi.type == WWT_IMGBTN_2) {
+     if (wi.bottom - wi.top != 31) changed = true;
+     wi.left = (buttons % 8) * 50; wi.right = wi.left + 49;
+     wi.top = 14 + (buttons / 8) * 32; wi.bottom = wi.top + 31;
+     buttons++;
+    } else if (wi.type == WWT_CAPTION) {
+     wi.right = 387;
+    } else if (wi.type == WWT_STICKYBOX) {
+     wi.left = 388; wi.right = 399;
+    } else if (wi.type == WWT_PANEL) {
+     wi.type = WWT_EMPTY; // Narrow desktop spacers are unnecessary in the grid.
+    }
+   }
+   w->width = 400; w->height = 14 + ((buttons + 7) / 8) * 32;
+   if (changed) { w->left = 0; w->top = 96; }
+  }
+ }
+ if (changed) MarkWholeScreenDirty();
+}
+#endif
+
 /**
  * Update the continuously changing contents of the windows, such as the viewports
  */
 void UpdateWindows()
 {
+#ifdef N3DS
+ LayoutN3DSToolbars();
+#endif
 	Window *w;
 	static int we4_timer = 0;
 	int t = we4_timer + 1;

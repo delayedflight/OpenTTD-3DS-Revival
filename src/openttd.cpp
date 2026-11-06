@@ -355,8 +355,15 @@ static void LoadIntroGame()
 	ResetWindowSystem();
 	SetupColoursAndInitialWindow();
 
-	/* Load the default opening screen savegame */
-	if (SaveOrLoad("opntitle.dat", SL_LOAD, DATA_DIR) != SL_OK) {
+	/* The original 3DS needs a predictable, cheap title backdrop. Do not load
+  * a possibly large transport simulation just to display the main menu. */
+#ifdef N3DS
+ GenerateWorld(GW_EMPTY, 64, 64);
+ WaitTillGeneratedWorld();
+ SetLocalCompany(COMPANY_SPECTATOR);
+#else
+ /* Load the default opening screen savegame */
+ if (SaveOrLoad("opntitle.dat", SL_LOAD, DATA_DIR) != SL_OK) {
 		GenerateWorld(GW_EMPTY, 64, 64); // if failed loading, make empty world.
 		WaitTillGeneratedWorld();
 		SetLocalCompany(COMPANY_SPECTATOR);
@@ -364,6 +371,7 @@ static void LoadIntroGame()
 		SetLocalCompany(COMPANY_FIRST);
 	}
 
+#endif
 	_pause_game = 0;
 	_cursor.fix_at = false;
 

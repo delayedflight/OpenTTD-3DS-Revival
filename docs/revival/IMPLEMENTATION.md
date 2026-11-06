@@ -1,0 +1,79 @@
+# OpenTTD 3DS Revival implementation guide
+
+This guide describes the r3 prototype, based on EnergeticBark/OpenTTD-3DS v1.0.1, OpenTTD 0.7.0. The tested r1b repair and r2 UI prototype are preserved separately. r3 needs independent physical-console validation.
+
+## Build and project layout
+
+The complete source distribution contains `source/` and `environment/`. Start Docker Desktop and run `environment/build.command`. The pinned devkitPro image and package setup are specified in `environment/Dockerfile`; `environment/build.sh` contains the exact configure flags. Source is copied into `/build` inside a disposable container because the legacy configure system does not handle paths containing spaces reliably. Build outputs go into `builds/repair-r3/`: the `.3dsx`, matching `.elf`, languages, and toolchain inventory. Keep the ELF paired with each distributed binary; addresses from one build must not be resolved using another build's symbols.
+
+The upstream checkout, the r1b source, and r2 source are kept separately in the development project. Private saves and crash dumps are local evidence, not release assets. Never test against the user's only save or write a release directly onto their SD card.
+
+## Rendering model
+
+`src/video/sdl_v.cpp` creates a 400 by 480 SDL surface with the 3DS SDL dual-screen flag. OpenTTD continues to see a 400 by 240 logical screen. The first half is the upper map display; the lower half is the physical touchscreen. The SDL backend crops the centre 320 pixels of the lower 400-pixel half, so the displayed pixels start at x=40 and y=240 in the SDL surface.
+
+r3 adds a separate UI surface. Its pitch matches the main SDL surface. `src/window.cpp` selects the destination when painting each window: `WC_MAIN_WINDOW` and `WC_STATUS_BAR` draw into the upper display, and every other window draws into the UI surface. The date/status/money bar occupies the bottom 12 pixels above, leaving all 240 touchscreen rows for UI. Map cursor motion is clamped above that information bar. Occlusion testing ignores windows on the other layer. Without that filter, an invisible menu would still cut a hole in the map beneath it.
+
+The UI surface is cleared only in damaged regions before those regions are repainted. This matters when a window closes: its old pixels must disappear. The existing dirty-block mechanism is retained; there is no second OpenTTD simulation and no duplicated window tree. Normal clipping, z-order and original widget callbacks are retained within the UI layer.
+
+The complete 400-pixel desktop is resampled horizontally to 320 physical touchscreen pixels. Vertical coordinates remain 1:1. This is a compatibility bridge for the old window system, not a claim that every desktop dialog has been redesigned. Large dialogs can still need individual adaptations. Native-width title rendering is a special case: the 320-pixel menu is centred in the logical desktop and copied without horizontal resampling while it is frontmost.
+
+`src/n3ds_ui.h` declares the small interface shared by the video, window and cursor code. These changes are guarded by `N3DS`; desktop rendering follows its existing path.
+
+## Touch coordinates and input routing
+
+SDL dual-screen touch events include the crop offset and lower-screen offset. Subtract x=40 and y=240 first. Normal UI input then maps physical x to `x*400/320`, with unchanged y. On the native title menu, physical x instead maps to x+40. Rendering and hit testing must use the same transform.
+
+`FindWindowFromPt` filters by input layer: normal touch input can select UI windows but cannot click through to the upper map. Map input can select only the main window. This is separate from drawing: visual z-order alone is insufficient to prevent clicks on the wrong display.
+
+X toggles between the UI desktop and a relative map-control pad. If a map action opens a new UI window (an error, bridge choice, station join or vehicle detail), the pad returns to the UI after A is released so the new dialog is visible. Tooltip windows are ignored for this transition. On the pad, dragging moves the upper cursor one logical pixel per touch pixel. The first touch records an anchor; lifting and touching again does not jump the cursor. Touching the pad does not itself place anything. A presses the map's left button; holding A while dragging supports normal construction drags. Releasing A restores the selected input mode. Switching modes releases button state before changing layers to prevent a stuck drag.
+
+The map and UI retain separate cursor positions. `N3DSMapCursorScope` temporarily substitutes the map position during upper-screen cursor drawing and restores the input position on scope exit. The existing cursor backup/restore buffer always belongs to the upper surface. Do not change the cursor's destination to the UI surface without also changing that ownership.
+
+B sends Escape (cancel placement); L/R send the existing zoom shortcuts; START toggles pause. These reuse OpenTTD's handlers rather than introducing parallel construction commands. SDL's 3DS joystick button numbers are used here, not raw HID key bit positions.
+
+## Scrolling
+
+D-pad input uses SDL joystick hat 0. Circle Pad input uses axes 0 and 1, with an 8000-unit dead zone on the approximately +/-32760 scale. Beyond that dead zone it contributes directional flags. The scroll factor increases from 2 toward 10 as pad displacement grows; D-pad input keeps factor 10. The existing isometric direction table and `ScrollMainViewport` are retained. Edit-box focus still suppresses key scrolling as in the original engine.
+
+## Touch toolbar layout
+
+`LayoutN3DSToolbars` repositions widgets without changing widget IDs or callbacks. The normal main toolbar displays its 27 real tools in a 9-column, three-row grid: about 35 physical pixels wide by 32 high per target. Its obsolete desktop toolbar-page switch is hidden because all tools are visible. Construction-toolbar image buttons use eight columns, approximately 40 physical pixels wide by 32 high. Caption and sticky controls retain their roles; narrow desktop spacers are removed.
+
+Construction child dialogs are positioned beneath the actual toolbar height where possible and clamped vertically. Large dialogs may overlap the toolbar: its desktop always-on-top rule is disabled on 3DS so essential save and load controls remain reachable. The status bar is excluded from touch hit testing because it is physically above. These rules apply to toolbar classes, not arbitrary dialogs; station-size grids, financial tables, text fields and other specialised windows keep their original behaviour. Each should be tested and adapted deliberately rather than blindly scaling widget coordinates everywhere.
+
+## Title screen and assets
+
+The 3DS title path deliberately uses an empty 64 by 64 backdrop, with no loaded transport network or AI. It does not load the bundled compressed `opntitle.dat`. This avoids the previous compressed-title load failure and provides a predictable small baseline. It is still an engine map, not a separate bitmap-only application; water-palette animation and normal menu engine work can remain.
+
+The OpenTTD title lettering comes from the bundled sprite set. The revival subtitle, menus and control-pad instructions use the game's existing pixel font. No external icon pack or proprietary Transport Tycoon artwork was imported. Existing sprite IDs, frame drawing, palettes and translated menu strings are reused. Some newly added instructional labels remain English.
+
+A custom scenario-editor title scene can be considered later. Start at 64 by 64, with no AI and very few vehicles. Do not silently replace the lightweight baseline with an arbitrary large save. A future title-scene loader should validate size, handle unsupported compression cleanly and fall back safely.
+
+## Memory considerations
+
+For the default 8-bit blitter, r2's dual-screen texture and indexed framebuffer added about 639,488 bytes compared with the original 320 by 240 mode, calculated from the pinned SDL backend's power-of-two texture allocation. r3 adds roughly another 96,000 bytes for the 400 by 240 indexed UI surface, plus SDL surface metadata. These figures are allocation calculations, not measured total process memory or a guarantee of original-3DS headroom. Other blitter depths allocate more. The UI does not load a second graphics pack, duplicate vehicle simulation or clean old save cargo records.
+
+## Stability fixes retained from r1b
+
+`CargoPacket` invalidation must leave its count at zero, and `Company` invalidation must clear its validity marker. The original release's optimised destructors failed to retain those stores. The repair explicitly preserves them, alongside `-fno-lifetime-dse`. This prevents the demonstrated new stale-cargo accumulation and removed-company/null-AI event path. It does not reclaim stale cargo already present in a user's save.
+
+Modern compiler detection and unsupported external MIDI-driver exclusions remain. Startup directory selection and flushed diagnostics are in `src/n3ds_bootlog.h`; the fallback path names are release-specific. Always update the executable directory, fallback argv and log path together for a new release.
+
+Existing SDK/compiler mixed-enum ABI warnings remain and must be disclosed. Emulator success alone does not establish hardware safety or remove that uncertainty.
+
+## Validation workflow
+
+1. Build in the pinned container and retain logs, exact ELF and executable hash.
+2. Boot without autoexec scripts. Confirm the title is above and the actual menu below, with no gameplay panel at startup. Verify menu text is native width and direct touches select the matching button.
+3. Load a disposable save through the lower-screen load dialog. Confirm no UI window occludes the upper map.
+4. Open rail/road/other construction tools below; check enlarged buttons, dropdowns and child pickers. Open and close dialogs to check damaged-region repainting.
+5. Switch to the relative pad with X. Repeatedly lift and reposition without pressing A: no building should occur and the cursor should not jump. Press A to place, and hold A while dragging for construction. Return to the UI and check button state is released.
+6. Test Circle Pad and D-pad scrolling, dead zone, diagonals, L/R zoom, B cancellation and START pause. Keyboard-emulated analogue input cannot establish physical dead-zone feel; test the real pad too.
+7. Save a disposable game through the UI, reload it, and run through monthly autosaves. Confirm the title/menu state after returning from gameplay.
+8. Validate ZIP checksums, ensure the source archive includes all new headers and docs, and verify that no private saves or crash dumps are distributed.
+9. Repeat on original 3DS XL hardware. Keep the known-working build installed separately and record the action, game date and diagnostic log for failures.
+
+## Known gaps
+
+Not every large legacy dialog has been redesigned. The horizontal compatibility transform can narrow text in in-game dialogs, and some original window minimum sizes exceed the available desktop. No new software keyboard is provided. This is a feature prototype, and physical stylus feel, hardware memory pressure, and longer endurance need separate checks. Network and music work remain outside this release.

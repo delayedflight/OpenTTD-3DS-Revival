@@ -206,6 +206,10 @@ struct MainWindow : Window
 			DrawSprite(SPR_OTTD_T, PAL_NONE, off_x +  34, 50);
 			DrawSprite(SPR_OTTD_T, PAL_NONE, off_x +  65, 50);
 			DrawSprite(SPR_OTTD_D, PAL_NONE, off_x +  96, 50);
+#ifdef N3DS
+   DoDrawStringCentered(off_x, 107, "3DS REVIVAL", TC_WHITE);
+   DoDrawStringCentered(off_x, 211, "Choose a game on the touchscreen", TC_WHITE);
+#endif
 		}
 	}
 

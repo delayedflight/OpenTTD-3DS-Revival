@@ -3,6 +3,7 @@
 /** @file gfx.cpp Handling of drawing text and other gfx related stuff. */
 
 #include "stdafx.h"
+#include "n3ds_ui.h"
 #include "openttd.h"
 #include "gfx_func.h"
 #include "variables.h"
@@ -1298,6 +1299,9 @@ void UndrawMouseCursor()
 
 void DrawMouseCursor()
 {
+#ifdef N3DS
+ N3DSMapCursorScope map_cursor_scope;
+#endif
 #if defined(WINCE)
 	/* Don't ever draw the mouse for WinCE, as we work with a stylus */
 	return;
