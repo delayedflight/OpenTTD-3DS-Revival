@@ -6,6 +6,9 @@
 #include "company_func.h"
 #include "gfx_func.h"
 #include "window_gui.h"
+#ifdef N3DS
+#include "n3ds_ui.h"
+#endif
 
 #include "table/sprites.h"
 #include "table/strings.h"
@@ -441,6 +444,9 @@ void Window::DrawWidgets() const
 			assert(r.right - r.left == 11); // To ensure the same sizes are used everywhere!
 
 			clicked = !!(this->flags4 & WF_STICKY);
+#ifdef N3DS
+			if (N3DSUsesScreenPin(this->window_class)) clicked=N3DSUpperUiActive();
+#endif
 			DrawFrameRect(r.left, r.top, r.right, r.bottom, wi->colour, (clicked) ? FR_LOWERED : FR_NONE);
 			DrawSprite((clicked) ? SPR_PIN_UP : SPR_PIN_DOWN, PAL_NONE, r.left + 2 + clicked, r.top + 3 + clicked);
 			break;

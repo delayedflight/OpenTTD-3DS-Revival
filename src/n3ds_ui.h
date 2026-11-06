@@ -4,9 +4,14 @@
 #ifdef N3DS
 #include "core/geometry_type.hpp"
 #include "gfx_type.h"
+#include "window_type.h"
 extern void *_n3ds_ui_pixels;
 extern void *_n3ds_cursor_surface;
 extern bool _n3ds_map_input;
+bool N3DSUpperUiActive();
+bool N3DSUsesScreenPin(WindowClass cls);
+void N3DSRequestMenuScreenChange(WindowClass cls, WindowNumber number);
+struct N3DSWidgetLayout { int16 left, right, top, bottom; byte type; };
 extern int _n3ds_scroll_factor;
 extern Point _n3ds_map_cursor;
 /** Defer station-picker mode changes until after the current input callback. */

@@ -26,6 +26,9 @@
 #include "widgets/dropdown_func.h"
 
 #include "table/sprites.h"
+#ifdef N3DS
+#include "table/strings.h"
+#endif
 
 #ifdef N3DS
 static bool N3DSTopWindow(const Window *w)
@@ -336,6 +339,12 @@ static void DispatchLeftClickEvent(Window *w, int x, int y, bool double_click)
 		}
 
 		if (w->desc_flags & WDF_STICKY_BUTTON && wi->type == WWT_STICKYBOX) {
+#ifdef N3DS
+			if (N3DSUsesScreenPin(w->window_class)) {
+				N3DSRequestMenuScreenChange(w->window_class,w->window_number);
+				return;
+			}
+#endif
 			w->flags4 ^= WF_STICKY;
 			w->InvalidateWidget(widget);
 			return;
@@ -795,6 +804,11 @@ static void AssignWidgetToWindow(Window *w, const Widget *widget)
 		w->widget = MallocT<Widget>(index);
 		memcpy(w->widget, widget, sizeof(*w->widget) * index);
 		w->widget_count = index - 1;
+#ifdef N3DS
+		if (N3DSUsesScreenPin(w->window_class)) {
+			for(uint i=0;i<w->widget_count;i++) if(w->widget[i].type==WWT_STICKYBOX) w->widget[i].tooltips=STR_NULL;
+		}
+#endif
 	} else {
 		w->widget = NULL;
 		w->widget_count = 0;
@@ -1557,7 +1571,7 @@ static bool HandleWindowDragging()
 				w->viewport->top  += ny - w->top;
 			}
 #ifdef N3DS
-			if (w->window_class == WC_VEHICLE_ORDERS) { nx = 40; ny = 22; }
+			if ((w->window_class == WC_VEHICLE_VIEW && w->width <= 320 && !N3DSUpperUiActive()) || w->window_class == WC_VEHICLE_ORDERS || (w->width == 320 && (w->window_class == WC_VEHICLE_DETAILS || w->window_class == WC_TRAINS_LIST || w->window_class == WC_ROADVEH_LIST || w->window_class == WC_SHIPS_LIST || w->window_class == WC_AIRCRAFT_LIST))) { nx = 40; ny = 22; }
 #endif
 			w->left = nx;
 			w->top  = ny;

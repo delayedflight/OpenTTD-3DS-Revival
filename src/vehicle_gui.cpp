@@ -3,6 +3,9 @@
 /** @file vehicle_gui.cpp The base GUI for all vehicles. */
 
 #include "stdafx.h"
+#ifdef N3DS
+#include "n3ds_ui.h"
+#endif
 #include "openttd.h"
 #include "debug.h"
 #include "company_func.h"
@@ -757,7 +760,11 @@ static void DrawVehicleImage(const Vehicle *v, int x, int y, VehicleID selection
  */
 void BaseVehicleListWindow::DrawVehicleListItems(int x, VehicleID selected_vehicle)
 {
+	#ifdef N3DS
+	int y = this->widget[VLW_WIDGET_LIST].top;
+#else
 	int y = PLY_WND_PRC__OFFSET_TOP_WIDGET;
+#endif
 	uint max = min(this->vscroll.pos + this->vscroll.cap, this->vehicles.Length());
 	for (uint i = this->vscroll.pos; i < max; ++i) {
 		const Vehicle *v = this->vehicles[i];
@@ -767,16 +774,28 @@ void BaseVehicleListWindow::DrawVehicleListItems(int x, VehicleID selected_vehic
 		SetDParam(1, v->GetDisplayProfitLastYear());
 
 		DrawVehicleImage(v, x + 19, y + 6, selected_vehicle, this->widget[VLW_WIDGET_LIST].right - this->widget[VLW_WIDGET_LIST].left - 20, 0);
+		#ifdef N3DS
+		DrawStringTruncated(x + 19, y + this->resize.step_height - 8, STR_0198_PROFIT_THIS_YEAR_LAST_YEAR, TC_FROMSTRING, this->widget[VLW_WIDGET_LIST].right - x - 21);
+#else
 		DrawString(x + 19, y + this->resize.step_height - 8, STR_0198_PROFIT_THIS_YEAR_LAST_YEAR, TC_FROMSTRING);
+#endif
 
 		if (v->name != NULL) {
 			/* The vehicle got a name so we will print it */
 			SetDParam(0, v->index);
-			DrawString(x + 19, y, STR_01AB, TC_FROMSTRING);
+			#ifdef N3DS
+		DrawStringTruncated(x + 19, y, STR_01AB, TC_FROMSTRING, this->widget[VLW_WIDGET_LIST].right - x - 21);
+#else
+		DrawString(x + 19, y, STR_01AB, TC_FROMSTRING);
+#endif
 		} else if (v->group_id != DEFAULT_GROUP) {
 			/* The vehicle has no name, but is member of a group, so print group name */
 			SetDParam(0, v->group_id);
-			DrawString(x + 19, y, STR_GROUP_TINY_NAME, TC_BLACK);
+			#ifdef N3DS
+		DrawStringTruncated(x + 19, y, STR_GROUP_TINY_NAME, TC_BLACK, this->widget[VLW_WIDGET_LIST].right - x - 21);
+#else
+		DrawString(x + 19, y, STR_GROUP_TINY_NAME, TC_BLACK);
+#endif
 		}
 
 		if (this->resize.step_height == PLY_WND_PRC__SIZE_OF_ROW_BIG) DrawSmallOrderList(v, x + 138, y);
@@ -807,8 +826,36 @@ void BaseVehicleListWindow::DrawVehicleListItems(int x, VehicleID selected_vehic
  */
 struct VehicleListWindow : public BaseVehicleListWindow {
 
+#ifdef N3DS
+	N3DSWidgetLayout n3ds_layout[15];
+	bool n3ds_ready;
+	int n3ds_width,n3ds_height,n3ds_cap;
+	void N3DSRect(int id,int l,int r,int t,int b) {Widget&w=this->widget[id];w.left=l;w.right=r;w.top=t;w.bottom=b;}
+	virtual void OnN3DSScreenChange(bool upper) {
+		if(!this->n3ds_ready)return;
+		for(uint i=0;i<this->widget_count;i++) {Widget&w=this->widget[i];const N3DSWidgetLayout&a=this->n3ds_layout[i];w.left=a.left;w.right=a.right;w.top=a.top;w.bottom=a.bottom;w.type=(WidgetType)a.type;}
+		this->width=upper?this->n3ds_width:320;this->height=upper?this->n3ds_height:200;
+		this->left=upper?0:40;this->top=22;
+		this->vscroll.cap=upper?this->n3ds_cap:((this->vehicle_type==VEH_TRAIN||this->vehicle_type==VEH_ROAD)?5:3);
+		if(!upper) {
+			this->N3DSRect(VLW_WIDGET_CAPTION,11,307,0,13);this->N3DSRect(VLW_WIDGET_STICKY,308,319,0,13);
+			this->N3DSRect(VLW_WIDGET_SORT_ORDER,0,80,14,35);this->N3DSRect(VLW_WIDGET_SORT_BY_PULLDOWN,81,319,14,35);
+			const int end=36+this->vscroll.cap*this->resize.step_height-1;
+			this->N3DSRect(VLW_WIDGET_LIST,0,299,36,end);this->N3DSRect(VLW_WIDGET_SCROLLBAR,300,319,36,end);
+			this->N3DSRect(VLW_WIDGET_OTHER_COMPANY_FILLER,0,319,166,187);
+			this->N3DSRect(VLW_WIDGET_AVAILABLE_VEHICLES,0,105,166,187);this->N3DSRect(VLW_WIDGET_MANAGE_VEHICLES_DROPDOWN,106,275,166,187);
+			this->N3DSRect(VLW_WIDGET_STOP_ALL,276,297,166,187);this->N3DSRect(VLW_WIDGET_START_ALL,298,319,166,187);
+			this->widget[VLW_WIDGET_RESIZE].type=WWT_EMPTY;this->widget[VLW_WIDGET_EMPTY_TOP_RIGHT].type=WWT_EMPTY;this->widget[VLW_WIDGET_EMPTY_BOTTOM_RIGHT].type=WWT_EMPTY;
+		}
+		this->widget[VLW_WIDGET_LIST].data=(this->vscroll.cap<<8)+1;MarkWholeScreenDirty();
+	}
+#endif
+
 	VehicleListWindow(const WindowDesc *desc, WindowNumber window_number) : BaseVehicleListWindow(desc, window_number)
 	{
+#ifdef N3DS
+		this->n3ds_ready=false;
+#endif
 		uint16 window_type = this->window_number & VLW_MASK;
 		CompanyID company = (CompanyID)GB(this->window_number, 0, 8);
 
@@ -932,6 +979,11 @@ struct VehicleListWindow : public BaseVehicleListWindow {
 
 		this->FindWindowPlacementAndResize(desc);
 		if (this->vehicle_type == VEH_TRAIN) ResizeWindow(this, 65, 0);
+#ifdef N3DS
+		for(uint i=0;i<this->widget_count;i++) {const Widget&w=this->widget[i];N3DSWidgetLayout&a=this->n3ds_layout[i];a.left=w.left;a.right=w.right;a.top=w.top;a.bottom=w.bottom;a.type=w.type;}
+		this->n3ds_width=this->width;this->n3ds_height=this->height;this->n3ds_cap=this->vscroll.cap;this->n3ds_ready=true;
+		this->OnN3DSScreenChange(N3DSUpperUiActive());
+#endif
 	}
 
 	~VehicleListWindow()
@@ -1023,7 +1075,7 @@ struct VehicleListWindow : public BaseVehicleListWindow {
 				ShowDropDownMenu(this, this->vehicle_sorter_names, this->vehicles.SortType(), VLW_WIDGET_SORT_BY_PULLDOWN, 0, (this->vehicle_type == VEH_TRAIN || this->vehicle_type == VEH_ROAD) ? 0 : (1 << 10));
 				return;
 			case VLW_WIDGET_LIST: { // Matrix to show vehicles
-				uint32 id_v = (pt.y - PLY_WND_PRC__OFFSET_TOP_WIDGET) / this->resize.step_height;
+				uint32 id_v = (pt.y - this->widget[VLW_WIDGET_LIST].top) / this->resize.step_height;
 				const Vehicle *v;
 
 				if (id_v >= this->vscroll.cap) return; // click out of bounds
@@ -1214,6 +1266,10 @@ enum VehicleDetailsWindowWidgets {
 	VLD_WIDGET_DETAILS_CAPACITY_OF_EACH,
 	VLD_WIDGET_DETAILS_TOTAL_CARGO,
 	VLD_WIDGET_RESIZE,
+#ifdef N3DS
+	VLD_WIDGET_OVERVIEW,
+	VLD_WIDGET_SECTION,
+#endif
 };
 
 /** Vehicle details widgets. */
@@ -1233,6 +1289,10 @@ static const Widget _vehicle_details_widgets[] = {
 	{ WWT_PUSHTXTBTN,     RESIZE_TB,  COLOUR_GREY, 195, 293, 113, 124, STR_013E_CAPACITIES,  STR_8851_SHOW_CAPACITIES_OF_EACH},       // VLD_WIDGET_DETAILS_CAPACITY_OF_EACH
 	{ WWT_PUSHTXTBTN,    RESIZE_RTB,  COLOUR_GREY, 294, 392, 113, 124, STR_TOTAL_CARGO,      STR_SHOW_TOTAL_CARGO},                   // VLD_WIDGET_DETAILS_TOTAL_CARGO
 	{  WWT_RESIZEBOX,   RESIZE_LRTB,  COLOUR_GREY, 393, 404, 113, 124, 0x0,                  STR_RESIZE_BUTTON},                      // VLD_RESIZE
+#ifdef N3DS
+	{ WWT_PUSHTXTBTN, RESIZE_NONE, COLOUR_GREY, 0, 159, 14, 35, STR_EMPTY, STR_NULL },
+	{ WWT_PUSHTXTBTN, RESIZE_NONE, COLOUR_GREY, 160, 319, 14, 35, STR_EMPTY, STR_NULL },
+#endif
 	{   WIDGETS_END},
 };
 
@@ -1282,10 +1342,66 @@ extern void DrawAircraftDetails(const Vehicle *v, int x, int y);
 
 struct VehicleDetailsWindow : Window {
 	int tab;
+#ifdef N3DS
+	N3DSWidgetLayout n3ds_layout[17];
+	bool n3ds_ready, n3ds_compact, n3ds_overview;
+	int n3ds_height, n3ds_cap;
+	void N3DSRect(int id,int l,int r,int t,int b) {
+		Widget &w=this->widget[id]; w.left=l;w.right=r;w.top=t;w.bottom=b;
+	}
+	virtual void OnN3DSScreenChange(bool upper) {
+		if (!this->n3ds_ready) return;
+		this->n3ds_compact=!upper;
+		for(uint i=0;i<this->widget_count;i++) {
+			Widget &w=this->widget[i];const N3DSWidgetLayout&a=this->n3ds_layout[i];
+			w.left=a.left;w.right=a.right;w.top=a.top;w.bottom=a.bottom;w.type=(WidgetType)a.type;
+		}
+		this->width=upper?400:320;this->height=upper?this->n3ds_height:192;
+		this->left=upper?0:40;this->top=22;
+		this->vscroll.cap=upper?this->n3ds_cap:(GetVehicle(this->window_number)->type==VEH_TRAIN?8:1);
+		this->widget[VLD_WIDGET_MIDDLE_DETAILS].data=(this->vscroll.cap<<8)+1;
+		if(!upper) {
+			this->N3DSRect(VLD_WIDGET_CAPTION,11,267,0,13);
+			this->N3DSRect(VLD_WIDGET_RENAME_VEHICLE,268,307,0,13);
+			this->N3DSRect(VLD_WIDGET_STICKY,308,319,0,13);
+			this->N3DSRect(VLD_WIDGET_TOP_DETAILS,0,319,36,191);
+			this->N3DSRect(VLD_WIDGET_MIDDLE_DETAILS,0,299,36,147);
+			if(GetVehicle(this->window_number)->type!=VEH_TRAIN)this->widget[VLD_WIDGET_MIDDLE_DETAILS].right=319;
+			this->N3DSRect(VLD_WIDGET_SCROLLBAR,300,319,36,147);
+			this->N3DSRect(VLD_WIDGET_INCREASE_SERVICING_INTERVAL,0,21,148,169);
+			this->N3DSRect(VLD_WIDGET_DECREASE_SERVICING_INTERVAL,22,43,148,169);
+			this->N3DSRect(VLD_WIDGET_BOTTOM_RIGHT,44,319,148,169);
+			for(int i=0;i<4;i++)this->N3DSRect(VLD_WIDGET_DETAILS_CARGO_CARRIED+i,i*80,i*80+79,170,191);
+		}
+		MarkWholeScreenDirty();
+	}
+	void N3DSVisibility(const Vehicle *v) {
+		this->SetWidgetHiddenState(VLD_WIDGET_OVERVIEW,!this->n3ds_compact);
+		this->SetWidgetHiddenState(VLD_WIDGET_SECTION,!this->n3ds_compact);
+		this->SetWidgetHiddenState(VLD_WIDGET_TOP_DETAILS,this->n3ds_compact&&!this->n3ds_overview);
+		this->SetWidgetHiddenState(VLD_WIDGET_MIDDLE_DETAILS,this->n3ds_compact&&this->n3ds_overview);
+		this->SetWidgetHiddenState(VLD_WIDGET_SCROLLBAR,v->type!=VEH_TRAIN||(this->n3ds_compact&&this->n3ds_overview));
+		for(int i=VLD_WIDGET_DETAILS_CARGO_CARRIED;i<=VLD_WIDGET_DETAILS_TOTAL_CARGO;i++)this->SetWidgetHiddenState(i,v->type!=VEH_TRAIN||(this->n3ds_compact&&this->n3ds_overview));
+		this->SetWidgetDisabledState(VLD_WIDGET_OVERVIEW,this->n3ds_overview);
+		this->SetWidgetDisabledState(VLD_WIDGET_SECTION,!this->n3ds_overview);
+	}
+#endif
+	void DrawStat(int y, StringID str) {
+#ifdef N3DS
+		if(this->n3ds_compact) {
+			if(this->n3ds_overview) DrawStringMultiLine(2,40+(y-15)*22/10,str,316,22);
+			return;
+		}
+#endif
+		DrawString(2,y,str,TC_FROMSTRING);
+	}
 
 	/** Initialize a newly created vehicle details window */
 	VehicleDetailsWindow(const WindowDesc *desc, WindowNumber window_number) : Window(desc, window_number)
  {
+#ifdef N3DS
+		this->n3ds_ready=false;this->n3ds_compact=false;this->n3ds_overview=true;
+#endif
 #ifdef N3DS
   /* Recover the five pixels that put the right-hand controls off-screen. */
   for (uint i = 0; i < this->widget_count; i++) {
@@ -1371,6 +1487,14 @@ struct VehicleDetailsWindow : Window {
 		this->widget[VLD_WIDGET_RESIZE].type = WWT_EMPTY;
 #endif
 		this->FindWindowPlacementAndResize(desc);
+#ifdef N3DS
+		for(uint i=0;i<this->widget_count;i++) {
+			const Widget&w=this->widget[i];N3DSWidgetLayout&a=this->n3ds_layout[i];
+			a.left=w.left;a.right=w.right;a.top=w.top;a.bottom=w.bottom;a.type=w.type;
+		}
+		this->n3ds_height=this->height;this->n3ds_cap=this->vscroll.cap;
+		this->n3ds_ready=true;this->OnN3DSScreenChange(N3DSUpperUiActive());
+#endif
 	}
 
 	/** Checks whether service interval is enabled for the vehicle. */
@@ -1436,15 +1560,21 @@ struct VehicleDetailsWindow : Window {
 			WIDGET_LIST_END);
 
 
+#ifdef N3DS
+		this->N3DSVisibility(v);
+#endif
 		SetDParam(0, v->index);
 		this->DrawWidgets();
+#ifdef N3DS
+		if(this->n3ds_compact) {DoDrawStringCentered(80,20,"Overview",TC_BLACK);DoDrawStringCentered(240,20,"Details",TC_BLACK);}
+#endif
 
 		/* Draw running cost */
 		SetDParam(1, v->age / DAYS_IN_LEAP_YEAR);
 		SetDParam(0, (v->age + DAYS_IN_YEAR < v->max_age) ? STR_AGE : STR_AGE_RED);
 		SetDParam(2, v->max_age / DAYS_IN_LEAP_YEAR);
 		SetDParam(3, v->GetDisplayRunningCost());
-		DrawString(2, 15, _vehicle_translation_table[VST_VEHICLE_AGE_RUNNING_COST_YR][v->type], TC_FROMSTRING);
+		DrawStat(15, _vehicle_translation_table[VST_VEHICLE_AGE_RUNNING_COST_YR][v->type]);
 
 		/* Draw max speed */
 		switch (v->type) {
@@ -1453,16 +1583,16 @@ struct VehicleDetailsWindow : Window {
 				SetDParam(1, v->u.rail.cached_power);
 				SetDParam(0, v->u.rail.cached_weight);
 				SetDParam(3, v->u.rail.cached_max_te / 1000);
-				DrawString(2, 25, (_settings_game.vehicle.train_acceleration_model != TAM_ORIGINAL && v->u.rail.railtype != RAILTYPE_MAGLEV) ?
+				DrawStat(25, (_settings_game.vehicle.train_acceleration_model != TAM_ORIGINAL && v->u.rail.railtype != RAILTYPE_MAGLEV) ?
 					STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED_MAX_TE :
-					STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED, TC_FROMSTRING);
+					STR_VEHICLE_INFO_WEIGHT_POWER_MAX_SPEED);
 				break;
 
 			case VEH_ROAD:
 			case VEH_SHIP:
 			case VEH_AIRCRAFT:
 				SetDParam(0, v->GetDisplayMaxSpeed());
-				DrawString(2, 25, _vehicle_translation_table[VST_VEHICLE_MAX_SPEED][v->type], TC_FROMSTRING);
+				DrawStat(25, _vehicle_translation_table[VST_VEHICLE_MAX_SPEED][v->type]);
 				break;
 
 			default: NOT_REACHED();
@@ -1471,22 +1601,31 @@ struct VehicleDetailsWindow : Window {
 		/* Draw profit */
 		SetDParam(0, v->GetDisplayProfitThisYear());
 		SetDParam(1, v->GetDisplayProfitLastYear());
-		DrawString(2, 35, _vehicle_translation_table[VST_VEHICLE_PROFIT_THIS_YEAR_LAST_YEAR][v->type], TC_FROMSTRING);
+		DrawStat(35, _vehicle_translation_table[VST_VEHICLE_PROFIT_THIS_YEAR_LAST_YEAR][v->type]);
 
 		/* Draw breakdown & reliability */
 		SetDParam(0, v->reliability * 100 >> 16);
 		SetDParam(1, v->breakdowns_since_last_service);
-		DrawString(2, 45, _vehicle_translation_table[VST_VEHICLE_RELIABILITY_BREAKDOWNS][v->type], TC_FROMSTRING);
+		DrawStat(45, _vehicle_translation_table[VST_VEHICLE_RELIABILITY_BREAKDOWNS][v->type]);
 
 		/* Draw service interval text */
 		SetDParam(0, v->service_interval);
 		SetDParam(1, v->date_of_last_service);
 #ifdef N3DS
-		DrawStringTruncated(46, this->widget[VLD_WIDGET_BOTTOM_RIGHT].top + 6, _settings_game.vehicle.servint_ispercent ? STR_SERVICING_INTERVAL_PERCENT : STR_883C_SERVICING_INTERVAL_DAYS, TC_FROMSTRING, this->width - 48);
+		if(this->n3ds_compact) DrawStringMultiLine(46,this->widget[VLD_WIDGET_BOTTOM_RIGHT].top+1,_settings_game.vehicle.servint_ispercent?STR_SERVICING_INTERVAL_PERCENT:STR_883C_SERVICING_INTERVAL_DAYS,272,22);
+		else DrawStringTruncated(46, this->widget[VLD_WIDGET_BOTTOM_RIGHT].top + 6, _settings_game.vehicle.servint_ispercent ? STR_SERVICING_INTERVAL_PERCENT : STR_883C_SERVICING_INTERVAL_DAYS, TC_FROMSTRING, this->width - 48);
 #else
 		DrawString(13, this->height - (v->type != VEH_TRAIN ? 11 : 23), _settings_game.vehicle.servint_ispercent ? STR_SERVICING_INTERVAL_PERCENT : STR_883C_SERVICING_INTERVAL_DAYS, TC_FROMSTRING);
 #endif
 
+#ifdef N3DS
+		if(this->n3ds_compact) {
+			if(this->n3ds_overview)return;
+			if(v->type==VEH_TRAIN)DrawVehicleDetails(v,2,37,this->vscroll.pos,this->vscroll.cap,det_tab);
+			else {DrawVehicleImage(v,3,43,INVALID_VEHICLE,0,0);DrawVehicleDetails(v,2,62,this->vscroll.pos,this->vscroll.cap,det_tab);}
+			return;
+		}
+#endif
 		switch (v->type) {
 			case VEH_TRAIN:
 				DrawVehicleDetails(v, 2, 57, this->vscroll.pos, this->vscroll.cap, det_tab);
@@ -1505,6 +1644,11 @@ struct VehicleDetailsWindow : Window {
 
 	virtual void OnClick(Point pt, int widget)
 	{
+#ifdef N3DS
+		if(widget==VLD_WIDGET_OVERVIEW||widget==VLD_WIDGET_SECTION) {
+			this->n3ds_overview=widget==VLD_WIDGET_OVERVIEW;this->OnN3DSScreenChange(false);return;
+		}
+#endif
 		/** Message strings for renaming vehicles indexed by vehicle type. */
 		static const StringID _name_vehicle_title[] = {
 			STR_8865_NAME_TRAIN,
@@ -1711,6 +1855,18 @@ static bool IsVehicleRefitable(const Vehicle *v)
 }
 
 struct VehicleViewWindow : Window {
+#ifdef N3DS
+	virtual void OnN3DSScreenChange(bool upper) {
+		if(!upper && (this->width>320 || this->height>218)) {
+			Point delta={min(this->width,320)-this->width,min(this->height,218)-this->height};
+			ResizeWindow(this,delta.x,delta.y);
+			Point size={this->width,this->height};this->OnResize(size,delta);
+		}
+		const int x=upper?0:40;
+		if(this->viewport!=NULL) {this->viewport->left+=x-this->left;this->viewport->top+=22-this->top;}
+		this->left=x;this->top=22;MarkWholeScreenDirty();
+	}
+#endif
 	VehicleViewWindow(const WindowDesc *desc, WindowNumber window_number) : Window(desc, window_number)
 	{
 		const Vehicle *v = GetVehicle(this->window_number);
@@ -1849,6 +2005,9 @@ struct VehicleViewWindow : Window {
 		}
 
 		this->FindWindowPlacementAndResize(desc);
+#ifdef N3DS
+		this->OnN3DSScreenChange(N3DSUpperUiActive());
+#endif
 	}
 
 	~VehicleViewWindow()

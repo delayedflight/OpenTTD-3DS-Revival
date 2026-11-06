@@ -494,6 +494,10 @@ public:
 	 * @param delta    the amount of which the window size changed.
 	 */
 	virtual void OnResize(Point new_size, Point delta) {}
+#ifdef N3DS
+	/** Reflow native-width vehicle panes when their display changes. */
+	virtual void OnN3DSScreenChange(bool upper) {}
+#endif
 
 	/**
 	 * A dropdown option associated to this window has been selected.

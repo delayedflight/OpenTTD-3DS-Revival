@@ -3,6 +3,9 @@
 /** @file group_gui.cpp GUI for the group window. */
 
 #include "stdafx.h"
+#ifdef N3DS
+#include "n3ds_ui.h"
+#endif
 #include "openttd.h"
 #include "window_gui.h"
 #include "textbuf_gui.h"
@@ -121,6 +124,14 @@ private:
 	GroupID group_sel;
 	VehicleID vehicle_sel;
 	GUIGroupList groups;
+#ifdef N3DS
+	N3DSWidgetLayout n3ds_layout[25];
+	bool n3ds_ready, n3ds_compact, n3ds_groups;
+	VehicleID n3ds_group_vehicle;
+	void N3DSRect(int id, int l, int r, int t, int b) {
+		Widget &w = this->widget[id]; w.left=l; w.right=r; w.top=t; w.bottom=b;
+	}
+#endif
 
 	/**
 	 * (Re)Build the group list.
@@ -168,8 +179,57 @@ private:
 	}
 
 public:
+#ifdef N3DS
+	virtual void OnN3DSScreenChange(bool upper) {
+		if (!this->n3ds_ready) return;
+		this->n3ds_compact = !upper;
+		for (uint i=0;i<this->widget_count;i++) {
+			Widget &w=this->widget[i]; const N3DSWidgetLayout &a=this->n3ds_layout[i];
+			w.left=a.left; w.right=a.right; w.top=a.top; w.bottom=a.bottom; w.type=(WidgetType)a.type;
+			this->SetWidgetHiddenState(i, false);
+		}
+		this->width=upper?400:320; this->height=upper?204:200;
+		this->left=upper?0:40; this->top=22;
+		this->vscroll.cap=(this->vehicle_type==VEH_TRAIN||this->vehicle_type==VEH_ROAD)?(upper?6:5):(upper?4:3);
+		this->vscroll2.cap=upper?9:5;
+		this->widget[GRP_WIDGET_SORT_BY_ORDER].data=upper?STR_SORT_BY:STR_EMPTY;
+		if (!upper) {
+			this->N3DSRect(GRP_WIDGET_CAPTION,11,307,0,13);
+			this->N3DSRect(GRP_WIDGET_STICKY,308,319,0,13);
+			this->N3DSRect(GRP_WIDGET_EMPTY_TOP_LEFT,0,95,14,35);
+			this->widget[GRP_WIDGET_EMPTY_TOP_LEFT].type=WWT_PUSHTXTBTN;
+			this->widget[GRP_WIDGET_EMPTY_TOP_LEFT].data=STR_EMPTY;
+			this->N3DSRect(GRP_WIDGET_SORT_BY_ORDER,96,127,14,35);
+			this->N3DSRect(GRP_WIDGET_SORT_BY_DROPDOWN,128,319,14,35);
+			this->N3DSRect(GRP_WIDGET_LIST_VEHICLE,0,299,36,36+this->vscroll.cap*this->resize.step_height-1);
+			this->N3DSRect(GRP_WIDGET_LIST_VEHICLE_SCROLLBAR,300,319,36,36+this->vscroll.cap*this->resize.step_height-1);
+			this->N3DSRect(GRP_WIDGET_AVAILABLE_VEHICLES,0,105,166,187);
+			this->N3DSRect(GRP_WIDGET_MANAGE_VEHICLES_DROPDOWN,106,275,166,187);
+			this->N3DSRect(GRP_WIDGET_STOP_ALL,276,297,166,187);
+			this->N3DSRect(GRP_WIDGET_START_ALL,298,319,166,187);
+			this->N3DSRect(GRP_WIDGET_ALL_VEHICLES,0,159,36,57);
+			this->N3DSRect(GRP_WIDGET_DEFAULT_VEHICLES,160,319,36,57);
+			this->N3DSRect(GRP_WIDGET_LIST_GROUP,0,299,58,167);
+			this->N3DSRect(GRP_WIDGET_LIST_GROUP_SCROLLBAR,300,319,58,167);
+			this->N3DSRect(GRP_WIDGET_CREATE_GROUP,0,31,168,192);
+			this->N3DSRect(GRP_WIDGET_DELETE_GROUP,32,63,168,192);
+			this->N3DSRect(GRP_WIDGET_RENAME_GROUP,64,95,168,192);
+			this->N3DSRect(GRP_WIDGET_REPLACE_PROTECTION,96,127,168,192);
+			for (int i=GRP_WIDGET_SORT_BY_ORDER;i<=GRP_WIDGET_START_ALL;i++) this->SetWidgetHiddenState(i,this->n3ds_groups);
+			for (int i=GRP_WIDGET_ALL_VEHICLES;i<=GRP_WIDGET_REPLACE_PROTECTION;i++) this->SetWidgetHiddenState(i,!this->n3ds_groups);
+			for (int i : {GRP_WIDGET_EMPTY_TOP_RIGHT,GRP_WIDGET_EMPTY2,GRP_WIDGET_EMPTY_BOTTOM_RIGHT,GRP_WIDGET_RESIZE,GRP_WIDGET_EMPTY1}) this->SetWidgetHiddenState(i,true);
+		}
+		this->widget[GRP_WIDGET_LIST_GROUP].data=(this->vscroll2.cap<<8)+1;
+		this->widget[GRP_WIDGET_LIST_VEHICLE].data=(this->vscroll.cap<<8)+1;
+		MarkWholeScreenDirty();
+	}
+#endif
 	VehicleGroupWindow(const WindowDesc *desc, WindowNumber window_number) : BaseVehicleListWindow(desc, window_number)
 	{
+#ifdef N3DS
+		this->n3ds_ready=false; this->n3ds_groups=false; this->n3ds_compact=false;
+		this->n3ds_group_vehicle=INVALID_VEHICLE;
+#endif
 		const Owner owner = (Owner)GB(this->window_number, 0, 8);
 		this->vehicle_type = (VehicleType)GB(this->window_number, 11, 5);
 #ifdef N3DS
@@ -281,6 +341,13 @@ public:
 		this->FindWindowPlacementAndResize(desc);
 #ifndef N3DS
 		if (this->vehicle_type == VEH_TRAIN) ResizeWindow(this, 65, 0);
+#endif
+#ifdef N3DS
+		for (uint i=0;i<this->widget_count;i++) {
+			const Widget &w=this->widget[i]; N3DSWidgetLayout &a=this->n3ds_layout[i];
+			a.left=w.left; a.right=w.right; a.top=w.top; a.bottom=w.bottom; a.type=w.type;
+		}
+		this->n3ds_ready=true; this->OnN3DSScreenChange(N3DSUpperUiActive());
 #endif
 	}
 
@@ -413,7 +480,13 @@ public:
 		this->widget[GRP_WIDGET_SORT_BY_DROPDOWN].data = this->vehicle_sorter_names[this->vehicles.SortType()];
 
 		this->DrawWidgets();
+#ifdef N3DS
+		if (this->n3ds_compact) DoDrawStringCentered(48,20,this->n3ds_groups?"Vehicles":"Groups",TC_BLACK);
+#endif
 
+#ifdef N3DS
+		if (!this->n3ds_compact || this->n3ds_groups) {
+#endif
 		/* Draw Matrix Group
 		 * The selected group is drawn in white */
 		StringID str_all_veh, str_no_group_veh;
@@ -437,10 +510,18 @@ public:
 				break;
 			default: NOT_REACHED();
 		}
+#ifdef N3DS
+		if (this->n3ds_compact) DrawStringTruncated(4,42,str_all_veh,IsAllGroupID(this->group_sel)?TC_WHITE:TC_BLACK,152);
+		else
+#endif
 		DrawString(10, y1, str_all_veh, IsAllGroupID(this->group_sel) ? TC_WHITE : TC_BLACK);
 
 		y1 += 13;
 
+#ifdef N3DS
+		if (this->n3ds_compact) { DrawStringTruncated(164,42,str_no_group_veh,IsDefaultGroupID(this->group_sel)?TC_WHITE:TC_BLACK,152); y1=42; }
+		else
+#endif
 		DrawString(10, y1, str_no_group_veh, IsDefaultGroupID(this->group_sel) ? TC_WHITE : TC_BLACK);
 
 		max = min(this->vscroll2.pos + this->vscroll2.cap, this->groups.Length());
@@ -449,7 +530,11 @@ public:
 
 			assert(g->owner == owner);
 
+			#ifdef N3DS
+			y1 += this->n3ds_compact ? 22 : PLY_WND_PRC__SIZE_OF_ROW_TINY;
+#else
 			y1 += PLY_WND_PRC__SIZE_OF_ROW_TINY;
+#endif
 
 			/* draw the selected group in white, else we draw it in black */
 			SetDParam(0, g->index);
@@ -464,13 +549,36 @@ public:
 			DrawStringRightAligned(this->widget[GRP_WIDGET_LIST_GROUP].right, y1 + 1, STR_GROUP_TINY_NUM, (this->group_sel == g->index) ? TC_WHITE : TC_BLACK);
 		}
 
+#ifdef N3DS
+		}
+		if (!this->n3ds_compact || !this->n3ds_groups) {
+#endif
 		this->DrawSortButtonState(GRP_WIDGET_SORT_BY_ORDER, this->vehicles.IsDescSortOrder() ? SBS_DOWN : SBS_UP);
 
 		this->DrawVehicleListItems(x, this->vehicle_sel);
+#ifdef N3DS
+		}
+#endif
 	}
 
 	virtual void OnClick(Point pt, int widget)
 	{
+#ifdef N3DS
+		if (this->n3ds_compact && widget==GRP_WIDGET_EMPTY_TOP_LEFT) {
+			this->n3ds_group_vehicle=INVALID_VEHICLE; this->n3ds_groups=!this->n3ds_groups;
+			this->OnN3DSScreenChange(false); return;
+		}
+		if (this->n3ds_compact && (widget==GRP_WIDGET_ALL_VEHICLES || widget==GRP_WIDGET_DEFAULT_VEHICLES || widget==GRP_WIDGET_LIST_GROUP)) {
+			GroupID group=widget==GRP_WIDGET_ALL_VEHICLES?ALL_GROUP:DEFAULT_GROUP;
+			if(widget==GRP_WIDGET_LIST_GROUP) {
+				uint index=(pt.y-this->widget[GRP_WIDGET_LIST_GROUP].top)/22+this->vscroll2.pos;
+				if(index>=this->groups.Length()) return;
+				group=this->groups[index]->index;
+			}
+			this->group_sel=group; this->vehicles.ForceRebuild(); this->n3ds_groups=false;
+			this->OnN3DSScreenChange(false); return;
+		}
+#endif
 		switch(widget) {
 			case GRP_WIDGET_SORT_BY_ORDER: // Flip sorting method ascending/descending
 				this->vehicles.ToggleSortOrder();
@@ -498,7 +606,13 @@ public:
 				break;
 
 			case GRP_WIDGET_LIST_GROUP: { // Matrix Group
-				uint16 id_g = (pt.y - PLY_WND_PRC__OFFSET_TOP_WIDGET - 26) / PLY_WND_PRC__SIZE_OF_ROW_TINY;
+				uint16 id_g = (pt.y - this->widget[GRP_WIDGET_LIST_GROUP].top) /
+#ifdef N3DS
+ (this->n3ds_compact ? 22 : PLY_WND_PRC__SIZE_OF_ROW_TINY)
+#else
+ PLY_WND_PRC__SIZE_OF_ROW_TINY
+#endif
+;
 
 				if (id_g >= this->vscroll2.cap) return;
 
@@ -514,7 +628,7 @@ public:
 			}
 
 			case GRP_WIDGET_LIST_VEHICLE: { // Matrix Vehicle
-				uint32 id_v = (pt.y - PLY_WND_PRC__OFFSET_TOP_WIDGET) / (int)this->resize.step_height;
+				uint32 id_v = (pt.y - this->widget[GRP_WIDGET_LIST_VEHICLE].top) / (int)this->resize.step_height;
 				const Vehicle *v;
 
 				if (id_v >= this->vscroll.cap) return; // click out of bounds
@@ -588,6 +702,19 @@ public:
 
 	virtual void OnDragDrop(Point pt, int widget)
 	{
+#ifdef N3DS
+		if (this->n3ds_compact && widget==GRP_WIDGET_EMPTY_TOP_LEFT && this->vehicle_sel!=INVALID_VEHICLE) {
+			DropDownList *list=new DropDownList();
+			const StringID defaults[]={STR_GROUP_DEFAULT_TRAINS,STR_GROUP_DEFAULT_ROADS,STR_GROUP_DEFAULT_SHIPS,STR_GROUP_DEFAULT_AIRCRAFTS};
+			list->push_back(new DropDownListStringItem(defaults[this->vehicle_type],DEFAULT_GROUP,false));
+			for(uint i=0;i<this->groups.Length();i++) {
+				DropDownListParamStringItem *item=new DropDownListParamStringItem(STR_GROUP_NAME,this->groups[i]->index,false);
+				item->SetParam(0,this->groups[i]->index); list->push_back(item);
+			}
+			this->n3ds_group_vehicle=this->vehicle_sel;
+			_cursor.vehchain=false; ShowDropDownList(this,list,DEFAULT_GROUP,GRP_WIDGET_EMPTY_TOP_LEFT); return;
+		}
+#endif
 		switch (widget) {
 			case GRP_WIDGET_ALL_VEHICLES: // All vehicles
 			case GRP_WIDGET_DEFAULT_VEHICLES: // Ungrouped vehicles
@@ -600,7 +727,13 @@ public:
 				break;
 
 			case GRP_WIDGET_LIST_GROUP: { // Maxtrix group
-				uint16 id_g = (pt.y - PLY_WND_PRC__OFFSET_TOP_WIDGET - 26) / PLY_WND_PRC__SIZE_OF_ROW_TINY;
+				uint16 id_g = (pt.y - this->widget[GRP_WIDGET_LIST_GROUP].top) /
+#ifdef N3DS
+ (this->n3ds_compact ? 22 : PLY_WND_PRC__SIZE_OF_ROW_TINY)
+#else
+ PLY_WND_PRC__SIZE_OF_ROW_TINY
+#endif
+;
 				const VehicleID vindex = this->vehicle_sel;
 
 				this->vehicle_sel = INVALID_VEHICLE;
@@ -619,7 +752,7 @@ public:
 			}
 
 			case GRP_WIDGET_LIST_VEHICLE: { // Maxtrix vehicle
-				uint32 id_v = (pt.y - PLY_WND_PRC__OFFSET_TOP_WIDGET) / (int)this->resize.step_height;
+				uint32 id_v = (pt.y - this->widget[GRP_WIDGET_LIST_VEHICLE].top) / (int)this->resize.step_height;
 				const Vehicle *v;
 				const VehicleID vindex = this->vehicle_sel;
 
@@ -663,6 +796,12 @@ public:
 
 	virtual void OnDropdownSelect(int widget, int index)
 	{
+#ifdef N3DS
+		if(widget==GRP_WIDGET_EMPTY_TOP_LEFT && this->n3ds_group_vehicle!=INVALID_VEHICLE) {
+			DoCommandP(0,index,this->n3ds_group_vehicle,CMD_ADD_VEHICLE_GROUP|CMD_MSG(STR_GROUP_CAN_T_ADD_VEHICLE));
+			this->n3ds_group_vehicle=INVALID_VEHICLE; this->vehicles.ForceRebuild(); this->groups.ForceRebuild(); this->SetDirty(); return;
+		}
+#endif
 		switch (widget) {
 			case GRP_WIDGET_SORT_BY_DROPDOWN:
 				this->vehicles.SetSortType(index);

@@ -50,8 +50,12 @@ Point _n3ds_map_cursor = {200, 120};
 static Point _ui_cursor = {200, 120};
 static bool NativeN3DSTitle();
 static bool _upper_ui;
+bool N3DSUpperUiActive() { return _upper_ui; }
 static WindowClass _upper_ui_class;
 static WindowNumber _upper_ui_number;
+static bool _upper_request_pending, _upper_request_value;
+static WindowClass _upper_request_class;
+static WindowNumber _upper_request_number;
 static void SetN3DSUpperUi(bool upper, bool preserve_placement = false);
 static void CheckN3DSUpperUi();
 static void SelectN3DSInput(bool map);
@@ -136,6 +140,8 @@ static void SetN3DSUpperUi(bool upper, bool preserve_placement)
  HandleMouseEvents();
  SelectN3DSInput(false);
  _upper_ui = upper;
+ Window *layout_window;
+ FOR_ALL_WINDOWS_FROM_FRONT(layout_window) layout_window->OnN3DSScreenChange(upper);
  if (upper) {
   _upper_ui_class = front->window_class;
   _upper_ui_number = front->window_number;
@@ -144,6 +150,26 @@ static void SetN3DSUpperUi(bool upper, bool preserve_placement)
  _cursor.dirty = true;
  _panel_needs_draw = true;
  MarkWholeScreenDirty();
+}
+
+bool N3DSUsesScreenPin(WindowClass cls)
+{
+ return cls==WC_TRAINS_LIST||cls==WC_ROADVEH_LIST||cls==WC_SHIPS_LIST||cls==WC_AIRCRAFT_LIST||cls==WC_VEHICLE_DETAILS||cls==WC_VEHICLE_ORDERS||cls==WC_VEHICLE_VIEW;
+}
+
+void N3DSRequestMenuScreenChange(WindowClass cls, WindowNumber number)
+{
+ if (!N3DSUsesScreenPin(cls) || _game_mode!=GM_NORMAL) return;
+ _upper_request_class=cls; _upper_request_number=number;
+ _upper_request_value=!_upper_ui; _upper_request_pending=true;
+}
+
+static void ProcessN3DSMenuScreenChange()
+{
+ if (!_upper_request_pending) return;
+ if (_left_button_down || _touch_held || _pad_held) return;
+ _upper_request_pending=false;
+ if (_game_mode==GM_NORMAL && FindWindowById(_upper_request_class,_upper_request_number)!=NULL) SetN3DSUpperUi(_upper_request_value);
 }
 
 static void CheckN3DSUpperUi()
@@ -157,9 +183,15 @@ static bool NativeN3DSOrdersRow(int y)
 {
  Window *w;
  FOR_ALL_WINDOWS_FROM_FRONT(w) {
-  if (w->window_class != WC_MAIN_WINDOW && w->window_class != WC_STATUS_BAR && w->window_class != WC_TOOLTIPS && w->window_class != WC_DROPDOWN_MENU) break;
+  if (w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR || w->window_class == WC_TOOLTIPS || w->window_class == WC_DROPDOWN_MENU) continue;
+  if (w->window_class == WC_VEHICLE_VIEW && w->left == 40 && w->width <= 320) {
+   if (y >= w->top && y < w->top + w->height) return true;
+   continue;
+  }
+  if ((w->window_class == WC_VEHICLE_ORDERS || w->window_class == WC_VEHICLE_DETAILS || w->window_class == WC_TRAINS_LIST || w->window_class == WC_ROADVEH_LIST || w->window_class == WC_SHIPS_LIST || w->window_class == WC_AIRCRAFT_LIST) && w->left == 40 && w->width == 320) return y >= w->top && y < w->top + w->height;
+  return false;
  }
- return w != NULL && w->window_class == WC_VEHICLE_ORDERS && w->left == 40 && w->width == 320 && y >= w->top && y < w->top + w->height;
+ return false;
 }
 
 /** Full-width dropdowns use the same native pixel and touch mapping. */
@@ -906,6 +938,7 @@ void VideoDriver_SDL::MainLoop()
 
 		while (PollEvent() == -1) {}
 		if (_exit_game) return;
+		ProcessN3DSMenuScreenChange();
 		ProcessN3DSStationPicker();
 
 		mod = SDL_CALL SDL_GetModState();

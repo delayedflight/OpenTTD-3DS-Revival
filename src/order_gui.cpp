@@ -644,6 +644,9 @@ public:
 			else if (wi.top == 88) { wi.top = 170; wi.bottom = 191; }
 			if (i == ORDER_WIDGET_RESIZE_BAR) wi.bottom = 191;
 		}
+		this->widget[ORDER_WIDGET_CAPTION].right = 307;
+		this->widget[ORDER_WIDGET_STICKY].left = 308;
+		this->widget[ORDER_WIDGET_STICKY].right = 319;
 		this->widget[ORDER_WIDGET_TIMETABLE_VIEW].left = 247;
 		this->widget[ORDER_WIDGET_TIMETABLE_VIEW].right = 307;
 		this->widget[ORDER_WIDGET_RESIZE].type = WWT_EMPTY;
