@@ -18,6 +18,8 @@
 #include <SDL.h>
 #ifdef N3DS
 #include <3ds.h>
+#include "../window_gui.h"
+#include "../table/sprites.h"
 #endif
 
 static FVideoDriver_SDL iFVideoDriver_SDL;
@@ -27,6 +29,64 @@ static bool _all_modes;
 
 #ifdef N3DS
 static SDL_Joystick *_3ds_joystick;
+static int _panel_x, _panel_y;
+static bool _panel_drag;
+static bool _pad_held;
+static bool _panel_needs_draw = true;
+
+struct N3DSTool {
+	SpriteID sprite;
+	const char *label;
+	uint16 key;
+};
+static const N3DSTool _touch_tools[] = {
+	{SPR_IMG_BUILDRAIL, "Rail", WKC_SHIFT | WKC_F7},
+	{SPR_IMG_BUILDROAD, "Road", WKC_SHIFT | WKC_F8},
+	{SPR_IMG_BUILDWATER, "Water", WKC_SHIFT | WKC_F9},
+	{SPR_IMG_BUILDAIR, "Air", WKC_SHIFT | WKC_F10},
+	{SPR_IMG_LANDSCAPING, "Land", 'L'},
+	{SPR_IMG_SMALLMAP, "Map", WKC_F4},
+	{SPR_IMG_SAVE, "Save", WKC_F3},
+	{SPR_IMG_PAUSE, "Pause", WKC_PAUSE},
+};
+
+/* SDL crops the centred 320 pixels of the lower 400-pixel half.
+	* Keep all game windows confined to the upper 400x240 viewport. */
+static void DrawN3DSPanel()
+{
+	DrawPixelInfo panel = _screen;
+	panel.dst_ptr = (byte *)_sdl_screen->pixels + 240 * _sdl_screen->pitch + 40 * _sdl_screen->format->BytesPerPixel;
+	panel.width = 320;
+	panel.height = 240;
+	panel.left = panel.top = 0;
+	panel.zoom = ZOOM_LVL_NORMAL;
+	DrawPixelInfo *saved = _cur_dpi;
+	_cur_dpi = &panel;
+	DrawFrameRect(0, 0, 319, 239, COLOUR_GREY, FR_NONE);
+	for (uint i = 0; i < lengthof(_touch_tools); i++) {
+		int x = (i % 4) * 80, y = (i / 4) * 36;
+		DrawFrameRect(x + 1, y + 1, x + 78, y + 34, COLOUR_GREY, FR_NONE);
+		DrawSprite(_touch_tools[i].sprite, PAL_NONE, x + 8, y + 9);
+		DoDrawString(_touch_tools[i].label, x + 34, y + 13, TC_WHITE);
+	}
+	DrawFrameRect(4, 76, 315, 211, COLOUR_GREY, FR_LOWERED);
+	DoDrawStringCentered(160, 116, "TOUCH TO POSITION", TC_WHITE);
+	DoDrawStringCentered(160, 132, "Drag to build on the upper screen", TC_WHITE);
+	DoDrawStringCentered(160, 219, "D-pad: scroll   L/R: zoom   B: cancel", TC_WHITE);
+	_cur_dpi = saved;
+}
+
+static void PositionN3DSCursor()
+{
+	int x = max(0, min(399, (_panel_x - 4) * 399 / 311));
+	int y = max(0, min(239, (_panel_y - 76) * 239 / 135));
+	_cursor.delta.x = x - _cursor.pos.x;
+	_cursor.delta.y = y - _cursor.pos.y;
+	_cursor.pos.x = x;
+	_cursor.pos.y = y;
+	_cursor.in_window = true;
+	_cursor.dirty = true;
+}
 #endif
 
 #define MAX_DIRTY_RECTS 100
@@ -89,6 +149,16 @@ static void CheckPaletteAnim()
 
 static void DrawSurfaceToScreen()
 {
+	#ifdef N3DS
+	if (_num_dirty_rects == 0 && !_panel_needs_draw) return;
+	if (_panel_needs_draw) {
+		DrawN3DSPanel();
+		_panel_needs_draw = false;
+	}
+	_num_dirty_rects = 0;
+	SDL_UpdateRect(_sdl_screen, 0, 0, 0, 0);
+	return;
+#endif
 	int n = _num_dirty_rects;
 	if (n == 0) return;
 
@@ -180,7 +250,7 @@ static void GetAvailableVideoMode(int *w, int *h)
 
 #ifdef WIN32
 /* Let's redefine the LoadBMP macro with because we are dynamically
- * loading SDL and need to 'SDL_CALL' all functions */
+	* loading SDL and need to 'SDL_CALL' all functions */
 #undef SDL_LoadBMP
 #define SDL_LoadBMP(file)	SDL_LoadBMP_RW(SDL_CALL SDL_RWFromFile(file, "rb"), 1)
 #endif
@@ -191,7 +261,12 @@ static bool CreateMainSurface(int w, int h)
 	char caption[50];
 	int bpp = BlitterFactoryBase::GetCurrentBlitter()->GetScreenDepth();
 
+	#ifdef N3DS
+	w = 400;
+	h = 240;
+#else
 	GetAvailableVideoMode(&w, &h);
+#endif
 
 	DEBUG(driver, 1, "SDL: using mode %dx%dx%d", w, h, bpp);
 
@@ -212,16 +287,23 @@ static bool CreateMainSurface(int w, int h)
 	#ifndef N3DS
 		newscreen = SDL_CALL SDL_SetVideoMode(w, h, bpp, SDL_SWSURFACE | SDL_HWPALETTE | (_fullscreen ? SDL_FULLSCREEN : SDL_RESIZABLE));
 	#else
- 		// game bottom screen and console top
-	 	newscreen = SDL_CALL SDL_SetVideoMode(w, h, bpp, SDL_SWSURFACE | 0 | 0x00200000 | 0x00040000);
- 	#endif
+			// Upper half is gameplay; lower half is the stylus control panel.
+	 	newscreen = SDL_CALL SDL_SetVideoMode(w, h * 2, bpp, SDL_SWSURFACE | 0x00300000 /* SDL_DUALSCR */);
+		#endif
 	if (newscreen == NULL) {
 		DEBUG(driver, 0, "SDL: Couldn't allocate a window to draw on");
 		return false;
 	}
 
 	_screen.width = newscreen->w;
+	#ifdef N3DS
+	_screen.height = 240;
+	_panel_needs_draw = true;
+	_cur_resolution.width = 400;
+	_cur_resolution.height = 240;
+#else
 	_screen.height = newscreen->h;
+#endif
 	_screen.pitch = newscreen->pitch / (bpp / 8);
 	_sdl_screen = newscreen;
 	InitPalette();
@@ -343,6 +425,15 @@ static int PollEvent()
 
 	switch (ev.type) {
 		case SDL_MOUSEMOTION:
+#ifdef N3DS
+			_panel_x = ev.motion.x - 40;
+			_panel_y = ev.motion.y - 240;
+			if (_panel_drag) {
+				PositionN3DSCursor();
+				HandleMouseEvents();
+			}
+			break;
+#endif
 			if (_cursor.fix_at) {
 				int dx = ev.motion.x - _cursor.pos.x;
 				int dy = ev.motion.y - _cursor.pos.y;
@@ -362,6 +453,20 @@ static int PollEvent()
 			break;
 
 		case SDL_MOUSEBUTTONDOWN:
+#ifdef N3DS
+			if (ev.button.button == SDL_BUTTON_LEFT) {
+				if (_panel_y >= 0 && _panel_y < 72 && _panel_x >= 0 && _panel_x < 320) {
+					uint i = (_panel_y / 36) * 4 + _panel_x / 80;
+					if (_game_mode != GM_MENU) HandleKeypress(uint32(_touch_tools[i].key) << 16);
+				} else if (_panel_x >= 4 && _panel_x <= 315 && _panel_y >= 76 && _panel_y <= 211) {
+					_panel_drag = true;
+					PositionN3DSCursor();
+					_left_button_down = true;
+					HandleMouseEvents();
+				}
+			}
+			break;
+#endif
 			if (_rightclick_emulate && SDL_CALL SDL_GetModState() & KMOD_CTRL) {
 				ev.button.button = SDL_BUTTON_RIGHT;
 			}
@@ -385,6 +490,15 @@ static int PollEvent()
 			break;
 
 		case SDL_MOUSEBUTTONUP:
+#ifdef N3DS
+			if (ev.button.button == SDL_BUTTON_LEFT) {
+				_panel_drag = false;
+				_left_button_down = _pad_held;
+				_left_button_clicked = false;
+				HandleMouseEvents();
+			}
+			break;
+#endif
 			if (_rightclick_emulate) {
 				_right_button_down = false;
 				_left_button_down = false;
@@ -398,6 +512,26 @@ static int PollEvent()
 			HandleMouseEvents();
 			break;
 
+		#ifdef N3DS
+		case SDL_JOYBUTTONDOWN:
+		case SDL_JOYBUTTONUP: {
+			bool down = ev.type == SDL_JOYBUTTONDOWN;
+			if (ev.jbutton.button == 1) {
+				_pad_held = down;
+				_left_button_down = down || _panel_drag;
+				if (!down) _left_button_clicked = false;
+				HandleMouseEvents();
+			} else if (down) {
+				switch (ev.jbutton.button) {
+					case 2: HandleKeypress(uint32(WKC_ESC) << 16); break;
+					case 5: HandleKeypress(uint32(WKC_MINUS) << 16); break;
+					case 6: HandleKeypress(uint32(WKC_EQUALS) << 16); break;
+					case 0: if (_game_mode != GM_MENU) HandleKeypress(uint32(WKC_PAUSE) << 16); break;
+				}
+			}
+			break;
+		}
+#endif
 		case SDL_ACTIVEEVENT:
 			if (!(ev.active.state & SDL_APPMOUSEFOCUS)) break;
 
@@ -460,8 +594,8 @@ const char *VideoDriver_SDL::Start(const char * const *parm)
 	SDL_CALL SDL_EnableUNICODE(1);
 	
 	#ifdef N3DS
-	printf("**** OpenTTD 0.7.0 revival r1b diagnostic ****\n");
-	printf("Don't worry if you get a \"Game Load Failed\" error.That's just the title screen savegame.\n\n");
+	N3DSBootLog(false, "Revival r2: upper-screen gameplay / lower-screen controls");
+	
 	// Enable the 3DS's controls to be used as a joystick.
 	_3ds_joystick = SDL_JoystickOpen(0);
 	SDL_JoystickEventState(SDL_ENABLE);

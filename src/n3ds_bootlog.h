@@ -9,8 +9,8 @@
 
 static inline void N3DSBootLog(bool reset, const char *format, ...)
 {
-	FILE *f = fopen("sdmc:/3ds/openttd-revival-r1/boot.log", reset ? "w" : "a");
-	if (f == NULL) f = fopen("sdmc:/openttd-revival-r1-boot.log", reset ? "w" : "a");
+	FILE *f = fopen("sdmc:/3ds/openttd-revival-r2/boot.log", reset ? "w" : "a");
+	if (f == NULL) f = fopen("sdmc:/openttd-revival-r2-boot.log", reset ? "w" : "a");
 	if (f == NULL) return;
 	va_list args;
 	va_start(args, format);
@@ -22,8 +22,8 @@ static inline void N3DSBootLog(bool reset, const char *format, ...)
 
 static inline void N3DSPrepareStartup(int &argc, char **&argv)
 {
-	N3DSBootLog(true, "OpenTTD revival r1b startup: main entered; argc=%d", argc);
-	static char fallback_path[] = "sdmc:/3ds/openttd-revival-r1/openttd-revival-r1.3dsx";
+	N3DSBootLog(true, "OpenTTD revival r2 startup: main entered; argc=%d", argc);
+	static char fallback_path[] = "sdmc:/3ds/openttd-revival-r2/openttd-revival-r2.3dsx";
 	static char *fallback_argv[] = {fallback_path, NULL};
 	if (argc < 1 || argv == NULL || argv[0] == NULL || argv[0][0] == '\0') {
 		N3DSBootLog(false, "Launcher supplied no executable path; using test-folder fallback");
@@ -40,7 +40,7 @@ static inline void N3DSPrepareStartup(int &argc, char **&argv)
 		N3DSBootLog(false, "Executable-directory chdir(%s): %d", path, chdir(path));
 	}
 	if (access("lang/english.lng", R_OK) != 0 || access("data/opengfx.obg", R_OK) != 0) {
-		N3DSBootLog(false, "Trying known test-folder directory: %d", chdir("sdmc:/3ds/openttd-revival-r1"));
+		N3DSBootLog(false, "Trying known test-folder directory: %d", chdir("sdmc:/3ds/openttd-revival-r2"));
 	}
 	if (getcwd(path, sizeof(path)) != NULL) N3DSBootLog(false, "Asset directory: %s", path);
 	N3DSBootLog(false, "Asset checks: english.lng=%d; opengfx.obg=%d", access("lang/english.lng", R_OK), access("data/opengfx.obg", R_OK));
