@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "gui.h"
 #include "window_gui.h"
+#include "n3ds_ui.h"
 #include "textbuf_gui.h"
 #include "viewport_func.h"
 #include "gfx_func.h"
@@ -1262,6 +1263,25 @@ struct CompanyWindow : Window
 		this->FindWindowPlacementAndResize(desc);
 	}
 
+#ifdef N3DS
+
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		const int width=upper?400:320;bool changed=this->width!=width||this->height!=218;
+		this->width=width;this->height=218;
+		N3DSWidgetRect(this,CW_WIDGET_FACE,0,width-1,14,173);
+		for(int i=0;i<4;i++){int l=(i%2)*(width/2),t=174+(i/2)*22;N3DSWidgetRect(this,CW_WIDGET_NEW_FACE+i,l,l+width/2-1,t,t+21);}
+		N3DSWidgetRect(this,CW_WIDGET_BUILD_VIEW_HQ,110,110+(width-110)/2-1,148,169);
+		N3DSWidgetRect(this,CW_WIDGET_RELOCATE_HQ,110+(width-110)/2,width-1,148,169);
+		N3DSWidgetRect(this,CW_WIDGET_BUY_SHARE,0,width/2-1,174,195);
+		N3DSWidgetRect(this,CW_WIDGET_SELL_SHARE,width/2,width-1,174,195);
+		N3DSWidgetRect(this,CW_WIDGET_COMPANY_PASSWORD,110,width-1,126,147);
+		N3DSWidgetRect(this,CW_WIDGET_COMPANY_JOIN,110,width-1,126,147);
+		Window::OnN3DSScreenChange(upper);if(changed)MarkWholeScreenDirty();
+	}
+
+#endif
+
 	virtual void OnPaint()
 	{
 		const Company *c = GetCompany((CompanyID)this->window_number);
@@ -1332,7 +1352,11 @@ struct CompanyWindow : Window
 
 		/* "Company value:" */
 		SetDParam(0, CalculateCompanyValue(c));
-		DrawString(110, 106, STR_7076_COMPANY_VALUE, TC_FROMSTRING);
+		#ifdef N3DS
+		DrawStringTruncated(110,106,STR_7076_COMPANY_VALUE,TC_FROMSTRING,this->width-112);
+#else
+		DrawString(110,106,STR_7076_COMPANY_VALUE,TC_FROMSTRING);
+#endif
 
 		/* Shares list */
 		DrawCompanyOwnerText(c);

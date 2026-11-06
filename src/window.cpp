@@ -802,7 +802,7 @@ static void AssignWidgetToWindow(Window *w, const Widget *widget)
 		for (const Widget *wi = widget; wi->type != WWT_LAST; wi++) index++;
 
 		#ifdef N3DS
-		bool add_pin=N3DSIsConstructionWindow(w->window_class);
+		bool add_pin=N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class);
 		for(const Widget *wi=widget;wi->type!=WWT_LAST;wi++) if(wi->type==WWT_STICKYBOX)add_pin=false;
 		w->widget = MallocT<Widget>(index + (add_pin?1:0));
 #else
@@ -1241,7 +1241,7 @@ Window::Window(const WindowDesc *desc, WindowNumber window_number)
 	this->Initialize(pt.x, pt.y, desc->minimum_width, desc->minimum_height, desc->cls, desc->widgets, window_number);
 	this->desc_flags = desc->flags;
 #ifdef N3DS
-	if(N3DSIsConstructionWindow(this->window_class)) this->desc_flags|=WDF_STICKY_BUTTON;
+	if(N3DSIsConstructionWindow(this->window_class)||N3DSIsManagementWindow(this->window_class)) this->desc_flags|=WDF_STICKY_BUTTON;
 #endif
 }
 
@@ -2209,9 +2209,14 @@ void InputLoop()
 }
 
 #ifdef N3DS
+void N3DSWidgetRect(Window *w, uint id, int l, int r, int t, int b)
+{
+ Widget &wi=w->widget[id];wi.left=l;wi.right=r;wi.top=t;wi.bottom=b;
+}
+
 void Window::OnN3DSScreenChange(bool upper)
 {
- if(!N3DSIsConstructionWindow(this->window_class))return;
+ if(!N3DSIsConstructionWindow(this->window_class)&&!N3DSIsManagementWindow(this->window_class))return;
  if(this->window_class==WC_BUILD_VEHICLE || this->window_class==WC_VEHICLE_DEPOT) {
   const int target=upper?400:320;
   const int step=max(1,(int)this->resize.step_width);
@@ -2222,13 +2227,13 @@ void Window::OnN3DSScreenChange(bool upper)
   }
  }
  const int nx=upper?max(0,(400-this->width)/2):40+max(0,(320-this->width)/2);
- const int ny=22;
+ const int ny=_game_mode==GM_MENU?max(0,(240-this->height)/2):min(22,max(0,240-this->height));
  if(this->viewport!=NULL){this->viewport->left+=nx-this->left;this->viewport->top+=ny-this->top;}
  bool changed=this->left!=nx||this->top!=ny;this->left=nx;this->top=ny;
  for(uint i=0;i<this->widget_count;i++){
   Widget &wi=this->widget[i];
   if(wi.type==WWT_CAPTION)wi.right=this->width-13;
-  if(wi.type==WWT_STICKYBOX){wi.left=this->width-12;wi.right=this->width-1;wi.tooltips=STR_NULL;}
+  if(wi.type==WWT_STICKYBOX){this->SetWidgetHiddenState(i,_game_mode==GM_MENU);wi.left=this->width-12;wi.right=this->width-1;wi.tooltips=STR_NULL;}
  }
  if(changed)MarkWholeScreenDirty();
 }
@@ -2252,7 +2257,7 @@ static void LayoutN3DSToolbars()
    }
    w->width=width;w->height=14+((buttons+7)/8)*32;
   }
-  if(N3DSIsConstructionWindow(w->window_class))w->OnN3DSScreenChange(upper);
+  if(N3DSIsConstructionWindow(w->window_class)||N3DSIsManagementWindow(w->window_class))w->OnN3DSScreenChange(upper);
  }
  if(changed)MarkWholeScreenDirty();
 }

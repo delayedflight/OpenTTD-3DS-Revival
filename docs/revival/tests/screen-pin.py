@@ -19,7 +19,7 @@ struct Widget{int type=WWT_STICKYBOX;};struct Window{int window_class=WC_TRAINS_
 Window*FindWindowById(int c,int n){return exists&&menu.window_class==c&&menu.window_number==n?&menu:nullptr;}
 void SetN3DSUpperUi(bool b){_upper_ui=b;transfers++;}
 '''
-cpp+='bool N3DSIsConstructionWindow(WindowClass){return false;}\n'
+cpp+='bool N3DSIsManagementWindow(WindowClass){return false;}bool N3DSIsConstructionWindow(WindowClass){return false;}\n'
 cpp+=block(s,'bool N3DSUsesScreenPin(WindowClass cls)')+'\n'+block(s,'void N3DSRequestMenuScreenChange(WindowClass cls, WindowNumber number)')+'\n'+block(s,'static void ProcessN3DSMenuScreenChange()')
 cpp+='\nvoid Click(Window*w,Widget*wi,int widget){'+block(win,'if (w->desc_flags & WDF_STICKY_BUTTON && wi->type == WWT_STICKYBOX)')+'}\n'
 cpp+=r'''

@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "gui.h"
 #include "window_gui.h"
+#include "n3ds_ui.h"
 #include "textbuf_gui.h"
 #include "company_func.h"
 #include "command_func.h"
@@ -304,6 +305,26 @@ public:
 		this->last_sorting = this->stations.GetListing();
 	}
 
+#ifdef N3DS
+
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		int width=upper?400:320, cols=width/22, count=this->widget_count-SLW_CARGOSTART;
+		int sort_top=36+((count+cols-1)/cols)*22,list_top=sort_top+22;
+		bool changed=this->width!=width||this->height!=212;
+		this->width=width;this->height=212;this->vscroll.cap=(212-list_top)/22;
+		for(int i=0;i<6;i++)N3DSWidgetRect(this,SLW_TRAIN+i,i*32,i*32+31,14,35);
+		N3DSWidgetRect(this,SLW_NOCARGOWAITING,192,223,14,35);N3DSWidgetRect(this,SLW_CARGOALL,224,255,14,35);
+		this->HideWidget(SLW_PAN_BETWEEN);this->HideWidget(SLW_PAN_RIGHT);this->HideWidget(SLW_PAN_SORT_RIGHT);
+		for(int i=0;i<count;i++)N3DSWidgetRect(this,SLW_CARGOSTART+i,(i%cols)*22,(i%cols)*22+21,36+(i/cols)*22,57+(i/cols)*22);
+		N3DSWidgetRect(this,SLW_SORTBY,0,95,sort_top,sort_top+21);N3DSWidgetRect(this,SLW_SORTDROPBTN,96,width-23,sort_top,sort_top+21);
+		N3DSWidgetRect(this,SLW_LIST,0,width-23,list_top,list_top+this->vscroll.cap*22-1);
+		N3DSWidgetRect(this,SLW_SCROLLBAR,width-22,width-1,list_top,list_top+this->vscroll.cap*22-1);this->HideWidget(SLW_RESIZE);
+		Window::OnN3DSScreenChange(upper);if(changed)MarkWholeScreenDirty();
+	}
+
+#endif
+
 	virtual void OnPaint()
 	{
 		const Owner owner = (Owner)this->window_number;
@@ -332,6 +353,9 @@ public:
 			const CargoSpec *cs = GetCargo(c);
 			if (!cs->IsValid()) continue;
 
+			#ifdef N3DS
+			x=this->widget[SLW_CARGOSTART+i].left+3;y=this->widget[SLW_CARGOSTART+i].top+5;
+#endif
 			cg_ofst = HasBit(this->cargo_filter, c) ? 2 : 1;
 			GfxFillRect(x + cg_ofst, y + cg_ofst, x + cg_ofst + 10 , y + cg_ofst + 7, cs->rating_colour);
 			DrawStringCentered(x + 6 + cg_ofst, y + cg_ofst, cs->abbrev, TC_BLACK);
@@ -339,23 +363,40 @@ public:
 			i++;
 		}
 
+		#ifdef N3DS
+		x=this->widget[SLW_NOCARGOWAITING].left+6;y=this->widget[SLW_NOCARGOWAITING].top+5;
+#else
 		x += 6;
+#endif
 		cg_ofst = this->IsWidgetLowered(SLW_NOCARGOWAITING) ? 2 : 1;
 		DrawStringCentered(x + cg_ofst, y + cg_ofst, STR_ABBREV_NONE, TC_BLACK);
+		#ifdef N3DS
+		x=this->widget[SLW_CARGOALL].left+6;
+#else
 		x += 14;
+#endif
 		cg_ofst = this->IsWidgetLowered(SLW_CARGOALL) ? 2 : 1;
 		DrawStringCentered(x + cg_ofst, y + cg_ofst, STR_ABBREV_ALL, TC_BLACK);
 
 		cg_ofst = this->IsWidgetLowered(SLW_FACILALL) ? 2 : 1;
+		#ifdef N3DS
+		DrawString(this->widget[SLW_FACILALL].left+3+cg_ofst,19+cg_ofst,STR_ABBREV_ALL,TC_BLACK);
+#else
 		DrawString(71 + cg_ofst, y + cg_ofst, STR_ABBREV_ALL, TC_BLACK);
+#endif
 
 		if (this->vscroll.count == 0) { // company has no stations
-			DrawString(xb, 40, STR_304A_NONE, TC_FROMSTRING);
+			DrawString(xb, this->widget[SLW_LIST].top+2, STR_304A_NONE, TC_FROMSTRING);
 			return;
 		}
 
 		int max = min(this->vscroll.pos + this->vscroll.cap, this->stations.Length());
-		y = 40; // start of the list-widget
+		y =
+#ifdef N3DS
+this->widget[SLW_LIST].top+2;
+#else
+40;
+#endif // start of the list-widget
 
 		for (int i = this->vscroll.pos; i < max; ++i) { // do until max number of stations of owner
 			const Station *st = this->stations[i];
@@ -369,16 +410,26 @@ public:
 
 			SetDParam(0, st->index);
 			SetDParam(1, st->facilities);
+			#ifdef N3DS
+			DrawStringTruncated(xb,y,STR_3049_0,TC_FROMSTRING,this->width-24);x=xb;
+			y+=10;
+#else
 			x = DrawString(xb, y, STR_3049_0, TC_FROMSTRING) + 5;
+#endif
 
 			/* show cargo waiting and station ratings */
 			for (CargoID j = 0; j < NUM_CARGO; j++) {
 				if (!st->goods[j].cargo.Empty()) {
-					StationsWndShowStationRating(x, y, j, st->goods[j].cargo.Count(), st->goods[j].rating);
+					if(x+20<this->widget[SLW_LIST].right) StationsWndShowStationRating(x,y,j,st->goods[j].cargo.Count(),st->goods[j].rating);
 					x += 20;
 				}
 			}
-			y += 10;
+			y +=
+#ifdef N3DS
+12;
+#else
+10;
+#endif
 		}
 	}
 
@@ -386,7 +437,13 @@ public:
 	{
 		switch (widget) {
 			case SLW_LIST: {
-				uint32 id_v = (pt.y - 41) / 10;
+				uint32 id_v = (pt.y - this->widget[SLW_LIST].top) /
+#ifdef N3DS
+22
+#else
+10
+#endif
+;
 
 				if (id_v >= this->vscroll.cap) return; // click out of bounds
 

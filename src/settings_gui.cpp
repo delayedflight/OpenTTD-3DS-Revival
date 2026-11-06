@@ -7,6 +7,7 @@
 #include "currency.h"
 #include "gui.h"
 #include "window_gui.h"
+#include "n3ds_ui.h"
 #include "textbuf_gui.h"
 #include "command_func.h"
 #include "engine_func.h"
@@ -164,6 +165,21 @@ struct GameOptionsWindow : Window {
 		if (this->reload) _switch_mode = SM_MENU;
 	}
 
+#ifdef N3DS
+
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		int width=upper?400:320;bool changed=this->width!=width||this->height!=204;this->width=width;this->height=204;
+		N3DSWidgetRect(this,2,0,width-1,14,203);
+		const int frames[]={3,5,7,9,11,13,15,18,20};
+		const int buttons[]={4,6,8,10,12,14,16,19,21};
+		for(int i=0;i<9;i++){int l=(i%2)*(width/2),t=14+(i/2)*38;Widget &label=this->widget[frames[i]];label.type=WWT_LABEL;N3DSWidgetRect(this,frames[i],l,l+width/2-1,t,t+13);N3DSWidgetRect(this,buttons[i],l+3,l+width/2-4,t+14,t+35);}
+		N3DSWidgetRect(this,GAMEOPT_FULLSCREEN,width/2+3,width-4,180,201);this->widget[GAMEOPT_FULLSCREEN].data=STR_OPTIONS_FULLSCREEN;
+		Window::OnN3DSScreenChange(upper);if(changed)MarkWholeScreenDirty();
+	}
+
+#endif
+
 	virtual void OnPaint()
 	{
 		SetDParam(1, _currency_specs[this->opt->locale.currency].name);
@@ -179,7 +195,9 @@ struct GameOptionsWindow : Window {
 		SetDParamStr(9, GetGraphicsSetName(GetIndexOfCurrentGraphicsSet()));
 
 		this->DrawWidgets();
-		DrawString(20, 175, STR_OPTIONS_FULLSCREEN, TC_FROMSTRING); // fullscreen
+		#ifndef N3DS
+		DrawString(20, 175, STR_OPTIONS_FULLSCREEN, TC_FROMSTRING);
+#endif // fullscreen
 	}
 
 	virtual void OnClick(Point pt, int widget)
@@ -422,9 +440,24 @@ static const WindowDesc _game_difficulty_desc(
 
 void SetDifficultyLevel(int mode, DifficultySettings *gm_opt);
 
+#ifdef N3DS
+/** Translate a paged hit into the canonical difficulty option index. */
+static int N3DSDifficultyOption(int page, int y)
+{
+	if(page<0||page>2||y<0||y>=6*22)return -1;
+	int row=page*6+y/22;if(row>=16)return -1;
+	if(row>=1)row++; // Deprecated competitor start-time slot.
+	if(row>=8)row++; // Deprecated competitor-intelligence slot.
+	return row;
+}
+#endif
+
 struct GameDifficultyWindow : public Window {
 private:
 	static const uint GAME_DIFFICULTY_NUM = 18;
+	#ifdef N3DS
+	int n3ds_page=0;
+#endif
 	bool clicked_increase;
 	uint8 clicked_button;
 	uint8 timeout;
@@ -433,8 +466,16 @@ private:
 	GameSettings opt_mod_temp;
 
 	enum {
+		#ifdef N3DS
+		GAMEDIFF_WND_TOP_OFFSET = 58,
+#else
 		GAMEDIFF_WND_TOP_OFFSET = 45,
-		GAMEDIFF_WND_ROWSIZE    = 9,
+#endif
+		#ifdef N3DS
+		GAMEDIFF_WND_ROWSIZE = 20,
+#else
+		GAMEDIFF_WND_ROWSIZE = 9,
+#endif
 		NO_SETTINGS_BUTTON = 0xFF,
 	};
 
@@ -480,10 +521,30 @@ public:
 		this->FindWindowPlacementAndResize(&_game_difficulty_desc);
 	}
 
+#ifdef N3DS
+
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		int width=upper?400:320;bool changed=this->width!=width||this->height!=218;this->width=width;this->height=218;
+		N3DSWidgetRect(this,GDW_UPPER_BG,0,width-1,14,57);
+		for(int i=0;i<4;i++)N3DSWidgetRect(this,GDW_LVL_EASY+i,i*(width/4),(i+1)*(width/4)-1,14,35);
+		N3DSWidgetRect(this,GDW_HIGHSCORE,0,width-1,36,57);N3DSWidgetRect(this,GDW_SETTING_BG,0,width-1,58,195);
+		N3DSWidgetRect(this,GDW_LOWER_BG,0,width-1,196,217);
+		N3DSWidgetRect(this,GDW_ACCEPT,44,width/2-1,196,217);N3DSWidgetRect(this,GDW_CANCEL,width/2,width-45,196,217);
+		Window::OnN3DSScreenChange(upper);if(changed)MarkWholeScreenDirty();
+	}
+
+#endif
+
 	virtual void OnPaint()
 	{
 		this->DrawWidgets();
 
+		#ifdef N3DS
+		DrawFrameRect(0,196,43,217,COLOUR_YELLOW,FR_NONE);DrawFrameRect(this->width-44,196,this->width-1,217,COLOUR_YELLOW,FR_NONE);
+		DoDrawStringCentered(22,202,"<",n3ds_page>0?TC_BLACK:TC_GREY);DoDrawStringCentered(this->width-22,202,">",n3ds_page<2?TC_BLACK:TC_GREY);
+		int visible_row=0;
+#endif
 		uint i;
 		const SettingDesc *sd = GetSettingFromName("difficulty.max_no_competitors", &i);
 		int y = GAMEDIFF_WND_TOP_OFFSET;
@@ -492,17 +553,28 @@ public:
 			const SettingDescBase *sdb = &sd->desc;
 			/* skip deprecated difficulty options */
 			if (!SlIsObjectCurrentlyValid(sd->save.version_from, sd->save.version_to)) continue;
+			#ifdef N3DS
+			int row=visible_row++;if(row<n3ds_page*6||row>=n3ds_page*6+6){str++;continue;}
+#endif
 			int32 value = (int32)ReadValue(GetVariableAddress(&this->opt_mod_temp, &sd->save), sd->save.conv);
 			bool editable = (_game_mode == GM_MENU || (sdb->flags & SGF_NEWGAME_ONLY) == 0);
 
+			#ifdef N3DS
+			for(int side=0;side<2;side++){bool enabled=editable&&(side?sdb->max!=value:sdb->min!=value);DrawFrameRect(5+side*22,y,26+side*22,y+21,COLOUR_YELLOW,(this->clicked_button==i&&this->clicked_increase==(side!=0))?FR_LOWERED:FR_NONE);DoDrawStringCentered(16+side*22,y+6,side?">":"<",enabled?TC_BLACK:TC_GREY);}
+#else
 			DrawArrowButtons(5, y, COLOUR_YELLOW,
 					(this->clicked_button == i) ? 1 + !!this->clicked_increase : 0,
 					editable && sdb->min != value,
 					editable && sdb->max != value);
+#endif
 
 			value += sdb->str;
 			SetDParam(0, value);
+			#ifdef N3DS
+			DrawStringMultiLine(52,y,str,this->width-54,22);
+#else
 			DrawString(30, y, str, TC_FROMSTRING);
+#endif
 
 			y += GAMEDIFF_WND_ROWSIZE + 2; // space items apart a bit
 			str++;
@@ -512,21 +584,42 @@ public:
 	virtual void OnClick(Point pt, int widget)
 	{
 		switch (widget) {
+			#ifdef N3DS
+			case GDW_LOWER_BG:
+				if(pt.x<44&&n3ds_page>0)n3ds_page--;else if(pt.x>=this->width-44&&n3ds_page<2)n3ds_page++;this->SetDirty();break;
+#endif
 			case GDW_SETTING_BG: { // Difficulty settings widget, decode click
 				/* Don't allow clients to make any changes */
 				if (_networking && !_network_server) return;
 
 				const int x = pt.x - 5;
-				if (!IsInsideMM(x, 0, 21)) return; // Button area
+				if (!IsInsideMM(x, 0,
+#ifdef N3DS
+44
+#else
+21
+#endif
+)) return; // Button area
 
 				const int y = pt.y - GAMEDIFF_WND_TOP_OFFSET;
 				if (y < 0) return;
 
 				/* Get button from Y coord. */
+				#ifdef N3DS
+				int option=N3DSDifficultyOption(n3ds_page,y);if(option<0)return;
+				uint8 btn=option;
+#else
 				uint8 btn = y / (GAMEDIFF_WND_ROWSIZE + 2);
-				if (btn >= 1) btn++; // Skip the deprecated option "competitor start time"
-				if (btn >= 8) btn++; // Skip the deprecated option "competitor intelligence"
-				if (btn >= GAME_DIFFICULTY_NUM || y % (GAMEDIFF_WND_ROWSIZE + 2) >= 9) return;
+				if (btn >= 1) btn++; // Skip deprecated competitor start time.
+				if (btn >= 8) btn++; // Skip deprecated competitor intelligence.
+#endif
+				if (btn >= GAME_DIFFICULTY_NUM || y % (GAMEDIFF_WND_ROWSIZE + 2) >=
+#ifdef N3DS
+22
+#else
+9
+#endif
+) return;
 
 				uint i;
 				const SettingDesc *sd = GetSettingFromName("difficulty.max_no_competitors", &i) + btn;
@@ -539,7 +632,13 @@ public:
 				this->timeout = 5;
 				int32 val = (int32)ReadValue(GetVariableAddress(&this->opt_mod_temp, &sd->save), sd->save.conv);
 
-				if (x >= 10) {
+				if (x >=
+#ifdef N3DS
+22
+#else
+10
+#endif
+) {
 					/* Increase button clicked */
 					val = min(val + sdb->interval, sdb->max);
 					this->clicked_increase = true;
@@ -620,7 +719,11 @@ void ShowGameDifficulty()
 	new GameDifficultyWindow();
 }
 
-static const int SETTING_HEIGHT = 11; ///< Height of a single setting in the tree view in pixels
+#ifdef N3DS
+static const int SETTING_HEIGHT = 22;
+#else
+static const int SETTING_HEIGHT = 11;
+#endif ///< Height of a single setting in the tree view in pixels
 static const int LEVEL_WIDTH = 15;    ///< Indenting width of a sub-page in pixels
 
 /**
@@ -919,7 +1022,13 @@ void SettingEntry::DrawSetting(GameSettings *settings_ptr, const SettingDesc *sd
 		/* Draw checkbox for boolean-value either on/off */
 		bool on = (*(bool*)var);
 
-		DrawFrameRect(x, y, x + 19, y + 8, _bool_ctabs[!!on][!!editable], on ? FR_LOWERED : FR_NONE);
+		DrawFrameRect(x, y, x +
+#ifdef N3DS
+43, y + 21,
+#else
+19, y + 8,
+#endif
+_bool_ctabs[!!on][!!editable], on ? FR_LOWERED : FR_NONE);
 		SetDParam(0, on ? STR_CONFIG_SETTING_ON : STR_CONFIG_SETTING_OFF);
 	} else {
 		int32 value;
@@ -927,7 +1036,15 @@ void SettingEntry::DrawSetting(GameSettings *settings_ptr, const SettingDesc *sd
 		value = (int32)ReadValue(var, sd->save.conv);
 
 		/* Draw [<][>] boxes for settings of an integer-type */
+		#ifdef N3DS
+		for(int side=0;side<2;side++){
+			bool enabled=editable&&(side?value!=sdb->max:value!=(sdb->flags&SGF_0ISDISABLED?0:sdb->min));
+			DrawFrameRect(x+side*22,y,x+side*22+21,y+21,COLOUR_YELLOW,state==side+1?FR_LOWERED:FR_NONE);
+			DoDrawStringCentered(x+side*22+11,y+6,side?">":"<",enabled?TC_BLACK:TC_GREY);
+		}
+#else
 		DrawArrowButtons(x, y, COLOUR_YELLOW, state, editable && value != (sdb->flags & SGF_0ISDISABLED ? 0 : sdb->min), editable && value != sdb->max);
+#endif
 
 		disabled = (value == 0) && (sdb->flags & SGF_0ISDISABLED);
 		if (disabled) {
@@ -943,7 +1060,11 @@ void SettingEntry::DrawSetting(GameSettings *settings_ptr, const SettingDesc *sd
 			SetDParam(1, value);
 		}
 	}
+	#ifdef N3DS
+	DrawStringMultiLine(x+50,y,(sdb->str)+disabled,max(1,max_x-x-50),22);
+#else
 	DrawStringTruncated(x + 25, y, (sdb->str) + disabled, TC_FROMSTRING, max_x - x - 25);
+#endif
 }
 
 
@@ -1303,6 +1424,18 @@ struct GameSettingsWindow : Window {
 		this->FindWindowPlacementAndResize(desc);
 	}
 
+#ifdef N3DS
+
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		int width=upper?400:320;bool changed=this->width!=width||this->height!=202;this->width=width;this->height=202;
+		N3DSWidgetRect(this,SETTINGSEL_OPTIONSPANEL,0,width-23,14,201);
+		N3DSWidgetRect(this,SETTINGSEL_SCROLLBAR,width-22,width-1,14,201);this->HideWidget(SETTINGSEL_RESIZE);
+		this->vscroll.cap=8;Window::OnN3DSScreenChange(upper);if(changed)MarkWholeScreenDirty();
+	}
+
+#endif
+
 	virtual void OnPaint()
 	{
 		this->DrawWidgets();
@@ -1348,7 +1481,13 @@ struct GameSettingsWindow : Window {
 		int32 value = (int32)ReadValue(var, sd->save.conv);
 
 		/* clicked on the icon on the left side. Either scroller or bool on/off */
-		if (x < 21) {
+		if (x <
+#ifdef N3DS
+44
+#else
+21
+#endif
+) {
 			const SettingDescBase *sdb = &sd->desc;
 			int32 oldvalue = value;
 
@@ -1370,7 +1509,13 @@ struct GameSettingsWindow : Window {
 					}
 
 					/* Increase or decrease the value and clamp it to extremes */
-					if (x >= 10) {
+					if (x >=
+#ifdef N3DS
+22
+#else
+10
+#endif
+) {
 						value += step;
 						if (value > sdb->max) value = sdb->max;
 						if (value < sdb->min) value = sdb->min; // skip between "disabled" and minimum
@@ -1385,7 +1530,13 @@ struct GameSettingsWindow : Window {
 							this->clicked_entry->SetButtons(0);
 						}
 						this->clicked_entry = pe;
-						this->clicked_entry->SetButtons((x >= 10) ? SEF_RIGHT_DEPRESSED : SEF_LEFT_DEPRESSED);
+						this->clicked_entry->SetButtons((x >=
+#ifdef N3DS
+22
+#else
+10
+#endif
+) ? SEF_RIGHT_DEPRESSED : SEF_LEFT_DEPRESSED);
 						this->flags4 |= WF_TIMEOUT_BEGIN;
 						_left_button_clicked = false;
 					}
@@ -1469,7 +1620,7 @@ static const Widget _settings_selection_widgets[] = {
 
 #ifdef N3DS
 static const WindowDesc _settings_selection_desc(
-	WDP_CENTER, WDP_CENTER, 301, 188, 450, 397,
+	WDP_CENTER, WDP_CENTER, 301, 188, 320, 202,
 	WC_GAME_OPTIONS, WC_NONE,
 	WDF_STD_TOOLTIPS | WDF_STD_BTN | WDF_DEF_WIDGET | WDF_RESIZABLE,
 	_settings_selection_widgets

@@ -6,6 +6,7 @@
 #include "openttd.h"
 #include "gui.h"
 #include "window_gui.h"
+#include "n3ds_ui.h"
 #include "textbuf_gui.h"
 #include "network/network.h"
 #include "variables.h"
@@ -116,6 +117,16 @@ public:
 	{
 		this->LowerWidget(_settings_newgame.game_creation.landscape + SGI_TEMPERATE_LANDSCAPE);
 		this->FindWindowPlacementAndResize(desc);
+	
+#ifdef N3DS
+
+		this->height=240;this->widget[1].bottom=239;
+		for(int i=0;i<6;i++){int l=(i%2)?161:3,t=14+(i/2)*24;N3DSWidgetRect(this,SGI_GENERATE_GAME+i,l,(i%2)?316:158,t,t+21);}
+		for(int i=0;i<4;i++){this->widget[SGI_TEMPERATE_LANDSCAPE+i].top=88;this->widget[SGI_TEMPERATE_LANDSCAPE+i].bottom=141;}
+		for(int i=0;i<6;i++){int l=(i%2)?161:3,t=146+(i/2)*24;N3DSWidgetRect(this,SGI_OPTIONS+i,l,(i%2)?316:158,t,t+21);}
+		N3DSWidgetRect(this,SGI_EXIT,97,224,218,239);this->left=40;this->top=0;
+
+#endif
 	}
 
 	virtual void OnPaint()
@@ -183,7 +194,7 @@ public:
 
 static const WindowDesc _select_game_desc(
 	#ifdef N3DS
- WDP_CENTER, WDP_CENTER, 320, 213, 320, 213,
+ WDP_CENTER, WDP_CENTER, 320, 240, 320, 240,
 #else
  WDP_CENTER, WDP_CENTER, 336, 213, 336, 213,
 #endif

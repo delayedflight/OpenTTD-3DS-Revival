@@ -154,16 +154,21 @@ static void SetN3DSUpperUi(bool upper, bool preserve_placement)
 
 bool N3DSIsMapConstructionWindow(WindowClass cls)
 {
- return cls==WC_BUILD_TOOLBAR||cls==WC_SCEN_BUILD_TOOLBAR||cls==WC_BUILD_STATION||cls==WC_BUS_STATION||cls==WC_TRUCK_STATION||cls==WC_BUILD_DEPOT||cls==WC_BUILD_SIGNAL||cls==WC_SCEN_LAND_GEN||cls==WC_BUILD_TREES;
+ return cls==WC_BUILD_TOOLBAR||cls==WC_SCEN_BUILD_TOOLBAR||cls==WC_BUILD_STATION||cls==WC_BUS_STATION||cls==WC_TRUCK_STATION||cls==WC_BUILD_DEPOT||cls==WC_BUILD_SIGNAL||cls==WC_SCEN_LAND_GEN||cls==WC_BUILD_TREES||cls==WC_BUILD_INDUSTRY;
 }
 bool N3DSIsConstructionWindow(WindowClass cls)
 {
  return N3DSIsMapConstructionWindow(cls)||cls==WC_BUILD_BRIDGE||cls==WC_BUILD_VEHICLE||cls==WC_VEHICLE_DEPOT||cls==WC_SELECT_STATION||cls==WC_BUILD_INDUSTRY;
 }
 
+bool N3DSIsManagementWindow(WindowClass cls)
+{
+ return cls==WC_COMPANY||cls==WC_GAME_OPTIONS||cls==WC_CUSTOM_CURRENCY||cls==WC_INDUSTRY_DIRECTORY||cls==WC_STATION_LIST||cls==WC_INDUSTRY_VIEW||cls==WC_STATION_VIEW;
+}
+
 bool N3DSUsesScreenPin(WindowClass cls)
 {
- return N3DSIsConstructionWindow(cls)||cls==WC_TRAINS_LIST||cls==WC_ROADVEH_LIST||cls==WC_SHIPS_LIST||cls==WC_AIRCRAFT_LIST||cls==WC_VEHICLE_DETAILS||cls==WC_VEHICLE_ORDERS||cls==WC_VEHICLE_VIEW;
+ return N3DSIsManagementWindow(cls)||N3DSIsConstructionWindow(cls)||cls==WC_TRAINS_LIST||cls==WC_ROADVEH_LIST||cls==WC_SHIPS_LIST||cls==WC_AIRCRAFT_LIST||cls==WC_VEHICLE_DETAILS||cls==WC_VEHICLE_ORDERS||cls==WC_VEHICLE_VIEW;
 }
 
 void N3DSRequestMenuScreenChange(WindowClass cls, WindowNumber number)
@@ -193,7 +198,7 @@ static bool NativeN3DSOrdersRow(int y)
  Window *w;
  FOR_ALL_WINDOWS_FROM_FRONT(w) {
   if (w->window_class == WC_MAIN_WINDOW || w->window_class == WC_STATUS_BAR || w->window_class == WC_TOOLTIPS || w->window_class == WC_DROPDOWN_MENU) continue;
-  if (N3DSIsConstructionWindow(w->window_class) && w->left >= 40 && w->left+w->width <= 360) {
+  if ((N3DSIsManagementWindow(w->window_class)||N3DSIsConstructionWindow(w->window_class)) && w->left >= 40 && w->left+w->width <= 360) {
    if (y >= w->top && y < w->top+w->height) return true;
    continue;
   }
@@ -233,7 +238,7 @@ static bool NativeN3DSToolbarRow(int y)
 static bool NativeN3DSTitle()
 {
  Window *w = N3DSFrontUi();
- return _game_mode == GM_MENU && w != NULL && w->window_class == WC_SELECT_GAME;
+ return _game_mode == GM_MENU && w != NULL && (w->window_class == WC_SELECT_GAME || N3DSIsManagementWindow(w->window_class));
 }
 
 void N3DSRequestStationPicker(bool begin)

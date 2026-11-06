@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "gui.h"
 #include "window_gui.h"
+#include "n3ds_ui.h"
 #include "textbuf_gui.h"
 #include "command_func.h"
 #include "viewport_func.h"
@@ -182,6 +183,21 @@ public:
 		this->FindWindowPlacementAndResize(&_build_industry_desc);
 	}
 
+#ifdef N3DS
+
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		int width=upper?400:320;bool changed=this->width!=width||this->height!=218;
+		this->width=width;this->height=218;this->vscroll.cap=5;
+		N3DSWidgetRect(this,DPIW_MATRIX_WIDGET,0,width-23,14,123);this->widget[DPIW_MATRIX_WIDGET].data=0x501;
+		N3DSWidgetRect(this,DPIW_SCROLLBAR,width-22,width-1,14,123);
+		N3DSWidgetRect(this,DPIW_INFOPANEL,0,width-1,124,195);
+		N3DSWidgetRect(this,DPIW_FUND_WIDGET,0,width-1,196,217);this->HideWidget(DPIW_RESIZE_WIDGET);
+		Window::OnN3DSScreenChange(upper);if(changed)MarkWholeScreenDirty();
+	}
+
+#endif
+
 	virtual void OnPaint()
 	{
 		const IndustrySpec *indsp = (this->selected_type == INVALID_INDUSTRYTYPE) ? NULL : GetIndustrySpec(this->selected_type);
@@ -207,9 +223,19 @@ public:
 
 		/* and now with the matrix painting */
 		for (byte i = 0; i < this->vscroll.cap && ((i + this->vscroll.pos) < this->count); i++) {
-			int offset = i * 13;
+			int offset = i *
+#ifdef N3DS
+22;
+#else
+13;
+#endif
 			int x = 3;
-			int y = 16;
+			int y =
+#ifdef N3DS
+20;
+#else
+16;
+#endif
 			bool selected = this->selected_index == i + this->vscroll.pos;
 
 			if (this->index[i + this->vscroll.pos] == INVALID_INDUSTRYTYPE) {
@@ -294,7 +320,13 @@ public:
 		switch (widget) {
 			case DPIW_MATRIX_WIDGET: {
 				const IndustrySpec *indsp;
-				int y = (pt.y - this->widget[DPIW_MATRIX_WIDGET].top) / 13 + this->vscroll.pos ;
+				int y = (pt.y - this->widget[DPIW_MATRIX_WIDGET].top) /
+#ifdef N3DS
+22
+#else
+13
+#endif
++ this->vscroll.pos ;
 
 				if (y >= 0 && y < count) { // Is it within the boundaries of available data?
 					this->selected_index = y;
@@ -865,6 +897,21 @@ public:
 		this->last_sorting = this->industries.GetListing();
 	}
 
+#ifdef N3DS
+
+	virtual void OnN3DSScreenChange(bool upper)
+	{
+		int width=upper?400:320;bool changed=this->width!=width||this->height!=212;
+		this->width=width;this->height=212;this->vscroll.cap=8;
+		N3DSWidgetRect(this,IDW_DROPDOWN_ORDER,0,95,14,35);
+		N3DSWidgetRect(this,IDW_DROPDOWN_CRITERIA,96,width-23,14,35);this->HideWidget(IDW_SPACER);
+		N3DSWidgetRect(this,IDW_INDUSTRY_LIST,0,width-23,36,211);
+		N3DSWidgetRect(this,IDW_SCROLLBAR,width-22,width-1,36,211);this->HideWidget(IDW_RESIZE);
+		Window::OnN3DSScreenChange(upper);if(changed)MarkWholeScreenDirty();
+	}
+
+#endif
+
 	virtual void OnPaint()
 	{
 		BuildIndustriesList();
@@ -876,7 +923,12 @@ public:
 		this->DrawSortButtonState(IDW_DROPDOWN_ORDER, this->industries.IsDescSortOrder() ? SBS_DOWN : SBS_UP);
 
 		int max = min(this->vscroll.pos + this->vscroll.cap, this->industries.Length());
-		int y = 28; // start of the list-widget
+		int y =
+#ifdef N3DS
+36;
+#else
+28;
+#endif // start of the list-widget
 
 		for (int n = this->vscroll.pos; n < max; ++n) {
 			const Industry *i = this->industries[n];
@@ -903,9 +955,18 @@ public:
 			/* Drawing the right string */
 			StringID str = STR_INDUSTRYDIR_ITEM_NOPROD;
 			if (p != 1) str = (p == 5) ? STR_INDUSTRYDIR_ITEM : STR_INDUSTRYDIR_ITEM_TWO;
+			#ifdef N3DS
+			DrawStringMultiLine(4,y,str,this->widget[IDW_INDUSTRY_LIST].right-4,22);
+#else
 			DrawStringTruncated(4, y, str, TC_FROMSTRING, this->widget[IDW_INDUSTRY_LIST].right - 4);
+#endif
 
-			y += 10;
+			y +=
+#ifdef N3DS
+22;
+#else
+10;
+#endif
 		}
 	}
 
@@ -922,7 +983,13 @@ public:
 				break;
 
 			case IDW_INDUSTRY_LIST: {
-				int y = (pt.y - 28) / 10;
+				int y = (pt.y - this->widget[IDW_INDUSTRY_LIST].top) /
+#ifdef N3DS
+22
+#else
+10
+#endif
+;
 				uint16 p;
 
 				if (!IsInsideMM(y, 0, this->vscroll.cap)) return;
