@@ -15,6 +15,9 @@ struct MusicFileSettings {
 	byte custom_2[33];
 	bool playing;
 	bool shuffle;
+#ifdef N3DS
+ bool wav_autoplay_initialized;
+#endif
 };
 
 struct FileEntry {

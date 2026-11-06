@@ -348,3 +348,13 @@ The first prototype refilled in MusicLoop and completed a title-screen loop with
 
 
 Final r3n emulator verification: the background reader completed/restarted the full theme with zero underruns, loaded a disposable Flufingwell copy while streaming, continued into the next month and created its monthly autosave with zero recorded underruns/I/O errors. Jazz Jukebox Stop/Play succeeded. See WAV-VALIDATION.txt for exact scope and limits. No original-console performance or audible-quality result is claimed.
+
+
+## r3o first-install autoplay and complete soundtrack mapping
+
+MusicFileSettings adds N3DS-only wav_autoplay_initialized, registered under _music_settings with the S flags (SLF_SAVE_NO | SLF_NETWORK_NO), default false. The actual WAV driver's startup probes the existing bounded reader until it finds a supported loose track. It then enables playing, selects All once and marks initialization. No usable audio/track leaves settings untouched; an initialized configuration preserves a later Stop or custom playlist. Config files are saved by the engine's ordinary normal-exit path. No standalone marker file or config replacement is used.
+
+All 22 user-supplied WAVs are ordinary 44.1 kHz stereo 16-bit PCM, mapped by exact title to the engine's nonsequential gm_ttNN names. The supplied files have no duplicate hashes. The actual reader streamed all 22 to completion, producing 103,633,824 output frames at 22.05 kHz with the same fixed ring. Existing audio lifecycle/ASan/UBSan/TSan checks pass, with new missing-track/audio, first-install autoplay, preserved Stop and playlist cases. See the r3o validation report for emulator verification. The soundtrack is excluded from the corresponding-source archive.
+
+
+The r3o emulator started music from an old playing=false/custom-playlist configuration, loaded a disposable Flufingwell copy, advanced from the theme to Easy Driver, accepted Next to Little Red Diesel and Stop, and saved playing=false plus wav_autoplay_initialized=true on normal Exit. No recorded underruns/I/O errors. This is separate from the complete 22-track host read-through; see WAV-VALIDATION-r3o.txt for limits.

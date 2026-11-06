@@ -5,6 +5,8 @@
 #include "n3ds_wav.h"
 #include "wav_stream.hpp"
 #include "../sound_func.h"
+#include "../music.h"
+#include "../fileio_func.h"
 #include <SDL.h>
 #include <3ds.h>
 
@@ -56,9 +58,22 @@ void N3DSStopWavMusic()
  if(_wav_reader!=NULL){threadJoin(_wav_reader,UINT64_MAX);threadFree(_wav_reader);_wav_reader=NULL;}
  if(_wav.file!=NULL){WavLog("stop");_wav.Close();}
 }
+/** One-time migration from the silent port's persisted playing=false setting. */
+static void InitializeWavAutoplay()
+{
+ if(msf.wav_autoplay_initialized)return;
+ char path[MAX_PATH];
+ for(unsigned i=0;i<NUM_SONGS_AVAILABLE;i++){
+  FioFindFullPath(path,sizeof(path),GM_DIR,_origin_songs_specs[i].filename);
+  if(!_wav.Open(path))continue;
+  _wav.Close();
+  msf.playing=true;msf.playlist=0;msf.wav_autoplay_initialized=true;
+  WavLog("autoplay initialized");return;
+ }
+}
 class MusicDriver_N3DSWav: public MusicDriver {
 public:
- const char *Start(const char * const *){WavLog(_n3ds_wav_output_rate==0?"audio unavailable":"audio ready");return _n3ds_wav_output_rate==0?"SDL sound output unavailable":NULL;}
+ const char *Start(const char * const *){WavLog(_n3ds_wav_output_rate==0?"audio unavailable":"audio ready");if(_n3ds_wav_output_rate==0)return "SDL sound output unavailable";InitializeWavAutoplay();return NULL;}
  void Stop(){StopSong();}
  void StopSong(){N3DSStopWavMusic();}
 

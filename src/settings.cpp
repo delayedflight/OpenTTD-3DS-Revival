@@ -1207,6 +1207,9 @@ static const SettingDesc _music_settings[] = {
 	SDT_LIST(MusicFileSettings, custom_2,   SLE_UINT8, S, 0, NULL,            STR_NULL, NULL),
 	SDT_BOOL(MusicFileSettings, playing,               S, 0, true,            STR_NULL, NULL),
 	SDT_BOOL(MusicFileSettings, shuffle,               S, 0, false,           STR_NULL, NULL),
+#ifdef N3DS
+ SDT_BOOL(MusicFileSettings, wav_autoplay_initialized, S, 0, false, STR_NULL, NULL),
+#endif
 	 SDT_END()
 };
 

@@ -1,6 +1,7 @@
 """Exercise the real bounded WAV reader and driver, including the user's full sample."""
 from pathlib import Path
 import struct,wave,subprocess,sys
+extra_samples=Path(sys.argv[3]).resolve() if len(sys.argv)>3 else None
 root=Path(__file__).resolve().parents[3];out=Path(sys.argv[1]).resolve();out.mkdir(parents=True,exist_ok=True);sample=Path(sys.argv[2]).resolve()
 for rate in [8000,11025,22050,44100,48000]:
  for ch in [1,2]:
@@ -12,6 +13,7 @@ fmt=base[20:36];pcm=base[44:]
 (out/'metadata.wav').write_bytes(riff([(b'JUNK',b'abc'),(b'data',pcm),(b'fmt ',fmt),(b'LIST',b'metadata')]))
 invalid=[b'',b'RIFF',base[:-1],b'RIFX'+base[4:],riff([(b'fmt ',fmt),(b'data',b'abc')]),riff([(b'fmt ',bytes([3,0])+fmt[2:]),(b'data',pcm)]),riff([(b'fmt ',fmt[:2]+b'\x03\x00'+fmt[4:]),(b'data',pcm)]),riff([(b'data',pcm)]),riff([(b'fmt ',fmt),(b'data',b'')]),riff([(b'fmt ',fmt),(b'data',pcm),(b'data',pcm)])]
 for i,b in enumerate(invalid):(out/f'bad-{i}.wav').write_bytes(b)
+(out/'autoplay').mkdir(exist_ok=True);(out/'autoplay/gm_tt00.wav').write_bytes(base)
 cpp=r'''
 #include <cstdio>
 #include <cassert>
@@ -32,7 +34,12 @@ size_t CheckedRead(void*p,size_t a,size_t b,FILE*f){assert(!audio_locked);return
 using byte=unsigned char;
 class Driver{public:virtual ~Driver(){}};class MusicDriver:public Driver{};
 template<class T>class MusicDriverFactory{};
-struct{bool playing=true;}msf;
+struct{bool playing=true,wav_autoplay_initialized=false;int playlist=4;}msf;
+const int MAX_PATH=1024,NUM_SONGS_AVAILABLE=22,GM_DIR=0;
+struct SongSpecs{const char*filename;};const SongSpecs _origin_songs_specs[]={{"gm_tt00.wav"},{"gm_tt02.wav"},{"gm_tt03.wav"},{"gm_tt17.wav"},{"gm_tt07.wav"},{"gm_tt09.wav"},{"gm_tt04.wav"},{"gm_tt19.wav"},{"gm_tt06.wav"},{"gm_tt12.wav"},{"gm_tt05.wav"},{"gm_tt01.wav"},{"gm_tt18.wav"},{"gm_tt10.wav"},{"gm_tt08.wav"},{"gm_tt13.wav"},{"gm_tt21.wav"},{"gm_tt15.wav"},{"gm_tt16.wav"},{"gm_tt14.wav"},{"gm_tt20.wav"},{"gm_tt11.wav"}};
+std::string probe_dir="missing-dir";
+char*FioFindFullPath(char*out,size_t capacity,int,const char*file){snprintf(out,capacity,"%s/%s",probe_dir.c_str(),file);return out;}
+
 using Thread=std::thread*;bool fail_thread=false;const int CUR_THREAD_HANDLE=0;
 int svcGetThreadPriority(int32_t*p,int){*p=0x30;return 0;}
 void svcSleepThread(long long){std::this_thread::yield();}
@@ -48,7 +55,7 @@ uint64_t render(RevivalWavStream&w,unsigned output,bool check){
  while(w.active){pump(w);int16_t dst[514]={};auto before=w.output_frames;w.Mix(dst,257,output);auto made=w.output_frames-before;count+=made;if(check)for(unsigned j=0;j<made;j++){assert(dst[j*2]==10000);assert(dst[j*2+1]==(w.channels==1?10000:-12000));}assert(w.queued<=w.CAPACITY);}
  assert(w.peak<=65536&&w.underruns==0&&!w.io_error);return count;
 }
-int main(int argc,char**argv){assert(argc==2);assert(sizeof(RevivalWavStream)<66000);
+int main(int argc,char**argv){assert(argc==2||argc==3);assert(sizeof(RevivalWavStream)<66000);
  for(int rate:{8000,11025,22050,44100,48000})for(int ch:{1,2}){RevivalWavStream w;std::string p=std::to_string(rate)+"-"+std::to_string(ch)+".wav";assert(w.Open(p.c_str()));assert(render(w,22050,true)==(uint64_t(50003)*22050+rate-1)/rate);}
  RevivalWavStream w;assert(w.Open("metadata.wav"));assert(render(w,22050,true)==25002);
  for(int i=0;i<10;i++){assert(!w.Open(("bad-"+std::to_string(i)+".wav").c_str()));assert(w.file==nullptr&&!w.active&&w.error!=nullptr);}
@@ -58,7 +65,15 @@ int main(int argc,char**argv){assert(argc==2);assert(sizeof(RevivalWavStream)<66
  assert(w.Open("44100-2.wav"));pump(w);w.active=true;w.Mix(dst,4,22050);assert(w.queued<65536);assert(w.Open("11025-1.wav"));assert(w.queued==0&&w.phase==0&&!w.active);w.Close();
  assert(w.Open("44100-2.wav"));pump(w);w.Publish(0,4);assert(w.io_error&&w.eof); // Short reads drain safely.
  assert(w.Open(argv[1]));uint64_t frames=w.remaining/w.align;unsigned rate=w.rate;auto count=render(w,22050,false);assert(count==(frames*22050+rate-1)/rate);
- _n3ds_wav_output_rate=22050;MusicDriver_N3DSWav driver;assert(driver.Start(nullptr)==nullptr);driver.PlaySong(argv[1]);uint64_t prior=0;
+
+ if(argc==3){uint64_t total=0;for(const auto&song:_origin_songs_specs){std::string path=std::string(argv[2])+"/"+song.filename;assert(w.Open(path.c_str()));auto frames=w.remaining/w.align;unsigned hz=w.rate;auto rendered=render(w,22050,false);assert(rendered==(uint64_t(frames)*22050+hz-1)/hz);total+=rendered;}std::cout<<"All 22 soundtrack files streamed completely; output frames="<<total<<"\n";}
+ MusicDriver_N3DSWav driver;msf.playing=false;msf.wav_autoplay_initialized=false;msf.playlist=4;
+ _n3ds_wav_output_rate=0;assert(driver.Start(nullptr)!=nullptr&&!msf.wav_autoplay_initialized&&!msf.playing);
+ _n3ds_wav_output_rate=22050;assert(driver.Start(nullptr)==nullptr&&!msf.wav_autoplay_initialized&&!msf.playing);
+ probe_dir="autoplay";assert(driver.Start(nullptr)==nullptr&&msf.wav_autoplay_initialized&&msf.playing&&msf.playlist==0);
+ msf.playing=false;msf.playlist=3;assert(driver.Start(nullptr)==nullptr&&!msf.playing&&msf.playlist==3);
+ driver.PlaySong(argv[1]);uint64_t prior=0;
+
  // Consume more than the entire prefetched ring without a single game-loop poll.
  auto tick=[](){
   auto limit=std::chrono::steady_clock::now()+std::chrono::seconds(3);
@@ -71,10 +86,10 @@ int main(int argc,char**argv){assert(argc==2);assert(sizeof(RevivalWavStream)<66
  driver.PlaySong("bad-0.wav");assert(!msf.playing&&!driver.IsSongPlaying());driver.Stop();fail_thread=true;msf.playing=true;driver.PlaySong("44100-2.wav");assert(!msf.playing&&_wav_reader==nullptr&&_wav.file==nullptr);fail_thread=false;
  for(int i=0;i<20;i++){driver.PlaySong("44100-2.wav");driver.StopSong();assert(_wav_reader==nullptr&&_wav.file==nullptr);}
  _n3ds_wav_output_rate=0;assert(driver.Start(nullptr)!=nullptr);
- std::cout<<"16-bit mono/stereo at 5 rates; metadata/padding/order; 11 invalid files; resampling duration, clipping, mute, starvation, short-read drain, restart, full user sample, background refill without game polling, thread failure and 20 joined restarts passed. Reader bytes="<<sizeof(w)<<" sample output frames="<<count<<"\n";
+ std::cout<<"16-bit mono/stereo at 5 rates; metadata/padding/order; 11 invalid files; resampling duration, clipping, mute, starvation, short-read drain, restart, full user sample, background refill without game polling, thread failure and 20 joined restarts and first-install autoplay/preserved Stop/missing-track/audio guards passed. Reader bytes="<<sizeof(w)<<" sample output frames="<<count<<"\n";
 }
 '''
-f=out/'wav-stream.cpp';f.write_text(cpp);exe=out/'wav-stream';subprocess.run(['clang++','-std=c++11','-O1','-fsanitize=address,undefined',str(f),'-o',str(exe)],check=True);subprocess.run([str(exe),str(sample)],cwd=out,check=True)
+f=out/'wav-stream.cpp';f.write_text(cpp);exe=out/'wav-stream';subprocess.run(['clang++','-std=c++11','-O1','-fsanitize=address,undefined',str(f),'-o',str(exe)],check=True);subprocess.run([str(exe),str(sample)]+([str(extra_samples)] if extra_samples else []),cwd=out,check=True)
 # Run the actual SDL startup/stop/callback with controlled backend failures.
 sdl=(root/'src/sound/sdl_s.cpp').read_text();sdl='\n'.join(l for l in sdl.splitlines() if not l.startswith('#include'))
 code=r'''

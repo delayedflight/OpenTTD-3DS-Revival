@@ -1,0 +1,33 @@
+r3o full soundtrack and autoplay validation
+
+All 22 supplied files were matched by exact numbered title to the engine's
+nonsequential gm_ttNN.wav names. Total size 829,071,560 bytes; total duration
+78.33 minutes. All are 16-bit stereo PCM at 44100 Hz. No duplicate file hashes.
+Original descriptive WAVs are unchanged; the package uses renamed copies.
+
+The actual bounded reader streamed every file completely under ASan/UBSan:
+103,633,824 total output frames at 22050 Hz, exact expected durations, no reader
+underruns or I/O errors. Existing format/rate/ring/mute/clipping/worker lifecycle,
+thread failure and SDL mix/failure/shutdown tests pass. New actual driver cases:
+missing audio or valid tracks leaves autoplay initialization unset; first valid
+installation enables playback/All; initialized Stop and custom playlist survive
+startup. ThreadSanitizer passes the threaded lifecycle and autoplay harness.
+The pinned Docker build completes; existing mixed-enum ABI warnings remain.
+
+Emulator: Azahar 2126.2 arm64, disposable profile with all 22 tracks.
+Initial profile deliberately contained playing=false, playlist=4 and no new flag.
+The new executable logged autoplay initialized and started the theme without UI
+input. A disposable Flufingwell copy loaded while streaming and continued into
+the next month with its monthly autosave. Theme completion advanced to Easy
+Driver; Next selected Little Red Diesel in Jazz Jukebox. Stop cleared playback.
+Normal game Exit saved playing=false and wav_autoplay_initialized=true in the
+disposable configuration. Every final-build recorded underrun/I/O count is zero.
+The whole soundtrack was read on the host; only the early tracks were selected
+in this emulator pass. No automated auditory-quality assessment is claimed.
+
+Music storage remains a fixed 64 KiB ring plus 16 KiB worker stack and runtime
+metadata/stdio/SDL buffers. The soundtrack size does not increase that ring.
+No SD device or original save was written. Real hardware has only been reported
+working with r3n manual playback by the user; r3o startup and the complete album
+still need original-3DS testing. CPU/RAM/SD headroom and sound quality remain
+hardware checks. The update supplies no configuration, saves or DSP marker.
