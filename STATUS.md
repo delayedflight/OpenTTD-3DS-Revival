@@ -4,7 +4,7 @@ Reviewed against source and existing evidence: 7 November 2026.
 
 ## Source and release identity
 
-Selected beta: **r3r**, approved for wider playtesting on 7 November2026.
+Selected beta: **r3r**, approved for wider playtesting on 7 November 2026.
 Integration branch: `revival/main`; release tag: `revival-r3r-beta`.
 The tag identifies committed source; the executable was built before that commit
 from the same application/build inputs. Documentation was subsequently updated.
@@ -63,8 +63,9 @@ optimisation list yet. The latest game is a beta, not feature-complete certifica
   includes working WAV driver, autoplay, track mapping and effects implementation.
 - IMPLEMENTATION.md opens with r3d-era wording but contains later sections through
   r3q. Treat its opening as historical; use this file for current state.
-- `readme.md` is the original author's historical README; its unchecked upper-screen
-  and music TODOs do not describe the revival. It is retained for provenance.
+- `readme.md` is the public revival introduction. The original port README is
+  preserved in [UPSTREAM-README.md](docs/revival/UPSTREAM-README.md); its TODOs
+  and download/build instructions are historical, not current revival guidance.
 - Configure disables the engine's general thread backend, but the N3DS WAV driver
   explicitly creates a libctru reader thread; “without-threads” is not no threads.
 - Toolchain base is digest-pinned; `dkp-pacman` still resolves 3ds-sdl at image-build

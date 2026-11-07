@@ -31,10 +31,31 @@ git add <specific files>
 git commit -m "Describe concrete behavior change"
 ```
 
-Review before merging back into revival/main. Create an annotated release tag
-only for a recorded release, and keep that release's executable, matching ELF,
-source, test results and checksums. Update PROJECT-HANDOVER.md at milestones.
-Do not overwrite or move existing release tags to a new build.
+Review before merging back into revival/main. Follow the maintenance convention
+below; update PROJECT-HANDOVER.md only at milestones. Keep each selected beta’s
+executable, matching ELF, source, test results and checksums together.
+
+## Documentation and release maintenance
+
+- Development chats own application changes and technical evidence. STATUS.md owns
+  current state, ARCHITECTURE.md implementation, and BENCHMARKS.md measured results.
+  This separate GitHub documentation/maintenance chat consumes that evidence for
+  public text; it does not begin ongoing autonomous maintenance.
+- Keep readme.md a public introduction and link to detailed evidence. Distinguish
+  implemented behavior, emulator checks and hardware verification. Check actual
+  source and recorded results before making new claims; avoid duplicating status.
+- Group related edits into one focused, reviewable commit. Avoid trivial commits
+  and a new GitHub Release for every fix; record individual fixes in commits or an
+  unreleased changelog when useful. Review links, claims and staged files before
+  publishing; prose-only changes need documentation checks, not a game rebuild.
+- Reserve published releases for meaningful, tested beta milestones with explicit
+  authorization, corresponding source, matching executable/ELF, checksums, license
+  notices and recorded test limits. Keep all existing commits and tags immutable;
+  never move or delete historical snapshot tags. Source tags are provenance, not
+  evidence of a downloadable GitHub Release.
+- This README maintenance task creates no tag, Release, binary asset publication
+  or automated release workflow. Future documentation work needs a user request;
+  source changes and crash repairs remain in the development chat.
 
 Private saves, scenarios, crash dumps, soundtrack, generated binaries, logs and
 build directories are ignored. The canonical checkout starts without these;

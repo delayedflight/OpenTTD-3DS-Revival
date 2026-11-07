@@ -1,74 +1,121 @@
 # OpenTTD 3DS Revival
 
-A continuation of [EnergeticBark's OpenTTD-3DS port](https://github.com/EnergeticBark/OpenTTD-3DS),
-retaining OpenTTD 0.7.0 for the original Nintendo 3DS / 3DS XL.
-The original author's README is preserved below.
+A continuation of [EnergeticBark’s OpenTTD-3DS port](https://github.com/EnergeticBark/OpenTTD-3DS),
+bringing the transport simulation **OpenTTD 0.7.0** to the original Nintendo
+3DS and 3DS XL. The revival focuses on dual-screen controls, usable menus,
+audio and stability within the original console’s limits; it retains the legacy
+engine. The [original port README](docs/revival/UPSTREAM-README.md) is preserved
+as historical documentation.
 
-**Current beta:** [`revival-r3r-beta`](https://github.com/delayedflight/OpenTTD-3DS-Revival/tree/revival-r3r-beta).
-The revival adds an upper-screen map, native lower-screen menus, optional upper
-windows, train-depot/purchase screen pairing, streamed WAV music, OpenSFX effects
-and stability repairs. The beta has an initial user hardware pass; extended
-playtesting is ongoing. No map size is certified safe. Networking and healthy AI
-support are not promised. The original TODO list below is historical.
+## Playable beta
 
-## Start here
+The current beta source is tagged
+[`revival-r3r-beta`](https://github.com/delayedflight/OpenTTD-3DS-Revival/tree/revival-r3r-beta).
+It is approved for wider playtesting after an initial user hardware pass: no
+crash reported so far, with session duration and exact coverage unspecified.
+Extended hardware testing remains open; this is not a feature-complete release.
+[Current status and known issues](STATUS.md) records the evidence and next checks.
 
-- [Current status and known issues](STATUS.md)
-- [Beta installation and playtest checklist](docs/revival/BETA-TESTING.md)
-- [Architecture](ARCHITECTURE.md) and [measurements/testing](BENCHMARKS.md)
-- [Build provenance](docs/revival/BUILD-r3r.json) and [graphics repair validation](docs/revival/GRAPHICS-QUEUE-VALIDATION.md)
-- [Contributor/agent entry point](AGENTS.md)
+Implemented features include:
 
-Start Docker Desktop, then run `bash environment/build.command` from this checkout.
-The contained recipe rebuilds the modified SDL library and game; outputs go into
-builds/repair-r3r/. The source includes SDL's original source/platform patch and
-the separate graphics-lock repair. Game code is GPLv2; SDL is LGPL2.1-or-later.
-See COPYING and environment/vendor/SDL-COPYING.txt.
+- An upper-screen map and native lower-screen menus, with optional upper menus.
+- Map/construction and upper-pointer input modes, plus paired train depot and
+  purchase screens, vehicle counts and wagon dragging.
+- Streamed WAV music with autoplay and compatible OpenSFX sound effects.
+- Stability repairs, including r3r’s shared graphics lock for SDL texture upload
+  and rendering. Host/build and emulator checks pass; extended hardware coverage
+  is still needed. See [graphics repair validation](docs/revival/GRAPHICS-QUEUE-VALIDATION.md).
 
-This repository contains source and documentation. It does not bundle the private
-WAV soundtrack, user saves, crash dumps or a complete console installation. The
-beta executable update requires an existing working graphics/language installation;
-keep those asset folders when replacing the executable. See the beta checklist.
+Verification varies by feature. Train-workshop interactions, full-playlist music,
+sound quality and longer sessions still need hardware coverage. Networking is
+disabled, and healthy AI operation is not promised. **No map size is certified
+safe.** Emulator results are not console performance benchmarks. The earlier
+r3p ordinary-play crash on a 256×256 map was a graphics-queue panic; RAM exhaustion
+was not established.
 
-The branch revival/main retains upstream history plus labelled recovery commits
-for 21 saved releases and the committed r3r beta. The recovery commits document
-saved snapshots, rather than pretending to be the original implementation timeline.
-Use small focused changes and relevant tests; include build/device details in bug
-reports, and keep personal evidence out of public source commits.
+## Installation and safe updates
 
----
+**There are currently no downloadable GitHub Release assets or public binary
+release listing.** The source tags are public; the selected beta update and
+complete source packages are retained locally by the project. This repository
+is source and documentation, not a complete fresh installation.
 
-## Original port README (historical)
+To use the executable update, you need a 3DS homebrew launcher and an existing
+working r3 installation with compatible graphics, language files and the converted
+OpenSFX bank. WAV music is optional. For a fresh installation, compatible base
+assets must be obtained separately; the update alone is insufficient. Modern
+OpenTTD asset-installation instructions may not apply to this 0.7.0 port.
 
-# OpenTTD port for the 3DS
-A port of OpenTTD v0.7.0 to the Nintendo 3DS
-## Installation
-* Download the latest version of openttd.zip from the releases page.
-* Extract its contents to /3ds/ on your SD card.
-## Building
+1. Back up the existing game folder, executable, configuration and saves.
+2. Replace **only** `/3ds/openttd-revival-r3/openttd-revival-r3.3dsx` with the
+   matching beta executable.
+3. Preserve `data/`, `gm/`, `lang/`, configuration and saves. Do not replace the
+   whole data folder with an executable-only update.
+4. Test with disposable copies of saves before continuing an important game.
 
-I've only tried compiling this on Linux so I'm not sure if it will work on a non-Unix-like OS.
-* Install the 3ds-sdl library using (dkp-)pacman
-* From the root of the project directory, run:
-```bash
-./configure --os=N3DS --host $DEVKITARM/bin/arm-none-eabi --enable-static --prefix-dir=$DEVKITPRO --with-sdl --without-png --without-threads --disable-network --disable-unicode --without-libfontconfig --without-zlib --without-libfreetype --without-icu
+See the [beta checklist](docs/revival/BETA-TESTING.md) for executable identity,
+suggested sessions and crash evidence. Do not redistribute private/commercial
+WAV soundtracks or original Transport Tycoon Deluxe assets.
+
+## Controls at a glance
+
+Use the touchscreen for lower-screen menus. In normal map mode, the Circle Pad
+scrolls the map and L/R zoom. X or Select switches construction control mode;
+follow the on-screen mode labels because button roles change with focus.
+Optional upper menus use pointer controls. With a paired upper depot and lower
+shop, X/Y/Select switches depot control and shopping; the Circle Pad moves the
+upper pointer, A/L clicks or holds, and D-pad up/down scrolls.
+See [screen ownership and input modes](ARCHITECTURE.md#rendering-ui-and-input)
+for the implementation overview.
+
+## Build from source
+
+Install and start Docker Desktop, then run from this checkout:
+
+```sh
+bash environment/build.command
 ```
-* Type:
-```bash
-make
-```
-* Then, in ./bin/ run:
-```bash
-$DEVKITPRO/tools/bin/3dsxtool openttd openttd.3dsx
-```
-I don't know really what I'm doing when it come to writing configure files lol. If anyone has advice I'll gladly take it.
-## Why 0.7.0 instead of a later version?
-Memory restrictions. The later versions I tried would always crash, even with a small map, because they simply wouldn't fit into the application memory of the 3DS. (The OLD 3DS at least. I don't own a NEW model I could test with.)
-One of the other reasons I picked 0.7.0 specifically, is it's the version that the DS port uses. This gives me something I can borrow some ideas from.
-It also has plenty of the features you would expect from OpenTTD, like OpenGFX support.
-## To do
-- [x] Resize UI elements to better fit the 3DS's low screen resolution. 
-- [ ] Put a viewport on the top screen, right now it's used as a console.
-- [ ] Networking support.
-- [ ] Fix music.
-- [ ] (maybe) Move to a slightly newer version of OpenTTD??????
+
+The contained build rebuilds the modified SDL library and game, mounts source
+read-only and writes artifacts to `builds/repair-r3r/` plus logs to `logs/`.
+Initial image/toolchain setup needs network access; game compilation runs with
+network disabled. See the [recipe](environment/Dockerfile),
+[SDL source and patch notices](environment/vendor/README.md) and
+[recorded beta provenance](docs/revival/BUILD-r3r.json). Recorded toolchain
+inventory supports reproducibility checks; byte-identical rebuilds are not guaranteed.
+Base assets and optional music must still be supplied separately.
+
+## Testing, bugs and contributions
+
+The public fork’s issue tracker is currently disabled. Prepare reproducible
+reports using the checklist below and share them through your existing project
+contact; no public reporting channel is currently advertised here.
+Include the tag or executable hash, console model, launcher/CFW, session length,
+map size, exact action, expected result and whether audio was active. Follow the
+[reporting checklist](docs/revival/BETA-TESTING.md#report-failures-usefully) for
+logs and crash dumps. Review attachments for private information before posting.
+A save is helpful when available, but is not required if the crash preceded saving.
+
+Contributors should start with [AGENTS.md](AGENTS.md) and [STATUS.md](STATUS.md),
+then consult [ARCHITECTURE.md](ARCHITECTURE.md), [BENCHMARKS.md](BENCHMARKS.md)
+and the [maintenance/release convention](docs/revival/PROJECT-ORGANISATION.md#documentation-and-release-maintenance).
+The [release registry](docs/revival/RELEASES.json) records source provenance;
+21 recovered snapshot tags and the current beta tag are not published GitHub
+Releases. Existing history and tags are preserved.
+
+## Credits and licenses
+
+Thanks to EnergeticBark for the original 3DS port, the upstream OpenTTD developers,
+and the OpenGFX, OpenSFX, SDL and devkitPro contributors whose work supports it.
+
+- Game source: GNU GPLv2; see [COPYING](COPYING) and the retained
+  [OpenTTD documentation](readme.openttd).
+- Modified SDL: LGPL 2.1-or-later; see its [license](environment/vendor/SDL-COPYING.txt)
+  and [source/modification notices](environment/vendor/README.md).
+- Converted OpenSFX collection: CC BY-SA 3.0; retain the
+  [conversion notice](docs/revival/OPENSFX-CONVERSION.txt),
+  [credits](docs/revival/OPENSFX-CREDITS.txt) and
+  [licenses](docs/revival/OPENSFX-LICENSE.txt) when redistributing the bank.
+
+Base graphics, music and other third-party assets retain their own licenses and
+attribution requirements. Preserve applicable notices when distributing a build.
