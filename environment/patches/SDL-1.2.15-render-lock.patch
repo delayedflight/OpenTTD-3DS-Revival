@@ -1,0 +1,48 @@
+--- a/src/video/n3ds/SDL_n3dsvideo.c
++++ b/src/video/n3ds/SDL_n3dsvideo.c
+@@ -104,6 +104,8 @@
+ void drawTexture( int x, int y, int width, int height, float left, float right, float top, float bottom);
+ 
+ // video thread variables and functions
++/* Serialize shared Citro3D state between upload and the private renderer. */
++static LightLock renderLock = 1;
+ volatile bool runThread = false;
+ LightEvent privateVideoThreadEvent;
+ Thread privateVideoThreadHandle = NULL;
+@@ -502,6 +504,7 @@
+ 		if (!runThread)
+ 			break;
+ 
++		LightLock_Lock(&renderLock);
+ 		if(gspHasGpuRight()) {
+ 			if (C3D_FrameBegin(C3D_FRAME_SYNCDRAW)){
+ //			if (C3D_FrameBegin(C3D_FRAME_NONBLOCK)){
+@@ -523,6 +526,7 @@
+ 				C3D_FrameEnd(0);
+ 			}
+ 		}
++		LightLock_Unlock(&renderLock);
+ 	}
+ }
+ 
+@@ -530,7 +534,11 @@
+ {
+ 	if(this->hidden->buffer) {
+ 
+-		if(!gspHasGpuRight()) return; // Blocking video output if the application is closing
++		LightLock_Lock(&renderLock);
++		if(!gspHasGpuRight()) {
++			LightLock_Unlock(&renderLock);
++			return; // GPU rights can change while waiting for the renderer.
++		}
+ 
+ 		GSPGPU_FlushDataCache(this->hidden->buffer, this->hidden->w*this->hidden->h*this->hidden->byteperpixel);
+ 
+@@ -548,6 +556,7 @@
+ 		C3D_TexEnvFunc(env, C3D_Both, GPU_REPLACE);
+ 
+ //		gspWaitForVBlank();
++		LightLock_Unlock(&renderLock);
+ 		LightEvent_Signal(&privateVideoThreadEvent);
+ 	}
+ }

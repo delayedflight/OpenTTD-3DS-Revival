@@ -166,5 +166,13 @@
     "source_archive": "outputs/releases/r3q/source/OpenTTD-3DS-Revival-r3q-source.tar.gz",
     "source_sha256": "1637c7db23a27187ca363b94a5ebf3bbb86b9720973eb99e91769886151312fd",
     "executable_sha256": "79dc5eccc7852f55700a5a76d0837a69edc0f123884c10e244f73b1997fd2717"
+  },
+  {
+    "release": "r3r-beta",
+    "tag": "revival-r3r-beta",
+    "status": "selected beta; initial user hardware pass; wider playtesting pending",
+    "executable_sha256": "b99a2027f3c1381986b7fb2507c8ec48dbab2f13c02357d46a702478cd7e2112",
+    "source_archive": "outputs/releases/r3r/source/OpenTTD-3DS-Revival-r3r-beta-source.tar.gz",
+    "note": "Resolve the annotated tag for commit identity. Binary built from matching pre-commit inputs; later changes are documentation."
   }
 ]

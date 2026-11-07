@@ -8,5 +8,6 @@ SOURCE_DIR="$PWD/work/r3q-source"
 if [[ -d "$PWD/src" ]]; then SOURCE_DIR="$PWD"; fi
 if [[ -d "$PWD/source" ]]; then SOURCE_DIR="$PWD/source"; fi
 SOURCE_DIR="${OPENTTD_SOURCE_DIR:-$SOURCE_DIR}"
-"$DOCKER_BIN" build -t openttd3ds-revival:dev environment 2>&1 | tee logs/container-build.log
-"$DOCKER_BIN" run --rm --network none --mount "type=bind,src=$SOURCE_DIR,dst=/source,readonly" --mount "type=bind,src=$PWD/builds,dst=/artifacts" openttd3ds-revival:dev 2>&1 | tee logs/game-build.log
+IMAGE_TAG="${OPENTTD_IMAGE_TAG:-openttd3ds-revival:r3r}"
+"$DOCKER_BIN" build -t "$IMAGE_TAG" environment 2>&1 | tee logs/container-build.log
+"$DOCKER_BIN" run --rm --network none --mount "type=bind,src=$SOURCE_DIR,dst=/source,readonly" --mount "type=bind,src=$PWD/builds,dst=/artifacts" "$IMAGE_TAG" 2>&1 | tee logs/game-build.log

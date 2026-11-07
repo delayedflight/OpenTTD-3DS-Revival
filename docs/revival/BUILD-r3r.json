@@ -1,0 +1,14 @@
+{
+  "release": "r3r",
+  "status": "selected-beta-initial-hardware-pass",
+  "branch": "fix/graphics-queue-baseline",
+  "base_commit": "96348c8dd102bb061da78ddfc74d58c914e6735a",
+  "executable_sha256": "b99a2027f3c1381986b7fb2507c8ec48dbab2f13c02357d46a702478cd7e2112",
+  "elf_sha256": "6f3a3279f65ea8f63403b22925fa51a2f104795f18aba20bcaee07a8cc00e643",
+  "library_checksum_file": "d9013dbb965d0fcaeb4a3ec61af969b46a7310d634372c3fd10613b0d6e74a2e  /opt/devkitpro/portlibs/3ds/lib/libSDL.a",
+  "dump_reference": "00000008",
+  "device_written": false,
+  "source_tag": "revival-r3r-beta",
+  "built_from_uncommitted_snapshot": true,
+  "hardware_feedback": "User reports no crash so far and major features working; duration and test coverage unspecified."
+}

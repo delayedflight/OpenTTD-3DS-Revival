@@ -4,6 +4,10 @@ Updated 2026-11-07. Target: original Nintendo 3DS / 3DS XL, OpenTTD 0.7.0.
 
 ## Start here
 
+Current session entry point: ../../AGENTS.md, then ../../STATUS.md. Architecture
+and measurements are in ../../ARCHITECTURE.md and ../../BENCHMARKS.md. This
+handover preserves historical release/evidence paths; STATUS owns current tasks.
+
 The canonical Git repository is `OpenTTD 3DS Revival/source/`, branch
 `revival/main`. Read this file, PROJECT-ORGANISATION.md and `git status` first.
 Old `work/r*-source` directories are preserved historical evidence, not the
@@ -37,15 +41,15 @@ Music uses a 64 KiB ring and 16 KiB worker stack, with SD I/O outside the audio
 callback. Do not preload the soundtrack. No engine upgrade, networking or
 healthy AI support is claimed. User has two beta testers, one a developer.
 
-## Current blocking evidence to obtain — no crash diagnosis started
+## Current crash investigation
 
-User reports a Luma crash on original 3DS XL using a 256x256 map.
-Build, trigger, save and new dump are not known. SD was not mounted at last
-check. Obtain newest ARM11 .dmp plus exact executable/build and affected save.
-Do not assume memory exhaustion from a Luma exception or certify a safe map
-size. Original author generated 1024x1024 on O3DS, but that is not long-session
-stability evidence. Our emulator results also do not establish hardware limits.
-User paused diagnosis to organise Git and outputs; finish organisation first.
+Dump00000008 obtained: user confirms r3p, 256x256, ordinary play before a chance
+to save. See ../../STATUS.md and CRASH-00000008.md. Matched r3p symbols identify
+an intentional graphics-queue panic; SDL transfer/render concurrency is a
+candidate, not a confirmed root cause. r3r shared graphics lock is selected as the beta under revival-r3r-beta;
+see GRAPHICS-QUEUE-VALIDATION.md and STATUS.md. User reports no crash so far; extended hardware coverage is pending. Raw dump
+and later-state copied SD logs remain outside Git in work/crash-dumps/00000008.
+
 
 ## Safety and workflow
 
@@ -57,8 +61,8 @@ updates by replacing only the .3dsx; the user previously accidentally replaced
 the whole data folder and lost graphics files.
 
 Future work happens on small feature/fix branches from revival/main, with
-meaningful commits. Update this handover, implementation notes, validation and
-release index at milestones. Prefer narrow source searches and relevant tests;
+meaningful commits. Update STATUS.md and affected architecture/benchmark/validation documents;
+update this handover only when its evidence/navigation changes. Prefer narrow source searches and relevant tests;
 read only the sections needed instead of replaying all prior chat history.
 Keep uncertainty explicit. Do not create/push a GitHub fork without instruction.
 
@@ -77,3 +81,5 @@ Build: start Docker Desktop, then run `bash environment/build.command` from
 project root; it now selects source/. Alternatively run the same command from
 the source repository; its outputs then stay in source/builds and source/logs.
 The pinned toolchain recipe and existing configure flags are unchanged.
+
+Current beta/playtester entry point: BETA-TESTING.md and ../../STATUS.md.

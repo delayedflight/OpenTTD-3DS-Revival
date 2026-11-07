@@ -1076,7 +1076,7 @@ const char *VideoDriver_SDL::Start(const char * const *parm)
 		N3DSBootLog(false, "SDL surface failed: %s", SDL_GetError());
 		return "Could not create SDL surface";
 	}
-	N3DSBootLog(false, "SDL surface ready");
+	N3DSBootLog(false, "SDL surface ready; r3r graphics transfer/render lock enabled");
 	MarkWholeScreenDirty();
 
 	SDL_CALL SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
