@@ -1,8 +1,11 @@
 # Git and output organisation
 
 Canonical repository: overarching project/source. Branch: revival/main.
-Remote upstream is the public EnergeticBark/OpenTTD-3DS repository, with push
-URL disabled. No origin or hosted fork was created; nothing has been uploaded.
+Remote origin is the public fork https://github.com/delayedflight/OpenTTD-3DS-Revival,
+with revival/main as its default branch. The upstream remote retains the public
+EnergeticBark/OpenTTD-3DS source with push disabled. Revival history and release
+source tags (including revival-r3r-beta) are uploaded. Private evidence, soundtrack
+and generated builds are excluded. Binary release assets have not been published.
 Author identity on the recovery commits is the repository-local project name
 OpenTTD 3DS Revival <revival@localhost>, not a claim of upstream authorship.
 
@@ -69,4 +72,5 @@ git clone OpenTTD-3DS-Revival-history.bundle revival-restored
 git -C revival-restored switch revival/main
 ```
 
-No remote backup exists until one is deliberately configured.
+The public fork now backs up committed revival source/tags. Local build/ELF and
+private evidence backups remain separate responsibilities.

@@ -83,3 +83,11 @@ the source repository; its outputs then stay in source/builds and source/logs.
 The pinned toolchain recipe and existing configure flags are unchanged.
 
 Current beta/playtester entry point: BETA-TESTING.md and ../../STATUS.md.
+
+## GitHub publication — 7 November2026
+
+Public fork: https://github.com/delayedflight/OpenTTD-3DS-Revival.
+origin points there; revival/main is default and tracks origin/revival/main.
+Upstream author/history and all revival release tags are preserved. Beta binary
+is unchanged; no public binary release asset has been uploaded. Local private
+saves/dumps/soundtrack and generated builds stay outside Git. See readme.md.
