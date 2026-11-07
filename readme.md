@@ -1,121 +1,136 @@
 # OpenTTD 3DS Revival
 
-A continuation of [EnergeticBark’s OpenTTD-3DS port](https://github.com/EnergeticBark/OpenTTD-3DS),
-bringing the transport simulation **OpenTTD 0.7.0** to the original Nintendo
-3DS and 3DS XL. The revival focuses on dual-screen controls, usable menus,
-audio and stability within the original console’s limits; it retains the legacy
-engine. The [original port README](docs/revival/UPSTREAM-README.md) is preserved
-as historical documentation.
+Build a transport empire on your Nintendo 3DS. This project continues
+[EnergeticBark’s OpenTTD-3DS port](https://github.com/EnergeticBark/OpenTTD-3DS),
+with a focus on making the game more comfortable to play across both screens.
 
-## Playable beta
+It runs **OpenTTD 0.7.0** and targets the original **Nintendo 3DS and 3DS XL**.
+The revival keeps that engine and builds on the original port with new menus,
+controls, audio and stability fixes. You can also read the
+[original port README](docs/revival/UPSTREAM-README.md) for its history.
 
-The current beta source is tagged
-[`revival-r3r-beta`](https://github.com/delayedflight/OpenTTD-3DS-Revival/tree/revival-r3r-beta).
-It is approved for wider playtesting after an initial user hardware pass: no
-crash reported so far, with session duration and exact coverage unspecified.
-Extended hardware testing remains open; this is not a feature-complete release.
-[Current status and known issues](STATUS.md) records the evidence and next checks.
+## What’s working
 
-Implemented features include:
+The current playable beta is
+[`r3r`](https://github.com/delayedflight/OpenTTD-3DS-Revival/tree/revival-r3r-beta).
+It includes:
 
-- An upper-screen map and native lower-screen menus, with optional upper menus.
-- Map/construction and upper-pointer input modes, plus paired train depot and
-  purchase screens, vehicle counts and wagon dragging.
-- Streamed WAV music with autoplay and compatible OpenSFX sound effects.
-- Stability repairs, including r3r’s shared graphics lock for SDL texture upload
-  and rendering. Host/build and emulator checks pass; extended hardware coverage
-  is still needed. See [graphics repair validation](docs/revival/GRAPHICS-QUEUE-VALIDATION.md).
+- The map on the upper screen, with native menus on the touchscreen and the
+  option to move menus to the upper screen.
+- Separate map, construction and pointer controls.
+- A train depot and purchase window that can share the two screens, with
+  vehicle counts and wagon dragging.
+- Streamed WAV music, autoplay and OpenSFX sound effects.
+- Stability fixes, including a graphics threading repair in r3r.
 
-Verification varies by feature. Train-workshop interactions, full-playlist music,
-sound quality and longer sessions still need hardware coverage. Networking is
-disabled, and healthy AI operation is not promised. **No map size is certified
-safe.** Emulator results are not console performance benchmarks. The earlier
-r3p ordinary-play crash on a 256×256 map was a graphics-queue panic; RAM exhaustion
-was not established.
+Initial hardware feedback has been positive, with no crashes reported so far on
+r3r, and the beta is ready for wider playtesting. That feedback does not yet
+cover a documented long session or every feature. Train-depot interactions,
+music autoplay, sound quality and longer games still need more testing on real
+hardware. The [beta checklist](docs/revival/BETA-TESTING.md) is a good place to start
+if you’d like to help.
 
-## Installation and safe updates
+Networking is disabled, and AI behaviour may still be unreliable. We haven’t
+established a safe maximum map size or measured performance on the console.
+For known issues and the evidence behind the fixes, see [STATUS.md](STATUS.md)
+and the [graphics repair notes](docs/revival/GRAPHICS-QUEUE-VALIDATION.md).
 
-**There are currently no downloadable GitHub Release assets or public binary
-release listing.** The source tags are public; the selected beta update and
-complete source packages are retained locally by the project. This repository
-is source and documentation, not a complete fresh installation.
+## Installing or updating
 
-To use the executable update, you need a 3DS homebrew launcher and an existing
-working r3 installation with compatible graphics, language files and the converted
-OpenSFX bank. WAV music is optional. For a fresh installation, compatible base
-assets must be obtained separately; the update alone is insufficient. Modern
-OpenTTD asset-installation instructions may not apply to this 0.7.0 port.
+**There isn’t a downloadable build on GitHub yet.** The beta source is public,
+but the prepared update and source packages are currently kept locally by the
+project. This repository does not include everything needed for a fresh install.
 
-1. Back up the existing game folder, executable, configuration and saves.
+The executable update needs a 3DS homebrew launcher and an existing working r3
+installation, including its graphics, language files and converted OpenSFX bank.
+WAV music is optional. If you’re starting from scratch, you’ll need compatible
+base assets separately; instructions for modern OpenTTD may not apply to this
+0.7.0 port.
+
+If you already have the beta update:
+
+1. Back up your game folder, including the old executable, configuration and saves.
 2. Replace **only** `/3ds/openttd-revival-r3/openttd-revival-r3.3dsx` with the
-   matching beta executable.
-3. Preserve `data/`, `gm/`, `lang/`, configuration and saves. Do not replace the
-   whole data folder with an executable-only update.
-4. Test with disposable copies of saves before continuing an important game.
+   beta executable.
+3. Keep your `data/`, `gm/` and `lang/` folders, configuration and saves.
+   **Don’t replace the whole data folder with the update.**
+4. Try a copy of your save before continuing an important game.
 
-See the [beta checklist](docs/revival/BETA-TESTING.md) for executable identity,
-suggested sessions and crash evidence. Do not redistribute private/commercial
-WAV soundtracks or original Transport Tycoon Deluxe assets.
+The [beta checklist](docs/revival/BETA-TESTING.md) includes the executable’s
+checksum so you can identify the build. Private or commercial WAV soundtracks
+and original Transport Tycoon Deluxe assets must not be redistributed.
 
-## Controls at a glance
+## Controls
 
-Use the touchscreen for lower-screen menus. In normal map mode, the Circle Pad
-scrolls the map and L/R zoom. X or Select switches construction control mode;
-follow the on-screen mode labels because button roles change with focus.
-Optional upper menus use pointer controls. With a paired upper depot and lower
-shop, X/Y/Select switches depot control and shopping; the Circle Pad moves the
-upper pointer, A/L clicks or holds, and D-pad up/down scrolls.
-See [screen ownership and input modes](ARCHITECTURE.md#rendering-ui-and-input)
-for the implementation overview.
+Use the touchscreen for the lower menus. In normal map mode, the Circle Pad
+scrolls the map and L/R zoom in and out. X or Select switches construction mode.
+Keep an eye on the on-screen labels: some buttons change roles with the mode.
 
-## Build from source
+Upper-screen menus use a pointer. When the train depot is above and the shop is
+below, X/Y/Select switches between depot control and shopping. In depot control,
+the Circle Pad moves the pointer, A/L clicks or holds, and D-pad up/down scrolls.
+The [architecture notes](ARCHITECTURE.md#rendering-ui-and-input) explain how the
+screen and input modes fit together.
 
-Install and start Docker Desktop, then run from this checkout:
+## Building from source
+
+Install and start Docker Desktop, then run this from the repository folder:
 
 ```sh
 bash environment/build.command
 ```
 
-The contained build rebuilds the modified SDL library and game, mounts source
-read-only and writes artifacts to `builds/repair-r3r/` plus logs to `logs/`.
-Initial image/toolchain setup needs network access; game compilation runs with
-network disabled. See the [recipe](environment/Dockerfile),
-[SDL source and patch notices](environment/vendor/README.md) and
-[recorded beta provenance](docs/revival/BUILD-r3r.json). Recorded toolchain
-inventory supports reproducibility checks; byte-identical rebuilds are not guaranteed.
-Base assets and optional music must still be supplied separately.
+The build compiles both the modified SDL library and the game. It leaves the
+source untouched and puts the results in `builds/repair-r3r/`, with logs in
+`logs/`. Setting up the Docker image and toolchain needs an internet connection;
+the game itself is compiled with networking disabled. You’ll still need to
+supply the base assets and any optional music separately.
 
-## Testing, bugs and contributions
+See the [Docker recipe](environment/Dockerfile),
+[SDL source and patch notes](environment/vendor/README.md) and
+[beta build record](docs/revival/BUILD-r3r.json) for details. The toolchain versions
+are recorded, but a rebuild is not guaranteed to produce an identical executable.
 
-The public fork’s issue tracker is currently disabled. Prepare reproducible
-reports using the checklist below and share them through your existing project
-contact; no public reporting channel is currently advertised here.
-Include the tag or executable hash, console model, launcher/CFW, session length,
-map size, exact action, expected result and whether audio was active. Follow the
-[reporting checklist](docs/revival/BETA-TESTING.md#report-failures-usefully) for
-logs and crash dumps. Review attachments for private information before posting.
-A save is helpful when available, but is not required if the crash preceded saving.
+## Testing and reporting problems
 
-Contributors should start with [AGENTS.md](AGENTS.md) and [STATUS.md](STATUS.md),
-then consult [ARCHITECTURE.md](ARCHITECTURE.md), [BENCHMARKS.md](BENCHMARKS.md)
-and the [maintenance/release convention](docs/revival/PROJECT-ORGANISATION.md#documentation-and-release-maintenance).
-The [release registry](docs/revival/RELEASES.json) records source provenance;
-21 recovered snapshot tags and the current beta tag are not published GitHub
-Releases. Existing history and tags are preserved.
+Useful reports tell us which build you ran, which console and launcher/CFW you
+used, how long you played, and what happened. Include the map size, the action
+that triggered the problem, what you expected, and whether music was playing.
+The [reporting checklist](docs/revival/BETA-TESTING.md#report-failures-usefully)
+explains which logs and crash dumps to keep.
+
+The fork’s public issue tracker is currently disabled. If you’re already testing
+with the project, use your existing contact to share reports. There isn’t a public
+reporting channel yet. Check attachments for private information before sharing;
+a copied save can help, but don’t worry if the crash happened before you could save.
+
+## Contributing
+
+Start with [AGENTS.md](AGENTS.md) and [STATUS.md](STATUS.md). For more detail, see:
+
+- [Architecture](ARCHITECTURE.md) — how the port works.
+- [Benchmarks and testing](BENCHMARKS.md) — measurements and test conditions.
+- [Maintenance and releases](docs/revival/PROJECT-ORGANISATION.md#documentation-and-release-maintenance)
+  — how to group changes and prepare meaningful beta milestones.
+- [Release registry](docs/revival/RELEASES.json) — the history of the saved source
+  snapshots and beta builds.
+
+The 21 recovered snapshot tags and current beta tag preserve the project’s
+history; they aren’t published GitHub Releases. Existing history and tags stay intact.
 
 ## Credits and licenses
 
 Thanks to EnergeticBark for the original 3DS port, the upstream OpenTTD developers,
-and the OpenGFX, OpenSFX, SDL and devkitPro contributors whose work supports it.
+and the OpenGFX, OpenSFX, SDL and devkitPro contributors whose work makes this possible.
 
-- Game source: GNU GPLv2; see [COPYING](COPYING) and the retained
+- Game source: GNU GPLv2. See [COPYING](COPYING) and the
   [OpenTTD documentation](readme.openttd).
-- Modified SDL: LGPL 2.1-or-later; see its [license](environment/vendor/SDL-COPYING.txt)
-  and [source/modification notices](environment/vendor/README.md).
-- Converted OpenSFX collection: CC BY-SA 3.0; retain the
+- Modified SDL: LGPL 2.1-or-later. See its [license](environment/vendor/SDL-COPYING.txt)
+  and [source and modification notices](environment/vendor/README.md).
+- Converted OpenSFX collection: CC BY-SA 3.0. Keep the
   [conversion notice](docs/revival/OPENSFX-CONVERSION.txt),
   [credits](docs/revival/OPENSFX-CREDITS.txt) and
-  [licenses](docs/revival/OPENSFX-LICENSE.txt) when redistributing the bank.
+  [licenses](docs/revival/OPENSFX-LICENSE.txt) with the bank when redistributing it.
 
-Base graphics, music and other third-party assets retain their own licenses and
-attribution requirements. Preserve applicable notices when distributing a build.
+Graphics, music and other third-party assets keep their own licenses and credit
+requirements. Please retain the relevant notices when sharing a build.
